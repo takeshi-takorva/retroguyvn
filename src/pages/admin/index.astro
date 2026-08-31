@@ -5,19 +5,19 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>RetroGuy Admin M1</title>
+  <title>RetroGuy Admin M1.1</title>
   <meta name="robots" content="noindex,nofollow" />
   <style>
-    :root{--bg:#09111e;--panel:#101b2c;--panel2:#15243a;--line:#2a3950;--text:#f5f7fb;--muted:#9eacbd;--accent:#d64535;--good:#39c67a;--warn:#f4b942}*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#07101c,#0c1728);color:var(--text);font:15px/1.5 Inter,system-ui,sans-serif}button,input,textarea{font:inherit}.shell{max-width:1180px;margin:auto;padding:28px 20px 80px}.top{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:24px}.brand h1{margin:0;font-size:28px}.brand p{margin:5px 0 0;color:var(--muted)}.pill{padding:8px 12px;border:1px solid var(--line);border-radius:999px;color:var(--muted)}.login,.editor{border:1px solid var(--line);background:rgba(16,27,44,.92);border-radius:18px}.login{padding:24px;max-width:560px;margin:80px auto}.login h2{margin-top:0}.row{display:flex;gap:12px}.row>*{min-width:0}.grow{flex:1}.field{display:grid;gap:7px}.field label{font-weight:700;font-size:13px}.field input,.field textarea{width:100%;border:1px solid var(--line);background:#08121f;color:var(--text);border-radius:10px;padding:11px 12px;outline:none}.field textarea{min-height:110px;resize:vertical}.field input:focus,.field textarea:focus{border-color:#6c7f99}.btn{border:1px solid var(--line);background:#17253a;color:#fff;border-radius:10px;padding:10px 15px;font-weight:800;cursor:pointer}.btn.primary{background:var(--accent);border-color:var(--accent)}.btn.good{background:#167d4a;border-color:#1d9f60}.btn:disabled{opacity:.45;cursor:not-allowed}.toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}.toolbar .actions{display:flex;gap:8px;flex-wrap:wrap}.status{color:var(--muted)}.editor{overflow:hidden}.sections{display:grid;gap:0}.section{padding:22px;border-bottom:1px solid var(--line)}.section:last-child{border-bottom:0}.section h2{margin:0 0 16px;font-size:19px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.wide{grid-column:1/-1}.media{display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:start}.preview{aspect-ratio:1/1;border:1px solid var(--line);background:#07101c;border-radius:12px;display:grid;place-items:center;overflow:hidden}.preview img{width:100%;height:100%;object-fit:cover}.media-controls{display:grid;gap:10px}.media-controls input[type=file]{max-width:100%}.note{color:var(--muted);font-size:13px}.hidden{display:none!important}.toast{position:fixed;right:18px;bottom:18px;max-width:360px;padding:12px 15px;background:#17253a;border:1px solid var(--line);border-radius:10px;box-shadow:0 16px 50px #0008}.toast.ok{border-color:#277f55}.toast.err{border-color:#b84c45}@media(max-width:720px){.grid{grid-template-columns:1fr}.wide{grid-column:auto}.media{grid-template-columns:1fr}.preview{max-width:260px}.top{align-items:flex-start;flex-direction:column}.row{flex-direction:column}}
+    :root{--bg:#09111e;--panel:#101b2c;--panel2:#15243a;--line:#2a3950;--text:#f5f7fb;--muted:#9eacbd;--accent:#d64535;--good:#39c67a;--warn:#f4b942}*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#07101c,#0c1728);color:var(--text);font:15px/1.5 Inter,system-ui,sans-serif}button,input,textarea,select{font:inherit}.shell{max-width:1180px;margin:auto;padding:28px 20px 80px}.top{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:24px}.brand h1{margin:0;font-size:28px}.brand p{margin:5px 0 0;color:var(--muted)}.pill{padding:8px 12px;border:1px solid var(--line);border-radius:999px;color:var(--muted)}.login,.editor{border:1px solid var(--line);background:rgba(16,27,44,.92);border-radius:18px}.login{padding:24px;max-width:560px;margin:80px auto}.login h2{margin-top:0}.row{display:flex;gap:12px}.row>*{min-width:0}.grow{flex:1}.field{display:grid;gap:7px}.field label{font-weight:700;font-size:13px}.field input,.field textarea,.field select{width:100%;border:1px solid var(--line);background:#08121f;color:var(--text);border-radius:10px;padding:11px 12px;outline:none}.field textarea{min-height:110px;resize:vertical}.field input:focus,.field textarea:focus,.field select:focus{border-color:#6c7f99}.btn{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:#17253a;color:#fff;border-radius:10px;padding:10px 15px;font-weight:800;cursor:pointer;text-decoration:none}.btn.primary{background:var(--accent);border-color:var(--accent)}.btn.good{background:#167d4a;border-color:#1d9f60}.btn.danger{background:#3a1b20;border-color:#75323b;color:#ffc9cf}.btn:disabled{opacity:.45;cursor:not-allowed}.toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}.toolbar .actions,.tabs{display:flex;gap:8px;flex-wrap:wrap}.status{color:var(--muted)}.editor{overflow:hidden}.tabs{padding:12px 18px;border-bottom:1px solid var(--line);background:#0c1625}.tab{background:transparent}.tab.active{background:#253753;border-color:#435d80}.sections{display:grid;gap:0}.section{padding:22px;border-bottom:1px solid var(--line)}.section:last-child{border-bottom:0}.section h2{margin:0 0 16px;font-size:19px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.wide{grid-column:1/-1}.media{display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:start}.preview{aspect-ratio:1/1;border:1px solid var(--line);background:#07101c;border-radius:12px;display:grid;place-items:center;overflow:hidden}.preview img{width:100%;height:100%;object-fit:cover}.media-controls{display:grid;gap:10px}.note{color:var(--muted);font-size:13px}.hidden{display:none!important}.toast{position:fixed;right:18px;bottom:18px;max-width:360px;padding:12px 15px;background:#17253a;border:1px solid var(--line);border-radius:10px;box-shadow:0 16px 50px #0008}.toast.ok{border-color:#277f55}.toast.err{border-color:#b84c45}.library{padding:22px}.library-head{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:18px}.library-head h2{margin:0}.uploader{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.media-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.media-card{border:1px solid var(--line);background:#0b1524;border-radius:14px;overflow:hidden}.media-card img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;background:#06101d}.media-body{padding:13px;display:grid;gap:9px}.media-name{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.media-meta,.usage{color:var(--muted);font-size:12px}.media-actions{display:grid;grid-template-columns:1fr auto;gap:8px}.media-actions select{min-width:0;border:1px solid var(--line);background:#08121f;color:#fff;border-radius:9px;padding:9px}.empty{padding:42px 18px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:14px}@media(max-width:900px){.media-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:720px){.grid{grid-template-columns:1fr}.wide{grid-column:auto}.media{grid-template-columns:1fr}.preview{max-width:260px}.top,.library-head{align-items:flex-start;flex-direction:column}.row{flex-direction:column}.media-grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
   <main class="shell">
-    <header class="top"><div class="brand"><h1>RetroGuy Admin M1</h1><p>Homepage CMS · Draft → Publish</p></div><div class="pill" id="connection">Not connected</div></header>
+    <header class="top"><div class="brand"><h1>RetroGuy Admin M1.1</h1><p>Homepage CMS · Cloudflare Access · Media Library</p></div><div class="pill" id="connection">Checking access…</div></header>
 
-    <section class="login" id="loginPanel">
+    <section class="login hidden" id="loginPanel">
       <h2>Admin access</h2>
-      <p class="note">Nhập Admin Token. Token chỉ được giữ trong session hiện tại của trình duyệt.</p>
+      <p class="note" id="loginNote">Cloudflare Access chưa được nhận diện. Bạn vẫn có thể dùng Admin Token dự phòng.</p>
       <form id="loginForm" class="row">
         <input class="grow" id="tokenInput" type="password" autocomplete="current-password" placeholder="Admin Token" required />
         <button class="btn primary" type="submit">Connect</button>
@@ -36,134 +36,102 @@
         </div>
       </div>
 
-      <form id="contentForm" class="sections">
-        <section class="section">
-          <h2>Hero</h2>
-          <div class="grid">
-            <div class="field wide"><label>Eyebrow</label><input data-path="hero.eyebrow" /></div>
-            <div class="field wide"><label>Tagline</label><input data-path="hero.tagline" /></div>
-            <div class="field wide"><label>Description</label><textarea data-path="hero.description"></textarea></div>
-            <div class="wide media" data-media="hero.image">
-              <div class="preview"><img alt="Hero preview" /></div>
-              <div class="media-controls"><div class="field"><label>Hero image URL</label><input data-path="hero.image" /></div><input type="file" accept="image/*" /><button class="btn uploadBtn" type="button">Upload image</button><div class="note">Tối đa 5 MB. Nên dùng WebP/JPG, cạnh dài khoảng 1200–1800 px.</div></div>
+      <nav class="tabs" aria-label="Admin sections">
+        <button class="btn tab active" data-view="homepage" type="button">Homepage</button>
+        <button class="btn tab" data-view="media" type="button">Media Library</button>
+      </nav>
+
+      <div id="homepageView">
+        <form id="contentForm" class="sections">
+          <section class="section">
+            <h2>Hero</h2>
+            <div class="grid">
+              <div class="field wide"><label>Eyebrow</label><input data-path="hero.eyebrow" /></div>
+              <div class="field wide"><label>Tagline</label><input data-path="hero.tagline" /></div>
+              <div class="field wide"><label>Description</label><textarea data-path="hero.description"></textarea></div>
+              <div class="wide media" data-media="hero.image"><div class="preview"><img alt="Hero preview" /></div><div class="media-controls"><div class="field"><label>Hero image URL</label><input data-path="hero.image" /></div><input type="file" accept="image/*" /><button class="btn uploadBtn" type="button">Upload image</button><div class="note">Tối đa 5 MB. Hoặc chọn ảnh đã upload trong Media Library.</div></div></div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section class="section">
-          <h2>Experience</h2>
-          <div class="grid">
-            <div class="field"><label>Heading</label><input data-path="experience.titleMain" /></div>
-            <div class="field"><label>Accent heading</label><input data-path="experience.titleAccent" /></div>
-            <div class="field wide"><label>Description</label><textarea data-path="experience.description"></textarea></div>
-            <div class="wide media" data-media="experience.image"><div class="preview"><img alt="Experience preview" /></div><div class="media-controls"><div class="field"><label>Image URL</label><input data-path="experience.image" /></div><input type="file" accept="image/*" /><button class="btn uploadBtn" type="button">Upload image</button></div></div>
-          </div>
-        </section>
+          <section class="section">
+            <h2>Experience</h2>
+            <div class="grid">
+              <div class="field"><label>Heading</label><input data-path="experience.titleMain" /></div><div class="field"><label>Accent heading</label><input data-path="experience.titleAccent" /></div>
+              <div class="field wide"><label>Description</label><textarea data-path="experience.description"></textarea></div>
+              <div class="wide media" data-media="experience.image"><div class="preview"><img alt="Experience preview" /></div><div class="media-controls"><div class="field"><label>Image URL</label><input data-path="experience.image" /></div><input type="file" accept="image/*" /><button class="btn uploadBtn" type="button">Upload image</button></div></div>
+            </div>
+          </section>
 
-        <section class="section">
-          <h2>Product family</h2>
-          <div class="grid">
-            <div class="field"><label>Heading</label><input data-path="family.titleMain" /></div>
-            <div class="field"><label>Accent heading</label><input data-path="family.titleAccent" /></div>
-            <div class="field wide"><label>Description</label><textarea data-path="family.description"></textarea></div>
-            <div class="wide media" data-media="family.image"><div class="preview"><img alt="Product family preview" /></div><div class="media-controls"><div class="field"><label>Image URL</label><input data-path="family.image" /></div><input type="file" accept="image/*" /><button class="btn uploadBtn" type="button">Upload image</button></div></div>
-          </div>
-        </section>
+          <section class="section">
+            <h2>Product family</h2>
+            <div class="grid">
+              <div class="field"><label>Heading</label><input data-path="family.titleMain" /></div><div class="field"><label>Accent heading</label><input data-path="family.titleAccent" /></div>
+              <div class="field wide"><label>Description</label><textarea data-path="family.description"></textarea></div>
+              <div class="wide media" data-media="family.image"><div class="preview"><img alt="Product family preview" /></div><div class="media-controls"><div class="field"><label>Image URL</label><input data-path="family.image" /></div><input type="file" accept="image/*" /><button class="btn uploadBtn" type="button">Upload image</button></div></div>
+            </div>
+          </section>
 
-        <section class="section">
-          <h2>Hardware</h2>
-          <div class="grid">
-            <div class="field"><label>Heading</label><input data-path="hardware.titleMain" /></div>
-            <div class="field"><label>Accent heading</label><input data-path="hardware.titleAccent" /></div>
-            <div class="field wide"><label>Description</label><textarea data-path="hardware.description"></textarea></div>
-            <div class="wide media" data-media="hardware.image"><div class="preview"><img alt="Hardware preview" /></div><div class="media-controls"><div class="field"><label>Image URL</label><input data-path="hardware.image" /></div><input type="file" accept="image/*" /><button class="btn uploadBtn" type="button">Upload image</button></div></div>
-          </div>
-        </section>
+          <section class="section">
+            <h2>Hardware</h2>
+            <div class="grid">
+              <div class="field"><label>Heading</label><input data-path="hardware.titleMain" /></div><div class="field"><label>Accent heading</label><input data-path="hardware.titleAccent" /></div>
+              <div class="field wide"><label>Description</label><textarea data-path="hardware.description"></textarea></div>
+              <div class="wide media" data-media="hardware.image"><div class="preview"><img alt="Hardware preview" /></div><div class="media-controls"><div class="field"><label>Image URL</label><input data-path="hardware.image" /></div><input type="file" accept="image/*" /><button class="btn uploadBtn" type="button">Upload image</button></div></div>
+            </div>
+          </section>
 
-        <section class="section">
-          <h2>Final CTA</h2>
-          <div class="grid">
-            <div class="field"><label>Heading</label><input data-path="cta.titleMain" /></div>
-            <div class="field"><label>Accent heading</label><input data-path="cta.titleAccent" /></div>
-            <div class="field wide"><label>Description</label><textarea data-path="cta.description"></textarea></div>
-          </div>
-        </section>
-      </form>
+          <section class="section"><h2>Final CTA</h2><div class="grid"><div class="field"><label>Heading</label><input data-path="cta.titleMain" /></div><div class="field"><label>Accent heading</label><input data-path="cta.titleAccent" /></div><div class="field wide"><label>Description</label><textarea data-path="cta.description"></textarea></div></div></section>
+        </form>
+      </div>
+
+      <section id="mediaView" class="library hidden">
+        <div class="library-head">
+          <div><h2>Media Library</h2><div class="note">Ảnh upload từ Admin M1/M1.1. Ảnh đang được dùng sẽ được khóa nút Delete.</div></div>
+          <div class="uploader"><input id="libraryFile" type="file" accept="image/*" /><button class="btn primary" id="libraryUploadBtn" type="button">Upload</button></div>
+        </div>
+        <div id="mediaGrid" class="media-grid"></div>
+      </section>
     </section>
   </main>
   <div id="toast" class="toast hidden" aria-live="polite"></div>
 
   <script>
-    const loginPanel = document.querySelector('#loginPanel');
-    const editorPanel = document.querySelector('#editorPanel');
-    const loginForm = document.querySelector('#loginForm');
-    const tokenInput = document.querySelector('#tokenInput');
-    const saveState = document.querySelector('#saveState');
-    const toast = document.querySelector('#toast');
-    const connection = document.querySelector('#connection');
-    let token = sessionStorage.getItem('rg_admin_token') || '';
-    let model = null;
+    const loginPanel=document.querySelector('#loginPanel'),editorPanel=document.querySelector('#editorPanel'),loginForm=document.querySelector('#loginForm'),tokenInput=document.querySelector('#tokenInput'),saveState=document.querySelector('#saveState'),toast=document.querySelector('#toast'),connection=document.querySelector('#connection'),mediaGrid=document.querySelector('#mediaGrid');
+    let token=sessionStorage.getItem('rg_admin_token')||'',model=null,auth=null,mediaItems=[];
+    const getPath=(obj,path)=>path.split('.').reduce((v,k)=>v?.[k],obj);
+    const setPath=(obj,path,value)=>{const parts=path.split('.');let cur=obj;parts.slice(0,-1).forEach(k=>cur=cur[k]||=( {} ));cur[parts.at(-1)]=value;};
+    const authHeaders=(json=false)=>({...(token?{Authorization:`Bearer ${token}`} : {}),...(json?{'content-type':'application/json'}:{})});
+    const showToast=(msg,kind='ok')=>{toast.textContent=msg;toast.className=`toast ${kind}`;setTimeout(()=>toast.classList.add('hidden'),3200);};
+    const busy=(state,text)=>{document.querySelectorAll('.toolbar button,.uploadBtn,#libraryUploadBtn,.media-card button').forEach(b=>b.disabled=state);saveState.textContent=text||(state?'Working…':'Ready');};
+    const formatBytes=n=>n<1024?`${n} B`:n<1048576?`${(n/1024).toFixed(1)} KB`:`${(n/1048576).toFixed(1)} MB`;
 
-    const getPath = (obj, path) => path.split('.').reduce((v, k) => v?.[k], obj);
-    const setPath = (obj, path, value) => { const parts = path.split('.'); let cur = obj; parts.slice(0,-1).forEach(k => cur = cur[k] ||= {}); cur[parts.at(-1)] = value; };
-    const headers = (json = false) => ({ Authorization: `Bearer ${token}`, ...(json ? {'content-type':'application/json'} : {}) });
-    const showToast = (msg, kind='ok') => { toast.textContent = msg; toast.className = `toast ${kind}`; setTimeout(() => toast.classList.add('hidden'), 3200); };
-    const busy = (state, text) => { document.querySelectorAll('.toolbar button,.uploadBtn').forEach(b => b.disabled = state); saveState.textContent = text || (state ? 'Working…' : 'Ready'); };
+    async function api(path,options={}){const res=await fetch(path,{...options,headers:{...authHeaders(options.json),...(options.headers||{})}});const data=await res.json().catch(()=>({}));if(!res.ok)throw Object.assign(new Error(data.error||`HTTP ${res.status}`),{status:res.status,data});return data;}
 
-    function syncForm() {
-      document.querySelectorAll('[data-path]').forEach(el => { el.value = getPath(model, el.dataset.path) ?? ''; });
-      document.querySelectorAll('[data-media]').forEach(box => {
-        const path = box.dataset.media; const url = getPath(model, path) || '';
-        const img = box.querySelector('.preview img'); img.src = url; img.style.display = url ? 'block' : 'none';
-      });
-    }
+    function syncForm(){document.querySelectorAll('[data-path]').forEach(el=>{el.value=getPath(model,el.dataset.path)??'';});document.querySelectorAll('[data-media]').forEach(box=>{const url=getPath(model,box.dataset.media)||'';const img=box.querySelector('.preview img');img.src=url;img.style.display=url?'block':'none';});}
+    function readForm(){document.querySelectorAll('[data-path]').forEach(el=>setPath(model,el.dataset.path,el.value.trim()));return model;}
 
-    function readForm() {
-      document.querySelectorAll('[data-path]').forEach(el => setPath(model, el.dataset.path, el.value.trim()));
-      return model;
-    }
+    function renderLibrary(){mediaGrid.innerHTML='';if(!mediaItems.length){const empty=document.createElement('div');empty.className='empty';empty.textContent='Chưa có ảnh upload trong Media Library.';mediaGrid.append(empty);return;}mediaItems.forEach(item=>{const card=document.createElement('article');card.className='media-card';const img=document.createElement('img');img.src=item.url;img.alt=item.name||'Uploaded image';const body=document.createElement('div');body.className='media-body';const name=document.createElement('div');name.className='media-name';name.textContent=item.name||item.id;const meta=document.createElement('div');meta.className='media-meta';meta.textContent=`${formatBytes(item.size||0)}${item.createdAt?' · '+new Date(item.createdAt).toLocaleString():''}`;const usage=document.createElement('div');usage.className='usage';const used=[...(item.usage?.published||[]).map(v=>`${v} (published)`),...(item.usage?.draft||[]).map(v=>`${v} (draft)`)];usage.textContent=used.length?`Used by: ${used.join(', ')}`:'Unused';const actions=document.createElement('div');actions.className='media-actions';const select=document.createElement('select');[['hero.image','Hero'],['experience.image','Experience'],['family.image','Product Family'],['hardware.image','Hardware']].forEach(([v,l])=>{const o=document.createElement('option');o.value=v;o.textContent=`Use as ${l}`;select.append(o);});const use=document.createElement('button');use.type='button';use.className='btn';use.textContent='Use';use.addEventListener('click',()=>{setPath(model,select.value,item.url);syncForm();showToast('Image assigned. Save draft or Publish to apply.');});const del=document.createElement('button');del.type='button';del.className='btn danger';del.textContent='Delete';del.disabled=used.length>0;del.addEventListener('click',async()=>{if(!confirm(`Delete ${item.name||item.id}?`))return;busy(true,'Deleting image…');try{await api(`/api/admin/media/${encodeURIComponent(item.id)}`,{method:'DELETE'});await loadMedia();showToast('Image deleted');}catch(e){showToast(e.message,'err')}finally{busy(false);}});actions.append(select,use);body.append(name,meta,usage,actions,del);card.append(img,body);mediaGrid.append(card);});}
 
-    async function api(path, options={}) {
-      const res = await fetch(path, { ...options, headers: { ...headers(options.json), ...(options.headers || {}) } });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      return data;
-    }
+    async function loadMedia(){const data=await api('/api/admin/media');mediaItems=data.items||[];renderLibrary();}
+    async function loadWorkspace(){busy(true,'Loading…');try{const [content]=await Promise.all([api('/api/admin/content/home'),loadMedia()]);model=content.draft;syncForm();loginPanel.classList.add('hidden');editorPanel.classList.remove('hidden');connection.textContent=auth.mode==='access'?(auth.email?`Access · ${auth.email}`:'Cloudflare Access'):'Token fallback';saveState.textContent='Draft loaded';}finally{busy(false);}}
 
-    async function load() {
-      busy(true, 'Loading…');
-      try {
-        const data = await api('/api/admin/content/home');
-        model = data.draft;
-        syncForm();
-        loginPanel.classList.add('hidden'); editorPanel.classList.remove('hidden');
-        connection.textContent = 'Connected'; saveState.textContent = 'Draft loaded';
-      } catch (e) {
-        token = ''; sessionStorage.removeItem('rg_admin_token');
-        loginPanel.classList.remove('hidden'); editorPanel.classList.add('hidden');
-        connection.textContent = 'Not connected'; showToast(e.message, 'err');
-      } finally { busy(false); }
-    }
+    async function connect(){try{auth=await api('/api/admin/session');await loadWorkspace();}catch(e){if(e.status===401){loginPanel.classList.remove('hidden');editorPanel.classList.add('hidden');connection.textContent=e.data?.accessConfigured?'Access session required':'Token fallback available';if(token){token='';sessionStorage.removeItem('rg_admin_token');showToast('Saved token is no longer valid','err');}}else showToast(e.message,'err');}}
 
-    loginForm.addEventListener('submit', async e => { e.preventDefault(); token = tokenInput.value.trim(); sessionStorage.setItem('rg_admin_token', token); await load(); });
-    document.querySelector('#reloadBtn').addEventListener('click', load);
-    document.querySelector('#logoutBtn').addEventListener('click', () => { sessionStorage.removeItem('rg_admin_token'); location.reload(); });
-    document.querySelector('#saveBtn').addEventListener('click', async () => { busy(true,'Saving draft…'); try { await api('/api/admin/content/home',{method:'PUT',json:true,body:JSON.stringify(readForm())}); showToast('Draft saved'); saveState.textContent='Draft saved'; } catch(e){showToast(e.message,'err')} finally{busy(false)} });
-    document.querySelector('#publishBtn').addEventListener('click', async () => { busy(true,'Publishing…'); try { await api('/api/admin/content/home',{method:'PUT',json:true,body:JSON.stringify(readForm())}); await api('/api/admin/publish/home',{method:'POST'}); showToast('Published. F5 website to view changes.'); saveState.textContent='Published'; } catch(e){showToast(e.message,'err')} finally{busy(false)} });
+    async function uploadFile(file){if(!file)throw new Error('Choose an image first');const form=new FormData();form.append('file',file);const res=await fetch('/api/admin/media',{method:'POST',headers:authHeaders(false),body:form});const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data.error||`HTTP ${res.status}`);await loadMedia();return data;}
 
-    document.querySelectorAll('.uploadBtn').forEach(btn => btn.addEventListener('click', async () => {
-      const box = btn.closest('[data-media]'); const file = box.querySelector('input[type=file]').files[0];
-      if (!file) return showToast('Choose an image first','err');
-      busy(true,'Uploading image…');
-      try {
-        const form = new FormData(); form.append('file', file);
-        const res = await fetch('/api/admin/media',{method:'POST',headers:headers(false),body:form});
-        const data = await res.json(); if(!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-        setPath(model, box.dataset.media, data.url); syncForm(); showToast('Image uploaded. Save or Publish to apply.');
-      } catch(e){showToast(e.message,'err')} finally{busy(false)}
-    }));
+    loginForm.addEventListener('submit',async e=>{e.preventDefault();token=tokenInput.value.trim();sessionStorage.setItem('rg_admin_token',token);await connect();});
+    document.querySelector('#reloadBtn').addEventListener('click',loadWorkspace);
+    document.querySelector('#logoutBtn').addEventListener('click',()=>{sessionStorage.removeItem('rg_admin_token');token='';if(auth?.mode==='access')location.href='/cdn-cgi/access/logout';else location.reload();});
+    document.querySelector('#saveBtn').addEventListener('click',async()=>{busy(true,'Saving draft…');try{await api('/api/admin/content/home',{method:'PUT',json:true,body:JSON.stringify(readForm())});await loadMedia();showToast('Draft saved');saveState.textContent='Draft saved';}catch(e){showToast(e.message,'err')}finally{busy(false)}});
+    document.querySelector('#publishBtn').addEventListener('click',async()=>{busy(true,'Publishing…');try{await api('/api/admin/content/home',{method:'PUT',json:true,body:JSON.stringify(readForm())});await api('/api/admin/publish/home',{method:'POST'});await loadMedia();showToast('Published. F5 website to view changes.');saveState.textContent='Published';}catch(e){showToast(e.message,'err')}finally{busy(false)}});
 
-    if (token) load();
+    document.querySelectorAll('.uploadBtn').forEach(btn=>btn.addEventListener('click',async()=>{const box=btn.closest('[data-media]'),file=box.querySelector('input[type=file]').files[0];busy(true,'Uploading image…');try{const data=await uploadFile(file);setPath(model,box.dataset.media,data.url);syncForm();showToast('Image uploaded and assigned. Save or Publish to apply.');}catch(e){showToast(e.message,'err')}finally{busy(false)}}));
+    document.querySelector('#libraryUploadBtn').addEventListener('click',async()=>{const input=document.querySelector('#libraryFile');busy(true,'Uploading image…');try{await uploadFile(input.files[0]);input.value='';showToast('Image added to Media Library');}catch(e){showToast(e.message,'err')}finally{busy(false)}});
+
+    document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b===btn));document.querySelector('#homepageView').classList.toggle('hidden',btn.dataset.view!=='homepage');document.querySelector('#mediaView').classList.toggle('hidden',btn.dataset.view!=='media');}));
+    document.querySelectorAll('[data-path$=".image"]').forEach(input=>input.addEventListener('input',()=>{if(model){setPath(model,input.dataset.path,input.value.trim());syncForm();}}));
+
+    connect();
   </script>
 </body>
 </html>
