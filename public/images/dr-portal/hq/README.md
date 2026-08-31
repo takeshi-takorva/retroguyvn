@@ -1,0 +1,1 @@
+High-resolution DR Portal production assets. These files replace the legacy sprite pipeline and are referenced directly by the homepage.
