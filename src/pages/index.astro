@@ -1,11 +1,3 @@
----
-import fs from 'node:fs';
-
-const sprite = fs.readFileSync(new URL('../../public/images/dr-portal/site-sprite.b64', import.meta.url), 'utf8').trim();
-const logo = fs.readFileSync(new URL('../../public/images/brand/retroguy-wordmark.b64', import.meta.url), 'utf8').trim();
-const spriteUrl = `data:image/webp;base64,${sprite}`;
-const logoUrl = `data:image/webp;base64,${logo}`;
----
 <!doctype html>
 <html lang="vi">
 <head>
@@ -38,8 +30,8 @@ const logoUrl = `data:image/webp;base64,${logo}`;
     @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
   </style>
 </head>
-<body style={`--sprite:url(${spriteUrl})`}>
-  <nav class="nav"><div class="wrap navin"><a class="brand" href="#top" aria-label="RetroGuy home"><img src={logoUrl} alt="Retro Guy" /></a><div class="navlinks"><a href="#experience">Experience</a><a href="#features">Features</a><a href="#gallery">Gallery</a><a href="#hardware">Hardware</a><a href="/news">Devlog</a><a class="navcta" href="#portal">Open Portal</a></div></div></nav>
+<body>
+  <nav class="nav"><div class="wrap navin"><a class="brand" href="#top" aria-label="RetroGuy home"><img class="rg-logo" alt="Retro Guy" /></a><div class="navlinks"><a href="#experience">Experience</a><a href="#features">Features</a><a href="#gallery">Gallery</a><a href="#hardware">Hardware</a><a href="/news">Devlog</a><a class="navcta" href="#portal">Open Portal</a></div></div></nav>
   <main id="top">
     <section class="hero"><div class="wrap hero-grid"><div><div class="eyebrow">Pocket Adventure Device</div><h1><span class="dr">DR</span><span class="portal">PORTAL</span></h1><div class="tag">Open the Portal. Enter the Realm.</div><p class="lead">Một thiết bị cầm tay nhỏ gọn nhưng chứa cả một thế giới số. Nuôi người bạn đồng hành, huấn luyện chuyên sâu, khám phá Realm, tham gia hoạt động và chiến đấu theo cách của bạn.</p><div class="actions"><a class="btn primary" href="#features">Explore Features</a><a class="btn secondary" href="#gallery">View Product</a></div></div><div class="visual reveal" id="tilt"><div class="visual-ring"></div><div class="media product-main" role="img" aria-label="DR Portal navy product render"></div><div class="scan"></div><div class="badge b1"><b>300+</b><span>DIGITAL MONSTERS</span></div><div class="badge b2"><b>500+</b><span>EVOLUTION PATHS</span></div></div></div></section>
     <section class="stats"><div class="wrap statgrid"><div class="stat"><strong>300+</strong><span>Living Digital Monsters</span></div><div class="stat"><strong>500+</strong><span>Branching Evolutions</span></div><div class="stat"><strong>6</strong><span>Explorable Regions</span></div><div class="stat"><strong>3V3</strong><span>Team Battle</span></div><div class="stat"><strong>10</strong><span>Character Save Slots</span></div></div></section>
@@ -48,10 +40,22 @@ const logoUrl = `data:image/webp;base64,${logo}`;
     <section class="section" id="gallery"><div class="wrap"><div class="section-head"><div><div class="eyebrow">Product gallery</div><h2>Choose your<br/><em>Portal.</em></h2></div><p>Hai hướng màu chủ đạo cùng ngôn ngữ phần cứng nhất quán. Navy nhấn mạnh tinh thần cyber-retro; Orange nổi bật và năng động hơn.</p></div><div class="gallery"><article class="gallery-card reveal"><div class="gallery-img g-navy"></div><div><b>Navy Edition</b><p>Thân xanh navy đậm kết hợp phím cam nổi bật.</p></div></article><article class="gallery-card reveal"><div class="gallery-img g-orange"></div><div><b>Orange Edition</b><p>Thân cam năng lượng với cụm phím tối tương phản.</p></div></article><article class="gallery-card reveal"><div class="gallery-img g-group"></div><div><b>Portal Colorways</b><p>Nhiều lựa chọn màu sắc có thể mở rộng cho các edition tương lai.</p></div></article></div></div></section>
     <section class="section dark" id="hardware"><div class="wrap"><div class="section-head"><div><div class="eyebrow">Hardware experience</div><h2>Made for<br/><em>pocket play.</em></h2></div><p>Phần cứng được xây quanh sự tiện dụng: hình dáng ôm tay, nút bấm rõ ràng, màn hình tập trung và kết nối đủ cho trải nghiệm local lẫn dịch vụ online sau này.</p></div><div class="hardware-wrap"><div class="media hardware-media reveal" role="img" aria-label="DR Portal rear panel and USB-C detail"></div><div class="hardware-list"><article class="hw"><small>Controls</small><b>Intuitive D-pad</b><p>Bố cục điều khiển trung tâm dễ ghi nhớ và sử dụng nhanh bằng ngón cái.</p></article><article class="hw"><small>Display</small><b>Pixel-first UI</b><p>Màn hình tập trung vào pixel art, VPet và giao diện rõ ở kích thước bỏ túi.</p></article><article class="hw"><small>Feedback</small><b>Sound + Vibration</b><p>Phản hồi nghe và cảm nhận được bằng tay cho event, warning và combat.</p></article><article class="hw"><small>Storage</small><b>microSD Content</b><p>Tách asset, map và nội dung khỏi bộ nhớ chính để dễ mở rộng.</p></article><article class="hw"><small>Connection</small><b>Wireless</b><p>Kết nối local cho battle/team play và nền tảng hướng tới dịch vụ online.</p></article><article class="hw"><small>Power / Data</small><b>USB-C</b><p>Một cổng hiện đại cho sạc và giao tiếp thiết bị.</p></article></div></div></div></section>
     <section class="section"><div class="wrap"><div class="section-head"><div><div class="eyebrow">Core gameplay loop</div><h2>Raise. Train.<br/><em>Explore. Evolve.</em></h2></div><p>Mọi hoạt động được nối vào một vòng dài hạn để cách bạn chơi có ảnh hưởng thật đến người bạn đồng hành.</p></div><div class="journey"><div class="step"><b>Raise</b><p>Chăm sóc trạng thái, cảm xúc và nhu cầu hằng ngày.</p></div><div class="step"><b>Train</b><p>Phát triển chỉ số và hoàn thiện vai trò chiến đấu.</p></div><div class="step"><b>Explore</b><p>Đi qua Realm, gặp NPC và mở khóa hoạt động.</p></div><div class="step"><b>Battle</b><p>Solo, team và PvP theo chiến thuật của đội hình.</p></div><div class="step"><b>Evolve</b><p>Hành vi và thành tích dẫn tới các nhánh phát triển khác nhau.</p></div></div></div></section>
-    <section class="cta" id="portal"><div class="wrap reveal"><img class="cta-logo" src={logoUrl} alt="Retro Guy" /><div class="eyebrow">A Digital World In Your Pocket</div><h2><span>Open</span> the Portal.<br/>Your world is waiting.</h2><p>Nuôi dưỡng một sinh vật số. Khám phá một thế giới. Tạo nên một hành trình khác biệt — ngay trên thiết bị bạn có thể mang theo mỗi ngày.</p><div class="actions" style="justify-content:center"><a class="btn primary" href="/news">Follow Development</a><a class="btn secondary" href="#top">Back to Top</a></div></div></section>
+    <section class="cta" id="portal"><div class="wrap reveal"><img class="cta-logo rg-logo" alt="Retro Guy" /><div class="eyebrow">A Digital World In Your Pocket</div><h2><span>Open</span> the Portal.<br/>Your world is waiting.</h2><p>Nuôi dưỡng một sinh vật số. Khám phá một thế giới. Tạo nên một hành trình khác biệt — ngay trên thiết bị bạn có thể mang theo mỗi ngày.</p><div class="actions" style="justify-content:center"><a class="btn primary" href="/news">Follow Development</a><a class="btn secondary" href="#top">Back to Top</a></div></div></section>
   </main>
-  <footer class="footer"><div class="wrap footer-in"><img src={logoUrl} alt="Retro Guy" /><small>DR Portal / Digital Realm — product development landing page. Nội dung và thông số có thể tiếp tục được cập nhật trong quá trình phát triển.</small></div></footer>
+  <footer class="footer"><div class="wrap footer-in"><img class="rg-logo" alt="Retro Guy" /><small>DR Portal / Digital Realm — product development landing page. Nội dung và thông số có thể tiếp tục được cập nhật trong quá trình phát triển.</small></div></footer>
   <script>
+    const loadAssets=async()=>{
+      try{
+        const [spriteRaw,logoRaw]=await Promise.all([
+          fetch('/images/dr-portal/site-sprite.b64').then(r=>r.text()),
+          fetch('/images/brand/retroguy-wordmark.b64').then(r=>r.text())
+        ]);
+        document.body.style.setProperty('--sprite',`url("data:image/webp;base64,${spriteRaw.trim()}")`);
+        const logoSrc=`data:image/webp;base64,${logoRaw.trim()}`;
+        document.querySelectorAll('.rg-logo').forEach(img=>img.setAttribute('src',logoSrc));
+      }catch(err){console.error('Asset loading failed',err)}
+    };
+    loadAssets();
     const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting)entry.target.classList.add('on')}),{threshold:.1});
     document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
     const tilt=document.getElementById('tilt');
