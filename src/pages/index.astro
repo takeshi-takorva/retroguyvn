@@ -4,230 +4,42 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="theme-color" content="#1A2637" />
-  <meta name="description" content="DR Portal by Retro Guy — Pocket Adventure Device. Raise, train, explore, battle and evolve inside Digital Realm." />
+  <meta name="description" content="DR Portal by Retro Guy — Pocket Adventure Device." />
   <title>DR Portal — Retro Guy</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800;900&family=Rajdhani:wght@600;700&family=Sora:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
   <style>
-    :root{
-      --brand-navy:#1A2637;
-      --brand-orange:#CC4233;
-      --brand-white:#FFFFFF;
-      --bg:#090D14;
-      --panel:#111A28;
-      --panel-2:#152236;
-      --muted:#9AA7B9;
-      --line:rgba(255,255,255,.10);
-      --accent:#FF6439;
-      --max:1240px;
-      --sprite:url('/images/dr-portal/site-sprite.webp');
-    }
-    *{box-sizing:border-box}
-    html{scroll-behavior:smooth}
-    body{margin:0;background:var(--bg);color:var(--brand-white);font-family:Sora,system-ui,sans-serif;overflow-x:hidden}
-    a{color:inherit;text-decoration:none}
-    img{display:block;max-width:100%;height:auto;filter:none!important;mix-blend-mode:normal!important;opacity:1!important}
-    .wrap{width:min(var(--max),calc(100% - 48px));margin:auto}
-
-    body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;background-image:radial-gradient(rgba(255,255,255,.08) 1px,transparent 1px);background-size:20px 20px;mask-image:linear-gradient(#000,rgba(0,0,0,.22) 75%,transparent)}
-
-    .nav{position:sticky;top:0;z-index:40;background:rgba(9,13,20,.90);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
-    .navin{height:76px;display:flex;align-items:center;justify-content:space-between;gap:26px}
-    .brand-logo{width:214px;max-height:45px;object-fit:contain;object-position:left center}
-    .navlinks{display:flex;align-items:center;gap:24px;font:700 16px Rajdhani,sans-serif;text-transform:uppercase;letter-spacing:.04em}
-    .navlinks a{color:#DCE3EC;transition:.2s}
-    .navlinks a:hover{color:#fff}
-    .navcta{padding:10px 15px;border:1px solid rgba(204,66,51,.72);border-radius:9px;background:rgba(204,66,51,.10)}
-
-    .hero{position:relative;min-height:calc(100vh - 76px);display:grid;align-items:center;overflow:hidden;padding:62px 0 72px;background:radial-gradient(circle at 78% 48%,rgba(204,66,51,.13),transparent 27%),linear-gradient(145deg,#090D14 0%,#0B111C 52%,#101A2A 100%)}
-    .hero:before{content:"";position:absolute;right:-130px;top:50%;width:760px;height:760px;transform:translateY(-50%);border-radius:50%;background:repeating-radial-gradient(circle,transparent 0 78px,rgba(204,66,51,.18) 79px 81px,transparent 82px 125px);opacity:.82}
-    .hero:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(120deg,transparent 60%,rgba(204,66,51,.045) 60% 61%,transparent 61%),radial-gradient(circle at 14% 78%,rgba(204,66,51,.14),transparent 22%)}
-    .hero-grid{position:relative;z-index:2;display:grid;grid-template-columns:1.02fr .98fr;gap:48px;align-items:center}
-    .eyebrow{display:inline-flex;align-items:center;gap:10px;font:700 11px Space Mono,monospace;letter-spacing:.15em;text-transform:uppercase;color:#D7E0EA}
-    .eyebrow:before{content:"";width:8px;height:8px;background:var(--brand-orange);box-shadow:0 0 16px rgba(204,66,51,.75)}
-    h1{font:900 clamp(65px,8vw,124px)/.82 Orbitron,sans-serif;text-transform:uppercase;letter-spacing:-.055em;margin:22px 0 7px}
-    h1 .dr{color:var(--brand-orange)}
-    h1 .portal{display:block;color:#F7F8FA}
-    .tagline{font:700 clamp(27px,3.25vw,46px)/1 Rajdhani,sans-serif;color:var(--accent);text-transform:uppercase;font-style:italic}
-    .lead{max-width:690px;margin:23px 0 0;color:#D0D7E1;font-size:17px;line-height:1.82}
-    .actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
-    .btn{display:inline-flex;align-items:center;justify-content:center;padding:13px 19px;border:1px solid var(--line);border-radius:10px;font:700 19px Rajdhani,sans-serif;text-transform:uppercase;transition:.2s}
-    .btn:hover{transform:translateY(-2px)}
-    .btn.primary{background:var(--brand-orange);border-color:var(--brand-orange);box-shadow:0 15px 38px rgba(204,66,51,.24)}
-    .btn.secondary{background:rgba(255,255,255,.035)}
-
-    .visual{position:relative;min-height:610px}
-    .portal-ring{position:absolute;width:520px;height:520px;left:50%;top:50%;transform:translate(-50%,-50%);border:1px solid rgba(204,66,51,.25);border-radius:50%;box-shadow:0 0 0 32px rgba(204,66,51,.025),0 0 0 75px rgba(255,255,255,.012)}
-    .sprite{background-image:var(--sprite);background-size:300% 200%;background-repeat:no-repeat;background-color:transparent;filter:none!important;mix-blend-mode:normal!important;opacity:1!important}
-    .product{position:absolute;aspect-ratio:1;border-radius:28px;background-color:transparent}
-    .product.orange{width:520px;right:-20px;top:30px;background-position:50% 0;z-index:3}
-    .product.navy{width:310px;left:-45px;bottom:0;background-position:0 0;z-index:4}
-    .product-label{position:absolute;z-index:6;padding:10px 13px;background:#0B111B;border:1px solid rgba(204,66,51,.45);border-radius:9px;box-shadow:0 14px 30px rgba(0,0,0,.28)}
-    .product-label b{display:block;font:800 16px Orbitron,sans-serif;color:#fff}
-    .product-label span{display:block;margin-top:4px;font:700 9px Space Mono,monospace;letter-spacing:.10em;color:#B7C0CF}
-    .label-orange{right:2px;bottom:77px}.label-navy{left:8px;top:128px}
-
-    .stats{border-block:1px solid var(--line);background:var(--brand-navy)}
-    .statgrid{display:grid;grid-template-columns:repeat(5,1fr)}
-    .stat{padding:23px 20px;border-right:1px solid rgba(255,255,255,.09)}
-    .stat:last-child{border:0}.stat strong{display:block;font:900 26px Orbitron,sans-serif;color:#fff}.stat span{display:block;margin-top:6px;font:700 12px Rajdhani,sans-serif;text-transform:uppercase;color:#B5C0CF;letter-spacing:.06em}
-
-    .section{padding:104px 0;border-bottom:1px solid rgba(255,255,255,.07);position:relative}
-    .section.alt{background:linear-gradient(180deg,#0D1522,#0A101A)}
-    .section-head{display:grid;grid-template-columns:.9fr 1.1fr;gap:52px;align-items:end;margin-bottom:44px}
-    .section-head h2{font:900 clamp(40px,5vw,72px)/.96 Orbitron,sans-serif;letter-spacing:-.035em;text-transform:uppercase;margin:10px 0 0}
-    .section-head h2 em{font-style:normal;color:var(--brand-orange)}
-    .section-head p{margin:0;color:#B8C3D0;line-height:1.82;font-size:16px}
-    .section-kicker{font:700 10px Space Mono,monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--brand-orange)}
-
-    .lifestyle{display:grid;grid-template-columns:1.08fr .92fr;gap:18px}
-    .life{position:relative;min-height:540px;overflow:hidden;border:1px solid var(--line);border-radius:24px;background:#101827}
-    .life-img{position:absolute;inset:0;background-image:var(--sprite);background-size:300% 200%;background-repeat:no-repeat;filter:none!important;opacity:1!important;transition:transform .45s ease}
-    .life.hand .life-img{background-position:0 100%}
-    .life.pocket .life-img{background-position:50% 100%}
-    .life:hover .life-img{transform:scale(1.025)}
-    .life:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(8,12,18,.92) 92%);pointer-events:none}
-    .life-copy{position:absolute;z-index:2;left:28px;right:28px;bottom:27px}
-    .life-copy small{font:700 10px Space Mono,monospace;letter-spacing:.13em;text-transform:uppercase;color:#E6EBF2}
-    .life-copy h3{font:700 36px/1 Rajdhani,sans-serif;text-transform:uppercase;margin:8px 0 7px}
-    .life-copy p{margin:0;max-width:600px;color:#C6D0DC;line-height:1.65}
-
-    .feature-shell{position:relative;overflow:hidden;border:1px solid rgba(204,66,51,.30);border-radius:26px;padding:36px;background:radial-gradient(circle at 50% 42%,rgba(204,66,51,.16),transparent 27%),linear-gradient(140deg,#070B12,#0C1421)}
-    .feature-shell:before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(204,66,51,.55) 1.4px,transparent 1.4px);background-size:15px 15px;mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent);opacity:.34}
-    .feature-title{position:relative;z-index:2;text-align:center;margin-bottom:32px}.feature-title strong{font:900 clamp(50px,7vw,94px)/.88 Orbitron,sans-serif;text-transform:uppercase}.feature-title strong span{color:var(--brand-orange)}.feature-title p{font:700 22px Rajdhani,sans-serif;color:#F27B5E;font-style:italic;margin:11px 0 0}
-    .feature-grid{position:relative;z-index:2;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-    .feature{min-height:195px;padding:21px;border:1px solid rgba(204,66,51,.44);background:rgba(4,8,14,.75);clip-path:polygon(0 0,92% 0,100% 11%,100% 100%,8% 100%,0 89%);transition:.2s}
-    .feature:hover{transform:translateY(-4px);border-color:#fff}
-    .feature .ico{width:52px;height:52px;display:grid;place-items:center;border:2px solid var(--brand-orange);font:900 14px Orbitron,sans-serif;color:#fff;margin-bottom:18px}
-    .feature b{display:block;font:800 26px/1 Rajdhani,sans-serif;text-transform:uppercase}.feature p{margin:9px 0 0;color:#B6C1CF;font-size:13px;line-height:1.62}
-
-    .colorway{display:grid;grid-template-columns:1.15fr .85fr;gap:34px;align-items:center}
-    .group-media{aspect-ratio:1.35;border:1px solid var(--line);border-radius:24px;background-position:100% 0;background-color:#111824}
-    .colorway h3{font:900 clamp(42px,5vw,68px)/.96 Orbitron,sans-serif;text-transform:uppercase;margin:0}.colorway h3 span{color:var(--brand-orange)}.colorway p{color:#BDC8D5;line-height:1.82}.swatches{display:flex;gap:11px;margin:25px 0}.swatch{width:44px;height:44px;border-radius:50%;border:3px solid #2A394F;box-shadow:0 0 0 1px rgba(255,255,255,.14)}.swatch.navy{background:#1A2637}.swatch.orange{background:#E95C39}.swatch.purple{background:#4A43C7}
-
-    .hardware-wrap{display:grid;grid-template-columns:.94fr 1.06fr;gap:38px;align-items:center}
-    .hardware-media{aspect-ratio:1.18;border:1px solid var(--line);border-radius:24px;background-position:100% 100%;background-color:#101827}
-    .hardware-list{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .hw{padding:20px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.025)}
-    .hw small{font:700 10px Space Mono,monospace;text-transform:uppercase;color:#D9E1EA}.hw b{display:block;margin:7px 0;font:700 26px Rajdhani,sans-serif;text-transform:uppercase}.hw p{margin:0;color:#ABB7C6;font-size:13px;line-height:1.58}
-
-    .journey{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;counter-reset:step}
-    .step{position:relative;padding:25px 19px 23px;border-top:2px solid rgba(204,66,51,.60);background:linear-gradient(180deg,rgba(204,66,51,.055),transparent)}
-    .step:before{counter-increment:step;content:"0" counter(step);display:block;font:800 13px Space Mono,monospace;color:var(--brand-orange);margin-bottom:24px}
-    .step b{font:800 29px Rajdhani,sans-serif;text-transform:uppercase}.step p{font-size:13px;line-height:1.65;color:#AEBAC8}.step:not(:last-child):after{content:"";position:absolute;right:-8px;top:-7px;width:13px;height:13px;background:var(--brand-orange);transform:rotate(45deg)}
-
-    .cta{padding:120px 0;text-align:center;background:radial-gradient(circle at 50% 36%,rgba(204,66,51,.15),transparent 28%),linear-gradient(180deg,#090D14,#101A2A)}
-    .cta-logo{width:min(520px,82vw);margin:0 auto 38px}
-    .cta h2{font:900 clamp(52px,7vw,102px)/.92 Orbitron,sans-serif;text-transform:uppercase;margin:0}.cta h2 span{color:var(--brand-orange)}.cta p{max-width:740px;margin:22px auto 30px;color:#BCC7D4;line-height:1.82}
-    .footer{border-top:1px solid var(--line);padding:32px 0 44px}.footer-in{display:flex;justify-content:space-between;gap:24px;align-items:center}.footer-logo{width:180px}.footer small{color:#8996A8;max-width:690px;text-align:right;line-height:1.6}
-
-    @media(max-width:1020px){
-      .hero-grid,.section-head,.colorway,.hardware-wrap{grid-template-columns:1fr}
-      .visual{min-height:560px;margin-top:20px}.product.orange{right:3%;}.product.navy{left:4%}
-      .feature-grid{grid-template-columns:1fr 1fr}.journey{grid-template-columns:1fr 1fr}.statgrid{grid-template-columns:repeat(3,1fr)}.stat{border-bottom:1px solid rgba(255,255,255,.08)}
-    }
-    @media(max-width:700px){
-      .wrap{width:min(var(--max),calc(100% - 30px))}.navlinks a:not(.navcta){display:none}.brand-logo{width:176px}
-      .hero{padding-top:42px}.hero:before{width:520px;height:520px;right:-260px}.visual{min-height:440px}.portal-ring{width:380px;height:380px}
-      .product.orange{width:350px;right:-5%;top:35px}.product.navy{width:200px;left:-8px;bottom:6px}.product-label{display:none}
-      .statgrid{grid-template-columns:1fr 1fr}.lifestyle{grid-template-columns:1fr}.life{min-height:430px}.feature-grid,.hardware-list,.journey{grid-template-columns:1fr}.feature-shell{padding:22px}.footer-in{display:grid}.footer small{text-align:left}
-    }
+    :root{--navy:#1A2637;--orange:#CC4233;--accent:#FF6439;--bg:#090D14;--panel:#111A28;--line:rgba(255,255,255,.10);--muted:#AEB9C7;--max:1240px}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:#fff;font-family:Sora,system-ui,sans-serif;overflow-x:hidden;position:relative;isolation:isolate}a{color:inherit;text-decoration:none}img{display:block;max-width:100%;height:auto;filter:none!important;mix-blend-mode:normal!important;opacity:1!important}.wrap{width:min(var(--max),calc(100% - 48px));margin:auto}
+    body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:radial-gradient(rgba(255,255,255,.075) 1px,transparent 1px);background-size:20px 20px;mask-image:linear-gradient(#000,rgba(0,0,0,.18) 78%,transparent)}
+    .nav{position:sticky;top:0;z-index:50;background:rgba(9,13,20,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}.navin{height:76px;display:flex;align-items:center;justify-content:space-between;gap:24px}.brand-logo{width:214px;height:auto}.navlinks{display:flex;gap:22px;align-items:center;font:700 16px Rajdhani,sans-serif;text-transform:uppercase}.navcta{padding:10px 14px;border:1px solid rgba(204,66,51,.65);border-radius:9px;background:rgba(204,66,51,.10)}
+    .hero{position:relative;overflow:hidden;padding:72px 0 86px;background:radial-gradient(circle at 78% 48%,rgba(204,66,51,.14),transparent 27%),linear-gradient(145deg,#090D14,#101A2A)}.hero:before{content:"";position:absolute;right:-150px;top:50%;width:760px;height:760px;transform:translateY(-50%);border-radius:50%;background:repeating-radial-gradient(circle,transparent 0 76px,rgba(204,66,51,.16) 77px 79px,transparent 80px 124px)}.hero-grid{position:relative;z-index:2;display:grid;grid-template-columns:1fr 1fr;gap:46px;align-items:center}.eyebrow{font:700 11px Space Mono,monospace;letter-spacing:.14em;text-transform:uppercase;color:#D5DEE9}.eyebrow:before{content:"";display:inline-block;width:8px;height:8px;margin-right:10px;background:var(--orange)}h1{font:900 clamp(64px,8vw,120px)/.84 Orbitron,sans-serif;text-transform:uppercase;letter-spacing:-.055em;margin:22px 0 8px}.dr{color:var(--orange)}.portal{display:block}.tagline{font:700 clamp(28px,3.2vw,46px)/1 Rajdhani,sans-serif;color:var(--accent);text-transform:uppercase;font-style:italic}.lead{max-width:680px;margin:24px 0 0;color:#D1D9E3;font-size:17px;line-height:1.82}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}.btn{padding:13px 18px;border-radius:9px;border:1px solid var(--line);font:700 18px Rajdhani,sans-serif;text-transform:uppercase}.btn.primary{background:var(--orange);border-color:var(--orange);box-shadow:0 15px 36px rgba(204,66,51,.25)}
+    .hero-media{position:relative;min-height:590px}.hero-product{position:absolute;object-fit:contain}.hero-product.orange{width:min(560px,90%);right:-20px;top:12px;z-index:2}.hero-product.navy{width:min(360px,60%);left:-24px;bottom:-12px;z-index:3}.label{position:absolute;z-index:5;padding:10px 13px;background:#0B111B;border:1px solid rgba(204,66,51,.45);border-radius:9px}.label b{display:block;font:800 15px Orbitron,sans-serif}.label span{font:700 9px Space Mono,monospace;color:#B8C2CF}.label.navy{left:2px;top:105px}.label.orange{right:2px;bottom:65px}
+    .stats{background:var(--navy);border-block:1px solid var(--line)}.statgrid{display:grid;grid-template-columns:repeat(5,1fr)}.stat{padding:23px 18px;border-right:1px solid rgba(255,255,255,.09)}.stat:last-child{border:0}.stat strong{display:block;font:900 24px Orbitron,sans-serif}.stat span{display:block;margin-top:6px;font:700 12px Rajdhani,sans-serif;text-transform:uppercase;color:#BCC6D2}
+    .section{padding:100px 0;border-bottom:1px solid rgba(255,255,255,.07)}.alt{background:linear-gradient(180deg,#0D1522,#0A101A)}.section-head{display:grid;grid-template-columns:.9fr 1.1fr;gap:48px;align-items:end;margin-bottom:42px}.kicker{font:700 10px Space Mono,monospace;color:var(--orange);letter-spacing:.14em;text-transform:uppercase}.section-head h2{margin:10px 0 0;font:900 clamp(40px,5vw,70px)/.96 Orbitron,sans-serif;text-transform:uppercase;letter-spacing:-.035em}.section-head h2 em{font-style:normal;color:var(--orange)}.section-head p{margin:0;color:#B9C3D0;line-height:1.82}
+    .lifestyle{display:grid;grid-template-columns:1.08fr .92fr;gap:18px}.life{position:relative;min-height:520px;overflow:hidden;border:1px solid var(--line);border-radius:24px;background:#101827}.life img{width:100%;height:100%;position:absolute;inset:0;object-fit:cover;transition:transform .35s ease}.life:hover img{transform:scale(1.02)}.life:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 42%,rgba(8,12,18,.94) 94%)}.life-copy{position:absolute;z-index:2;left:28px;right:28px;bottom:26px}.life-copy small{font:700 10px Space Mono,monospace;text-transform:uppercase}.life-copy h3{font:700 36px/1 Rajdhani,sans-serif;text-transform:uppercase;margin:8px 0}.life-copy p{margin:0;color:#C7D0DB;line-height:1.65}
+    .feature-shell{padding:34px;border:1px solid rgba(204,66,51,.30);border-radius:26px;background:radial-gradient(circle at 50% 42%,rgba(204,66,51,.15),transparent 28%),#080D15}.feature-title{text-align:center;margin-bottom:30px}.feature-title strong{font:900 clamp(48px,7vw,90px)/.88 Orbitron,sans-serif;text-transform:uppercase}.feature-title span{color:var(--orange)}.feature-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.feature{min-height:180px;padding:20px;border:1px solid rgba(204,66,51,.38);background:rgba(4,8,14,.72)}.feature b{display:block;font:800 25px/1 Rajdhani,sans-serif;text-transform:uppercase}.feature p{color:#B6C1CF;font-size:13px;line-height:1.62}
+    .colorway{display:grid;grid-template-columns:1.15fr .85fr;gap:34px;align-items:center}.media-card{overflow:hidden;border:1px solid var(--line);border-radius:24px;background:#111824}.media-card img{width:100%;height:100%;object-fit:cover}.group-media{aspect-ratio:1.2}.colorway h3{font:900 clamp(42px,5vw,68px)/.96 Orbitron,sans-serif;text-transform:uppercase;margin:0}.colorway h3 span{color:var(--orange)}.colorway p{color:#BDC8D5;line-height:1.82}.swatches{display:flex;gap:11px;margin:24px 0}.swatch{width:42px;height:42px;border-radius:50%;border:3px solid #2A394F}.swatch.navy{background:#1A2637}.swatch.orange{background:#E95C39}.swatch.purple{background:#4A43C7}
+    .hardware-wrap{display:grid;grid-template-columns:.94fr 1.06fr;gap:38px;align-items:center}.hardware-media{aspect-ratio:1.45}.hardware-media img{object-fit:contain;background:#101827}.hardware-list{display:grid;grid-template-columns:1fr 1fr;gap:12px}.hw{padding:19px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.025)}.hw small{font:700 10px Space Mono,monospace}.hw b{display:block;margin:7px 0;font:700 25px Rajdhani,sans-serif;text-transform:uppercase}.hw p{margin:0;color:#ABB7C6;font-size:13px;line-height:1.58}
+    .journey{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.step{padding:24px 18px;border-top:2px solid rgba(204,66,51,.60);background:linear-gradient(180deg,rgba(204,66,51,.055),transparent)}.step b{font:800 28px Rajdhani,sans-serif;text-transform:uppercase}.step p{color:#AEBAC8;font-size:13px;line-height:1.65}
+    .cta{padding:110px 0;text-align:center;background:radial-gradient(circle at 50% 36%,rgba(204,66,51,.14),transparent 30%),#0B111B}.cta-logo{width:min(520px,82vw);margin:0 auto 34px}.cta h2{font:900 clamp(50px,7vw,96px)/.92 Orbitron,sans-serif;text-transform:uppercase;margin:0}.cta h2 span{color:var(--orange)}.cta p{max-width:720px;margin:22px auto 30px;color:#BCC7D4;line-height:1.82}.footer{padding:30px 0 42px;border-top:1px solid var(--line)}.footer-in{display:flex;justify-content:space-between;align-items:center;gap:20px}.footer-logo{width:180px}.footer small{color:#8795A8}
+    @media(max-width:980px){.navlinks{display:none}.hero-grid,.section-head,.colorway,.hardware-wrap{grid-template-columns:1fr}.hero-media{min-height:520px}.statgrid{grid-template-columns:repeat(2,1fr)}.lifestyle{grid-template-columns:1fr}.feature-grid{grid-template-columns:repeat(2,1fr)}.journey{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:620px){.wrap{width:min(100% - 28px,var(--max))}.hero{padding-top:50px}.hero-media{min-height:430px}.hero-product.orange{width:92%;right:-8%}.hero-product.navy{width:58%;left:-4%}.feature-grid,.hardware-list,.journey{grid-template-columns:1fr}.statgrid{grid-template-columns:1fr}.life{min-height:430px}.footer-in{flex-direction:column;align-items:flex-start}}
   </style>
 </head>
 <body>
-  <nav class="nav">
-    <div class="wrap navin">
-      <a href="#top" aria-label="Retro Guy home"><img class="brand-logo" src="/images/brand/retroguy-wordmark.webp" alt="Retro Guy" /></a>
-      <div class="navlinks">
-        <a href="#experience">Experience</a><a href="#features">Features</a><a href="#gallery">Gallery</a><a href="#hardware">Hardware</a><a href="/news">Devlog</a><a class="navcta" href="#portal">Open Portal</a>
-      </div>
-    </div>
-  </nav>
-
-  <main id="top">
-    <section class="hero">
-      <div class="wrap hero-grid">
-        <div>
-          <div class="eyebrow">Retro Guy • Pocket Adventure Device</div>
-          <h1><span class="dr">DR</span><span class="portal">PORTAL</span></h1>
-          <div class="tagline">Open the Portal. Enter the Realm.</div>
-          <p class="lead">Một thiết bị đồng hành nhỏ gọn để nuôi, huấn luyện, khám phá, chiến đấu và phát triển người bạn đồng hành số. Mang Digital Realm theo bạn — trong lòng bàn tay, trong túi quần, ở bất cứ đâu.</p>
-          <div class="actions"><a class="btn primary" href="#features">Explore Features</a><a class="btn secondary" href="#gallery">View Product</a></div>
-        </div>
-        <div class="visual" aria-label="DR Portal product variants">
-          <div class="portal-ring"></div>
-          <div class="sprite product orange" role="img" aria-label="DR Portal Orange Edition"></div>
-          <div class="sprite product navy" role="img" aria-label="DR Portal Navy Edition"></div>
-          <div class="product-label label-orange"><b>ORANGE</b><span>DR PORTAL EDITION</span></div>
-          <div class="product-label label-navy"><b>NAVY</b><span>DR PORTAL EDITION</span></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="stats"><div class="wrap statgrid">
-      <div class="stat"><strong>300+</strong><span>Living Digital Monsters</span></div><div class="stat"><strong>500+</strong><span>Branching Evolutions</span></div><div class="stat"><strong>6</strong><span>World Regions</span></div><div class="stat"><strong>3V3</strong><span>Team Battle</span></div><div class="stat"><strong>10</strong><span>Character Slots</span></div>
-    </div></section>
-
-    <section id="experience" class="section alt">
-      <div class="wrap">
-        <div class="section-head"><div><div class="section-kicker">Everyday Companion</div><h2>Designed to go <em>with you.</em></h2></div><p>DR Portal được thiết kế như một thiết bị game đồng hành thay vì một máy chơi game cồng kềnh: thân máy nhỏ, các phím vật lý dễ thao tác và trải nghiệm có thể tiếp tục trong những khoảng thời gian ngắn xuyên suốt ngày.</p></div>
-        <div class="lifestyle">
-          <article class="life hand"><div class="life-img"></div><div class="life-copy"><small>One-hand comfort</small><h3>Made for your hand.</h3><p>Form công thái học cho thao tác nhanh bằng một tay, phù hợp với gameplay ngắn và thường xuyên.</p></div></article>
-          <article class="life pocket"><div class="life-img"></div><div class="life-copy"><small>Pocket size</small><h3>Ready anywhere.</h3><p>Nhỏ gọn để mang đi bất cứ đâu — một người bạn đồng hành cho mọi khoảnh khắc.</p></div></article>
-        </div>
-      </div>
-    </section>
-
-    <section id="features" class="section">
-      <div class="wrap feature-shell">
-        <div class="feature-title"><strong><span>DR</span> PORTAL</strong><p>Open the Portal — Enter the Realm</p></div>
-        <div class="feature-grid">
-          <article class="feature"><div class="ico">300+</div><b>Living Companions</b><p>Nuôi dưỡng và tương tác với hệ sinh thái nhân vật số phong phú.</p></article>
-          <article class="feature"><div class="ico">500+</div><b>Branching Evolution</b><p>Nhiều nhánh tiến hóa phụ thuộc cách bạn chăm sóc, huấn luyện và trải nghiệm.</p></article>
-          <article class="feature"><div class="ico">MAP</div><b>Realm Exploration</b><p>Khám phá sáu vùng đất với NPC, hoạt động, tài nguyên, thời tiết và thử thách.</p></article>
-          <article class="feature"><div class="ico">3V3</div><b>Team Battle</b><p>Combat đội hình với lựa chọn chiến thuật, PvE và hệ thống PvP được mở rộng dần.</p></article>
-          <article class="feature"><div class="ico">TRN</div><b>Training & Growth</b><p>ATK, DEF, Dash, Stamina và mini game tạo nhịp phát triển dài hạn.</p></article>
-          <article class="feature"><div class="ico">SFX</div><b>Sound & Vibration</b><p>Phản hồi âm thanh và rung giúp thiết bị có cảm giác sống động hơn trong từng hoạt động.</p></article>
-          <article class="feature"><div class="ico">CTRL</div><b>Physical Controls</b><p>Hệ phím D-pad và nút chức năng trực quan dành cho chơi game bằng thao tác vật lý.</p></article>
-          <article class="feature"><div class="ico">10</div><b>Character Care</b><p>Nhiều slot nhân vật để xây dựng bộ sưu tập và hành trình riêng của bạn.</p></article>
-        </div>
-      </div>
-    </section>
-
-    <section id="gallery" class="section alt">
-      <div class="wrap">
-        <div class="section-head"><div><div class="section-kicker">Product Family</div><h2>Choose your <em>Portal.</em></h2></div><p>Từ Navy Edition trầm, kỹ thuật tới Orange Edition nổi bật, thiết kế giữ chung một DNA: thân máy bo mềm, mặt điều khiển tập trung và màn hình dọc dành cho thế giới pixel art.</p></div>
-        <div class="colorway"><div class="sprite group-media" role="img" aria-label="DR Portal color variants"></div><div><h3>One device. <span>Many identities.</span></h3><div class="swatches"><span class="swatch navy"></span><span class="swatch orange"></span><span class="swatch purple"></span></div><p>Colorway có thể phát triển theo edition, event hoặc collaboration trong tương lai trong khi giữ cấu trúc phần cứng và trải nghiệm cốt lõi thống nhất.</p><a class="btn secondary" href="#hardware">See the hardware</a></div></div>
-      </div>
-    </section>
-
-    <section id="hardware" class="section">
-      <div class="wrap">
-        <div class="section-head"><div><div class="section-kicker">Hardware</div><h2>Built for <em>pocket play.</em></h2></div><p>Cấu trúc phần cứng tập trung vào độ gọn, kết nối đơn giản và khả năng mở rộng nội dung. Thiết kế mặt lưng, loa và USB-C được tích hợp để giữ tổng thể liền mạch.</p></div>
-        <div class="hardware-wrap"><div class="sprite hardware-media" role="img" aria-label="DR Portal rear and USB-C views"></div><div class="hardware-list">
-          <article class="hw"><small>Interface</small><b>Physical Controls</b><p>D-pad và các nút chức năng đặt trong vùng ngón tay thao tác tự nhiên.</p></article>
-          <article class="hw"><small>Connection</small><b>USB-C</b><p>Cổng kết nối hiện đại cho nguồn và các workflow cập nhật phù hợp.</p></article>
-          <article class="hw"><small>Feedback</small><b>Speaker + Vibration</b><p>Phản hồi trực tiếp bằng âm thanh và rung trong gameplay.</p></article>
-          <article class="hw"><small>Content</small><b>microSD Assets</b><p>Không gian asset linh hoạt cho map, sprite, SFX và nội dung mở rộng.</p></article>
-          <article class="hw"><small>Display</small><b>Portrait Pixel UI</b><p>Màn hình dọc phù hợp giao diện VPet và thế giới pixel art.</p></article>
-          <article class="hw"><small>Ergonomics</small><b>Rounded Shell</b><p>Thân máy bo mềm, thân thiện với cầm nắm lâu và mang theo hằng ngày.</p></article>
-        </div></div>
-      </div>
-    </section>
-
-    <section class="section alt">
-      <div class="wrap">
-        <div class="section-head"><div><div class="section-kicker">Core Loop</div><h2>Your journey keeps <em>moving.</em></h2></div><p>Digital Realm kết nối việc chăm sóc nhân vật với exploration và combat thành một vòng lặp liên tục thay vì các mini game rời rạc.</p></div>
-        <div class="journey"><article class="step"><b>Raise</b><p>Chăm sóc người bạn đồng hành và duy trì trạng thái sống.</p></article><article class="step"><b>Train</b><p>Tăng năng lực thông qua training và activity.</p></article><article class="step"><b>Explore</b><p>Đi xuyên các khu vực, gặp NPC và khám phá sự kiện.</p></article><article class="step"><b>Battle</b><p>Thử thách đội hình trong PvE và PvP.</p></article><article class="step"><b>Evolve</b><p>Mở nhánh tiến hóa từ những lựa chọn đã tích lũy.</p></article></div>
-      </div>
-    </section>
-
-    <section id="portal" class="cta">
-      <div class="wrap"><img class="cta-logo" src="/images/brand/retroguy-wordmark.webp" alt="Retro Guy" /><h2>OPEN THE <span>PORTAL.</span></h2><p>Your world is waiting. Theo dõi quá trình phát triển DR Portal và Digital Realm, từ phần cứng, firmware tới thế giới nội dung đang tiếp tục được mở rộng.</p><div class="actions" style="justify-content:center"><a class="btn primary" href="/news">Follow Development</a><a class="btn secondary" href="/digital-realm">Enter Digital Realm</a></div></div>
-    </section>
+  <nav class="nav"><div class="wrap navin"><a href="/"><img class="brand-logo" src="/images/brand/retroguy-wordmark.webp" alt="Retro Guy" /></a><div class="navlinks"><a href="#experience">Experience</a><a href="#features">Features</a><a href="#product">Product</a><a href="#hardware">Hardware</a><a class="navcta" href="/news">Devlog</a></div></div></nav>
+  <main>
+    <section class="hero"><div class="wrap hero-grid"><div><div class="eyebrow">Retro Guy · Pocket Adventure Device</div><h1><span class="dr">DR</span><span class="portal">Portal</span></h1><div class="tagline">Open the Portal. Enter the Realm.</div><p class="lead">Một thiết bị đồng hành nhỏ gọn để nuôi, huấn luyện, khám phá, chiến đấu và phát triển người bạn đồng hành số. Mang Digital Realm theo bạn — trong lòng bàn tay, trong túi quần, ở bất cứ đâu.</p><div class="actions"><a class="btn primary" href="#features">Explore Features</a><a class="btn" href="#product">View Product</a></div></div><div class="hero-media"><img class="hero-product orange" src="/images/dr-portal/products/orange-angle.webp" alt="DR Portal Orange Edition" /><img class="hero-product navy" src="/images/dr-portal/products/navy-angle.webp" alt="DR Portal Navy Edition" /><div class="label navy"><b>NAVY</b><span>DR PORTAL EDITION</span></div><div class="label orange"><b>ORANGE</b><span>DR PORTAL EDITION</span></div></div></div></section>
+    <section class="stats"><div class="wrap statgrid"><div class="stat"><strong>300+</strong><span>Living Digital Monsters</span></div><div class="stat"><strong>500+</strong><span>Branching Evolutions</span></div><div class="stat"><strong>6</strong><span>Regions</span></div><div class="stat"><strong>3v3</strong><span>Team Battle</span></div><div class="stat"><strong>10</strong><span>Save Slots</span></div></div></section>
+    <section class="section" id="experience"><div class="wrap"><div class="section-head"><div><div class="kicker">Everyday Companion</div><h2>Designed to go <em>with you.</em></h2></div><p>DR Portal được thiết kế như một thiết bị game đồng hành thay vì một máy chơi game cồng kềnh: thân máy nhỏ, các phím vật lý dễ thao tác và trải nghiệm có thể tiếp tục trong những khoảng thời gian ngắn xuyên suốt ngày.</p></div><div class="lifestyle"><article class="life"><img src="/images/dr-portal/products/lifestyle-hand.webp" alt="DR Portal held in one hand" /><div class="life-copy"><small>One-hand comfort</small><h3>Made for your hand.</h3><p>Form công thái học cho thao tác nhanh bằng một tay, phù hợp với gameplay ngắn và thường xuyên.</p></div></article><article class="life"><img src="/images/dr-portal/products/lifestyle-pocket.webp" alt="DR Portal carried in a pocket" /><div class="life-copy"><small>Pocket size</small><h3>Ready anywhere.</h3><p>Nhỏ gọn để mang đi bất cứ đâu — một người bạn đồng hành cho mọi khoảnh khắc.</p></div></article></div></div></section>
+    <section class="section alt" id="features"><div class="wrap feature-shell"><div class="feature-title"><strong>PLAY <span>YOUR WAY</span></strong></div><div class="feature-grid"><div class="feature"><b>Raise & Care</b><p>Nuôi, chăm sóc và xây dựng mối liên kết với Digital Monster.</p></div><div class="feature"><b>Train</b><p>Huấn luyện chỉ số qua nhiều bài tập và mini game.</p></div><div class="feature"><b>Explore</b><p>Khám phá 6 vùng đất, NPC, nhiệm vụ và hoạt động.</p></div><div class="feature"><b>Battle</b><p>Solo, Team và 3v3 với hệ thống chiến đấu có chiều sâu.</p></div><div class="feature"><b>Evolve</b><p>Hơn 500 hướng tiến hóa phân nhánh.</p></div><div class="feature"><b>Dynamic Feedback</b><p>Âm thanh và rung phản hồi trực tiếp theo hành động.</p></div><div class="feature"><b>Save & Grow</b><p>10 save slots cho nhiều hành trình nhân vật.</p></div><div class="feature"><b>Always Expanding</b><p>Nội dung có thể tiếp tục mở rộng qua cập nhật OTA.</p></div></div></div></section>
+    <section class="section" id="product"><div class="wrap"><div class="section-head"><div><div class="kicker">Product Family</div><h2>Choose your <em>portal.</em></h2></div><p>Từ Navy Edition trầm, kỹ thuật tới Orange Edition nổi bật, thiết kế giữ chung một DNA: thân máy bo mềm, mặt điều khiển tập trung và màn hình dọc dành cho thế giới pixel art.</p></div><div class="colorway"><div class="media-card group-media"><img src="/images/dr-portal/products/product-family.webp" alt="DR Portal product family" /></div><div><h3>One device.<br /><span>Many identities.</span></h3><div class="swatches"><i class="swatch navy"></i><i class="swatch orange"></i><i class="swatch purple"></i></div><p>Colorway có thể phát triển theo edition, event hoặc collaboration trong tương lai trong khi giữ cấu trúc phần cứng và trải nghiệm cốt lõi thống nhất.</p><a class="btn" href="#hardware">See the Hardware</a></div></div></div></section>
+    <section class="section alt" id="hardware"><div class="wrap"><div class="section-head"><div><div class="kicker">Hardware</div><h2>Built for <em>pocket play.</em></h2></div><p>Cấu trúc phần cứng tập trung vào độ gọn, kết nối đơn giản và khả năng mở rộng nội dung. Thiết kế mặt lưng, loa và USB-C được tích hợp để giữ tổng thể liền mạch.</p></div><div class="hardware-wrap"><div class="media-card hardware-media"><img src="/images/dr-portal/products/hardware.webp" alt="DR Portal hardware views" /></div><div class="hardware-list"><div class="hw"><small>Interface</small><b>Physical Controls</b><p>D-pad và các nút chức năng đặt trong vùng ngón tay thao tác tự nhiên.</p></div><div class="hw"><small>Connection</small><b>USB-C</b><p>Cổng kết nối hiện đại cho nguồn và workflow cập nhật phù hợp.</p></div><div class="hw"><small>Feedback</small><b>Speaker + Vibration</b><p>Phản hồi trực tiếp bằng âm thanh và rung trong gameplay.</p></div><div class="hw"><small>Content</small><b>microSD Assets</b><p>Không gian asset linh hoạt cho map, sprite, SFX và nội dung mở rộng.</p></div><div class="hw"><small>Display</small><b>Portrait Pixel UI</b><p>Màn hình dọc phù hợp diện VPet và thế giới pixel art.</p></div><div class="hw"><small>Ergonomics</small><b>Rounded Shell</b><p>Thân máy bo mềm, thân thiện với cầm nắm lâu và mang theo hằng ngày.</p></div></div></div></div></section>
+    <section class="section"><div class="wrap"><div class="section-head"><div><div class="kicker">Core Loop</div><h2>Raise. Train. Explore. Battle. Evolve.</h2></div><p>Mỗi hoạt động đều quay trở lại hành trình phát triển người bạn đồng hành số, tạo một vòng lặp ngắn nhưng có chiều sâu để chơi lâu dài.</p></div><div class="journey"><div class="step"><b>Raise</b><p>Chăm sóc và tương tác.</p></div><div class="step"><b>Train</b><p>Phát triển chỉ số.</p></div><div class="step"><b>Explore</b><p>Mở bản đồ và nhiệm vụ.</p></div><div class="step"><b>Battle</b><p>Thử sức mạnh và đội hình.</p></div><div class="step"><b>Evolve</b><p>Mở nhánh phát triển mới.</p></div></div></div></section>
+    <section class="cta"><div class="wrap"><img class="cta-logo" src="/images/brand/retroguy-wordmark.webp" alt="Retro Guy" /><h2>Your world is <span>waiting.</span></h2><p>DR Portal là cánh cửa bỏ túi dẫn vào Digital Realm — một thế giới để nuôi, khám phá, chiến đấu và phát triển theo cách của riêng bạn.</p><div class="actions" style="justify-content:center"><a class="btn primary" href="/news">Follow Development</a><a class="btn" href="/digital-realm">Enter Digital Realm</a></div></div></section>
   </main>
-
-  <footer class="footer"><div class="wrap footer-in"><img class="footer-logo" src="/images/brand/retroguy-wordmark.webp" alt="Retro Guy" /><small>DR Portal / Digital Realm — product development website. Visuals, specifications and software features may continue to evolve during development.</small></div></footer>
+  <footer class="footer"><div class="wrap footer-in"><img class="footer-logo" src="/images/brand/retroguy-wordmark.webp" alt="Retro Guy" /><small>© 2026 Retro Guy · DR Portal · Digital Realm</small></div></footer>
 </body>
 </html>
