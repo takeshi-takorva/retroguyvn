@@ -1,0 +1,48 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="RetroGuy VN — Open the Portal">
+  <section class="hero">
+    <div>
+      <p class="eyebrow">Retro-inspired handheld experiences</p>
+      <h1>OPEN THE <em>PORTAL.</em></h1>
+      <p class="lede">RetroGuy creates compact game hardware and original digital worlds inspired by the feeling of carrying an entire adventure in your pocket.</p>
+      <div class="actions">
+        <a class="button" href="/digital-realm">Explore Digital Realm</a>
+        <a class="button secondary" href="/news">View development</a>
+      </div>
+    </div>
+    <div class="hero-visual" aria-label="Digital Realm product placeholder">
+      <div class="orb"></div><div class="orb"></div><div class="device-placeholder"></div>
+    </div>
+  </section>
+
+  <div class="band">
+    <div class="stat-row">
+      <div class="stat"><strong>128×160</strong><span>Pixel-first display</span></div>
+      <div class="stat"><strong>ESP32-S3</strong><span>Connected handheld core</span></div>
+      <div class="stat"><strong>OTA</strong><span>Planned online updates</span></div>
+      <div class="stat"><strong>3V3</strong><span>Team combat foundation</span></div>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="section-head">
+      <div><p class="eyebrow">The project</p><h2>A pocket world,<br/>built to grow.</h2></div>
+      <p>Digital Realm combines virtual-pet routines, exploration, collection, mini-games and combat with a hardware experience designed around one-handed play.</p>
+    </div>
+    <div class="grid">
+      <article class="card"><span class="num">01 / EXPLORE</span><h3>Living regions</h3><p>Travel between forests, lakes, frozen peaks, sacred ruins and neon cities with NPCs, shops and activities.</p></article>
+      <article class="card"><span class="num">02 / RAISE</span><h3>Your companion</h3><p>Care, train, evolve and build a long-term relationship with the character living inside the device.</p></article>
+      <article class="card"><span class="num">03 / CONNECT</span><h3>Battle together</h3><p>Local multiplayer is the foundation; online services, matchmaking and persistent profiles are planned next.</p></article>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <div><p class="eyebrow">Development</p><h2>Designed as a platform.</h2></div>
+      <p>The website V1 is intentionally lightweight. Account, device registration, OTA, cloud save and online PvP will be added as separate services without rebuilding the public site.</p>
+    </div>
+    <div class="actions"><a class="button" href="/features">See features</a><a class="button secondary" href="/download">Downloads</a></div>
+  </section>
+</BaseLayout>
