@@ -1,0 +1,169 @@
+---
+---
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>RetroGuy Admin M1</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <style>
+    :root{--bg:#09111e;--panel:#101b2c;--panel2:#15243a;--line:#2a3950;--text:#f5f7fb;--muted:#9eacbd;--accent:#d64535;--good:#39c67a;--warn:#f4b942}*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#07101c,#0c1728);color:var(--text);font:15px/1.5 Inter,system-ui,sans-serif}button,input,textarea{font:inherit}.shell{max-width:1180px;margin:auto;padding:28px 20px 80px}.top{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:24px}.brand h1{margin:0;font-size:28px}.brand p{margin:5px 0 0;color:var(--muted)}.pill{padding:8px 12px;border:1px solid var(--line);border-radius:999px;color:var(--muted)}.login,.editor{border:1px solid var(--line);background:rgba(16,27,44,.92);border-radius:18px}.login{padding:24px;max-width:560px;margin:80px auto}.login h2{margin-top:0}.row{display:flex;gap:12px}.row>*{min-width:0}.grow{flex:1}.field{display:grid;gap:7px}.field label{font-weight:700;font-size:13px}.field input,.field textarea{width:100%;border:1px solid var(--line);background:#08121f;color:var(--text);border-radius:10px;padding:11px 12px;outline:none}.field textarea{min-height:110px;resize:vertical}.field input:focus,.field textarea:focus{border-color:#6c7f99}.btn{border:1px solid var(--line);background:#17253a;color:#fff;border-radius:10px;padding:10px 15px;font-weight:800;cursor:pointer}.btn.primary{background:var(--accent);border-color:var(--accent)}.btn.good{background:#167d4a;border-color:#1d9f60}.btn:disabled{opacity:.45;cursor:not-allowed}.toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}.toolbar .actions{display:flex;gap:8px;flex-wrap:wrap}.status{color:var(--muted)}.editor{overflow:hidden}.sections{display:grid;gap:0}.section{padding:22px;border-bottom:1px solid var(--line)}.section:last-child{border-bottom:0}.section h2{margin:0 0 16px;font-size:19px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.wide{grid-column:1/-1}.media{display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:start}.preview{aspect-ratio:1/1;border:1px solid var(--line);background:#07101c;border-radius:12px;display:grid;place-items:center;overflow:hidden}.preview img{width:100%;height:100%;object-fit:cover}.media-controls{display:grid;gap:10px}.media-controls input[type=file]{max-width:100%}.note{color:var(--muted);font-size:13px}.hidden{display:none!important}.toast{position:fixed;right:18px;bottom:18px;max-width:360px;padding:12px 15px;background:#17253a;border:1px solid var(--line);border-radius:10px;box-shadow:0 16px 50px #0008}.toast.ok{border-color:#277f55}.toast.err{border-color:#b84c45}@media(max-width:720px){.grid{grid-template-columns:1fr}.wide{grid-column:auto}.media{grid-template-columns:1fr}.preview{max-width:260px}.top{align-items:flex-start;flex-direction:column}.row{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top"><div class="brand"><h1>RetroGuy Admin M1</h1><p>Homepage CMS · Draft → Publish</p></div><div class="pill" id="connection">Not connected</div></header>
+
+    <section class="login" id="loginPanel">
+      <h2>Admin access</h2>
+      <p class="note">Nhập Admin Token. Token chỉ được giữ trong session hiện tại của trình duyệt.</p>
+      <form id="loginForm" class="row">
+        <input class="grow" id="tokenInput" type="password" autocomplete="current-password" placeholder="Admin Token" required />
+        <button class="btn primary" type="submit">Connect</button>
+      </form>
+    </section>
+
+    <section class="editor hidden" id="editorPanel">
+      <div class="toolbar">
+        <div><strong>Homepage</strong><div class="status" id="saveState">Ready</div></div>
+        <div class="actions">
+          <a class="btn" href="/" target="_blank" rel="noopener">Preview site</a>
+          <button class="btn" id="reloadBtn" type="button">Reload</button>
+          <button class="btn primary" id="saveBtn" type="button">Save draft</button>
+          <button class="btn good" id="publishBtn" type="button">Publish</button>
+          <button class="btn" id="logoutBtn" type="button">Logout</button>
+        </div>
+      </div>
+
+      <form id="contentForm" class="sections">
+        <section class="section">
+          <h2>Hero</h2>
+          <div class="grid">
+            <div class="field wide"><label>Eyebrow</label><input data-path="hero.eyebrow" /></div>
+            <div class="field wide"><label>Tagline</label><input data-path="hero.tagline" /></div>
+            <div class="field wide"><label>Description</label><textarea data-path="hero.description"></textarea></div>
+            <div class="wide media" data-media="hero.image">
+              <div class="preview"><img alt="Hero preview" /></div>
+              <div class="media-controls"><div class="field"><label>Hero image URL</label><input data-path="hero.image" /></div><input type="file" accept="image/*" /><button class="btn uploadBtn" type="button">Upload image</button><div class="note">Tối đa 5 MB. Nên dùng WebP/JPG, cạnh dài khoảng 1200–1800 px.</div></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2>Experience</h2>
+          <div class="grid">
+            <div class="field"><label>Heading</label><input data-path="experience.titleMain" /></div>
+            <div class="field"><label>Accent heading</label><input data-path="experience.titleAccent" /></div>
+            <div class="field wide"><label>Description</label><textarea data-path="experience.description"></textarea></div>
+            <div class="wide media" data-media="experience.image"><div class="preview"><img alt="Experience preview" /></div><div class="media-controls"><div class="field"><label>Image URL</label><input data-path="experience.image" /></div><input type="file" accept="image/*" /><button class="btn uploadBtn" type="button">Upload image</button></div></div>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2>Product family</h2>
+          <div class="grid">
+            <div class="field"><label>Heading</label><input data-path="family.titleMain" /></div>
+            <div class="field"><label>Accent heading</label><input data-path="family.titleAccent" /></div>
+            <div class="field wide"><label>Description</label><textarea data-path="family.description"></textarea></div>
+            <div class="wide media" data-media="family.image"><div class="preview"><img alt="Product family preview" /></div><div class="media-controls"><div class="field"><label>Image URL</label><input data-path="family.image" /></div><input type="file" accept="image/*" /><button class="btn uploadBtn" type="button">Upload image</button></div></div>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2>Hardware</h2>
+          <div class="grid">
+            <div class="field"><label>Heading</label><input data-path="hardware.titleMain" /></div>
+            <div class="field"><label>Accent heading</label><input data-path="hardware.titleAccent" /></div>
+            <div class="field wide"><label>Description</label><textarea data-path="hardware.description"></textarea></div>
+            <div class="wide media" data-media="hardware.image"><div class="preview"><img alt="Hardware preview" /></div><div class="media-controls"><div class="field"><label>Image URL</label><input data-path="hardware.image" /></div><input type="file" accept="image/*" /><button class="btn uploadBtn" type="button">Upload image</button></div></div>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2>Final CTA</h2>
+          <div class="grid">
+            <div class="field"><label>Heading</label><input data-path="cta.titleMain" /></div>
+            <div class="field"><label>Accent heading</label><input data-path="cta.titleAccent" /></div>
+            <div class="field wide"><label>Description</label><textarea data-path="cta.description"></textarea></div>
+          </div>
+        </section>
+      </form>
+    </section>
+  </main>
+  <div id="toast" class="toast hidden" aria-live="polite"></div>
+
+  <script>
+    const loginPanel = document.querySelector('#loginPanel');
+    const editorPanel = document.querySelector('#editorPanel');
+    const loginForm = document.querySelector('#loginForm');
+    const tokenInput = document.querySelector('#tokenInput');
+    const saveState = document.querySelector('#saveState');
+    const toast = document.querySelector('#toast');
+    const connection = document.querySelector('#connection');
+    let token = sessionStorage.getItem('rg_admin_token') || '';
+    let model = null;
+
+    const getPath = (obj, path) => path.split('.').reduce((v, k) => v?.[k], obj);
+    const setPath = (obj, path, value) => { const parts = path.split('.'); let cur = obj; parts.slice(0,-1).forEach(k => cur = cur[k] ||= {}); cur[parts.at(-1)] = value; };
+    const headers = (json = false) => ({ Authorization: `Bearer ${token}`, ...(json ? {'content-type':'application/json'} : {}) });
+    const showToast = (msg, kind='ok') => { toast.textContent = msg; toast.className = `toast ${kind}`; setTimeout(() => toast.classList.add('hidden'), 3200); };
+    const busy = (state, text) => { document.querySelectorAll('.toolbar button,.uploadBtn').forEach(b => b.disabled = state); saveState.textContent = text || (state ? 'Working…' : 'Ready'); };
+
+    function syncForm() {
+      document.querySelectorAll('[data-path]').forEach(el => { el.value = getPath(model, el.dataset.path) ?? ''; });
+      document.querySelectorAll('[data-media]').forEach(box => {
+        const path = box.dataset.media; const url = getPath(model, path) || '';
+        const img = box.querySelector('.preview img'); img.src = url; img.style.display = url ? 'block' : 'none';
+      });
+    }
+
+    function readForm() {
+      document.querySelectorAll('[data-path]').forEach(el => setPath(model, el.dataset.path, el.value.trim()));
+      return model;
+    }
+
+    async function api(path, options={}) {
+      const res = await fetch(path, { ...options, headers: { ...headers(options.json), ...(options.headers || {}) } });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      return data;
+    }
+
+    async function load() {
+      busy(true, 'Loading…');
+      try {
+        const data = await api('/api/admin/content/home');
+        model = data.draft;
+        syncForm();
+        loginPanel.classList.add('hidden'); editorPanel.classList.remove('hidden');
+        connection.textContent = 'Connected'; saveState.textContent = 'Draft loaded';
+      } catch (e) {
+        token = ''; sessionStorage.removeItem('rg_admin_token');
+        loginPanel.classList.remove('hidden'); editorPanel.classList.add('hidden');
+        connection.textContent = 'Not connected'; showToast(e.message, 'err');
+      } finally { busy(false); }
+    }
+
+    loginForm.addEventListener('submit', async e => { e.preventDefault(); token = tokenInput.value.trim(); sessionStorage.setItem('rg_admin_token', token); await load(); });
+    document.querySelector('#reloadBtn').addEventListener('click', load);
+    document.querySelector('#logoutBtn').addEventListener('click', () => { sessionStorage.removeItem('rg_admin_token'); location.reload(); });
+    document.querySelector('#saveBtn').addEventListener('click', async () => { busy(true,'Saving draft…'); try { await api('/api/admin/content/home',{method:'PUT',json:true,body:JSON.stringify(readForm())}); showToast('Draft saved'); saveState.textContent='Draft saved'; } catch(e){showToast(e.message,'err')} finally{busy(false)} });
+    document.querySelector('#publishBtn').addEventListener('click', async () => { busy(true,'Publishing…'); try { await api('/api/admin/content/home',{method:'PUT',json:true,body:JSON.stringify(readForm())}); await api('/api/admin/publish/home',{method:'POST'}); showToast('Published. F5 website to view changes.'); saveState.textContent='Published'; } catch(e){showToast(e.message,'err')} finally{busy(false)} });
+
+    document.querySelectorAll('.uploadBtn').forEach(btn => btn.addEventListener('click', async () => {
+      const box = btn.closest('[data-media]'); const file = box.querySelector('input[type=file]').files[0];
+      if (!file) return showToast('Choose an image first','err');
+      busy(true,'Uploading image…');
+      try {
+        const form = new FormData(); form.append('file', file);
+        const res = await fetch('/api/admin/media',{method:'POST',headers:headers(false),body:form});
+        const data = await res.json(); if(!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        setPath(model, box.dataset.media, data.url); syncForm(); showToast('Image uploaded. Save or Publish to apply.');
+      } catch(e){showToast(e.message,'err')} finally{busy(false)}
+    }));
+
+    if (token) load();
+  </script>
+</body>
+</html>
