@@ -1,0 +1,16 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const features = [
+  ['01','Pocket-first design','Compact dedicated hardware focused on comfortable one-handed play and quick daily interactions.'],
+  ['02','Virtual companion','Care, clean, train, evolve and build persistent progress over time.'],
+  ['03','Realm exploration','Travel through multiple regions with NPCs, shops, quests, weather and local activities.'],
+  ['04','3v3 combat','A team-based combat architecture designed to support PvE, local PvP and future online play.'],
+  ['05','Mini-games','Fishing, training and other location-based activities expand progression beyond combat.'],
+  ['06','Connected future','Device accounts, OTA updates, cloud save, events, ranking and online matchmaking are planned as web services.']
+];
+---
+<BaseLayout title="Features — RetroGuy VN">
+  <section class="page-hero"><p class="eyebrow">Digital Realm</p><h1>FEATURES</h1><p class="lede">The V1 feature map focuses on the experience players touch every day while keeping the architecture ready for network services later.</p></section>
+  <section class="section"><div class="grid">{features.map(([n,t,d]) => <article class="card"><span class="num">{n}</span><h3>{t}</h3><p>{d}</p></article>)}</div></section>
+  <section class="section"><div class="notice"><strong>Roadmap note:</strong> Account, OTA, cloud save and online PvP are backend phases. This public website V1 does not expose unfinished services as available features.</div></section>
+</BaseLayout>
