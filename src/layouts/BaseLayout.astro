@@ -1,0 +1,74 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'RetroGuy VN',
+  description = 'RetroGuy VN — retro-inspired hardware, Digital Realm, development updates and downloads.'
+} = Astro.props;
+
+const path = Astro.url.pathname;
+const nav = [
+  ['/', 'HOME'],
+  ['/digital-realm', 'DIGITAL REALM'],
+  ['/features', 'FEATURES'],
+  ['/gallery', 'MEDIA'],
+  ['/news', 'NEWS'],
+  ['/download', 'DOWNLOAD'],
+  ['/support', 'SUPPORT']
+];
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#06121f" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <div class="scanlines" aria-hidden="true"></div>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="RetroGuy VN home">
+        <span class="brand-mark">RG</span>
+        <span>RETROGUY<span class="accent">VN</span></span>
+      </a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">MENU</button>
+      <nav class="site-nav" aria-label="Primary navigation">
+        {nav.map(([href, label]) => (
+          <a href={href} class:list={[path === href && 'active']}>{label}</a>
+        ))}
+      </nav>
+    </header>
+
+    <main><slot /></main>
+
+    <footer class="site-footer">
+      <div>
+        <strong>RETROGUY VN</strong>
+        <p>Retro hardware. Pocket worlds. New adventures.</p>
+      </div>
+      <div class="footer-links">
+        <a href="/digital-realm">Digital Realm</a>
+        <a href="/news">Devlog</a>
+        <a href="/support">Support</a>
+      </div>
+      <small>© {new Date().getFullYear()} RetroGuy VN. All rights reserved.</small>
+    </footer>
+
+    <script is:inline>
+      const button = document.querySelector('.nav-toggle');
+      const nav = document.querySelector('.site-nav');
+      button?.addEventListener('click', () => {
+        const open = nav?.classList.toggle('open') ?? false;
+        button.setAttribute('aria-expanded', String(open));
+      });
+    </script>
+  </body>
+</html>
