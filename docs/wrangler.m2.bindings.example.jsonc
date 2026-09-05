@@ -1,0 +1,17 @@
+{
+  // Copy these sections into wrangler.jsonc only after the Cloudflare resources exist.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "retroguy-cms",
+      "database_id": "<D1_DATABASE_ID>",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "retroguy-media"
+    }
+  ]
+}
