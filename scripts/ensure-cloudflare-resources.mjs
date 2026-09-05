@@ -14,6 +14,13 @@ function output(result) {
   return `${result.stdout || ''}\n${result.stderr || ''}`.trim();
 }
 
+// GitHub Actions only validates the project. It has no Cloudflare API token,
+// so remote resource provisioning must be skipped there.
+if (process.env.GITHUB_ACTIONS === 'true') {
+  console.log('[cloudflare] GitHub Actions detected; skip remote R2 provisioning.');
+  process.exit(0);
+}
+
 const whoami = run(['whoami']);
 if (whoami.status !== 0) {
   console.log('[cloudflare] No authenticated Wrangler session; skip remote resource ensure step.');
@@ -22,7 +29,7 @@ if (whoami.status !== 0) {
 
 const list = run(['r2', 'bucket', 'list']);
 if (list.status !== 0) {
-  console.error('[cloudflare] Unable to list R2 buckets.');
+  console.error('[cloudflare] Unable to list R2 buckets in authenticated deployment environment.');
   console.error(output(list));
   process.exit(1);
 }
