@@ -13,7 +13,7 @@ const DB_NAME = 'retroguyvn-db';
 const DB_ID = 'ee89d627-5e03-49d2-b4bc-30a9be91a9a1';
 const MEDIA_BINDING = 'MEDIA';
 const MEDIA_BUCKET = 'retroguyvn-media';
-const DEPLOY_FINGERPRINT = 'retroguyvn-web-2.0.5';
+const DEPLOY_FINGERPRINT = 'retroguyvn-web-2.0.6';
 const PIN_ROOT_CONFIG = process.env.CI === 'true' || process.env.WORKERS_CI === '1';
 
 if (!existsSync(GENERATED_CONFIG)) {
