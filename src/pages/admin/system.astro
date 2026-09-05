@@ -6,14 +6,14 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="robots" content="noindex,nofollow" />
-  <title>RetroGuy CMS M2 System</title>
+  <title>RetroGuy CMS M2.0B System</title>
   <style>
     :root{--bg:#08111e;--panel:#101b2c;--line:#2a3950;--text:#f5f7fb;--muted:#9eacbd;--orange:#d64535;--green:#2eae6f;--red:#c74e47}*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#07101c,#0c1728);color:var(--text);font:15px/1.55 Inter,system-ui,sans-serif}.shell{width:min(900px,calc(100% - 32px));margin:40px auto 80px}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:22px}.top h1{margin:0;font-size:28px}.top p{margin:4px 0 0;color:var(--muted)}a{color:inherit}.btn{border:1px solid var(--line);background:#17253a;color:white;border-radius:10px;padding:10px 14px;font-weight:750;cursor:pointer;text-decoration:none}.btn.primary{background:var(--orange);border-color:var(--orange)}.btn.good{background:#157647;border-color:#23985f}.btn:disabled{opacity:.45;cursor:not-allowed}.panel{border:1px solid var(--line);background:rgba(16,27,44,.94);border-radius:18px;padding:22px;margin-bottom:16px}.panel h2{margin:0 0 14px;font-size:18px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.card{border:1px solid var(--line);border-radius:12px;padding:15px;background:#08121f}.card span{display:block;color:var(--muted);font-size:12px;text-transform:uppercase}.card strong{display:block;margin-top:7px;font-size:18px}.ok{color:#4ad58c}.bad{color:#ff746b}.warn{color:#f1bd59}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.login input{flex:1;min-width:220px;background:#08121f;border:1px solid var(--line);border-radius:10px;color:#fff;padding:11px 12px}.note{color:var(--muted);font-size:13px}.log{white-space:pre-wrap;background:#07101c;border:1px solid var(--line);border-radius:12px;padding:14px;min-height:80px;color:#cbd5e1}.hidden{display:none!important}@media(max-width:680px){.grid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
   </style>
 </head>
 <body>
   <main class="shell">
-    <header class="top"><div><h1>CMS M2.0 · System</h1><p>D1 + R2 migration console</p></div><div class="row"><a class="btn" href="/admin">← Admin</a><a class="btn" href="/" target="_blank">Website</a></div></header>
+    <header class="top"><div><h1>CMS M2.0B · System</h1><p>Automatic D1/R2 provisioning + production migration</p></div><div class="row"><a class="btn" href="/admin">← Admin</a><a class="btn" href="/" target="_blank">Website</a></div></header>
 
     <section class="panel login" id="loginPanel">
       <h2>Admin authentication</h2>
@@ -33,9 +33,9 @@
       </div>
 
       <div class="panel">
-        <h2>Legacy → M2 migration</h2>
-        <p class="note">M2.0 tự bootstrap Homepage từ M1.1 khi D1 xuất hiện. Nút dưới đây copy toàn bộ media cũ từ Durable Object sang R2, giữ nguyên media ID và URL <code>/media/&lt;id&gt;</code>.</p>
-        <div class="row"><button id="refresh" class="btn">Refresh status</button><button id="migrate" class="btn good">Run migration</button></div>
+        <h2>M2.0B automatic migration</h2>
+        <p class="note">Cloudflare tự provision D1/R2 từ Wrangler binding. Khi cả hai binding xuất hiện, Worker tự tạo schema và copy dữ liệu M1.1 sang D1/R2 trong background. Durable Object cũ vẫn được giữ làm fallback cho đến khi migration hoàn tất.</p>
+        <div class="row"><button id="refresh" class="btn">Refresh status</button><button id="migrate" class="btn good">Retry migration now</button></div>
       </div>
 
       <div class="panel"><h2>Log</h2><div class="log" id="log">Ready.</div></div>
@@ -57,8 +57,12 @@
   function paint(s){
     const mark=(el,ok)=>{el.textContent=ok?'READY':'NOT BOUND';el.className=ok?'ok':'bad'};
     mark($('#d1'),s.d1); mark($('#r2'),s.r2);
-    $('#mode').textContent=s.mode; $('#mode').className=s.mode==='m2-hybrid'?'ok':'warn';
-    $('#migrationState').textContent=s.migration?.completedAt?`Legacy migration completed: ${s.migration.completedAt}`:'Legacy media has not been fully migrated yet.';
+    const active = Boolean(s.d1 && s.r2 && s.schemaReady && s.migration?.completedAt);
+    $('#mode').textContent = active ? 'm2-active' : (s.d1 && s.r2 ? 'm2-migrating' : 'm1.1-fallback');
+    $('#mode').className = active ? 'ok' : 'warn';
+    $('#migrationState').textContent = active
+      ? `Production migration completed: ${s.migration.completedAt}`
+      : (s.d1 && s.r2 ? 'D1/R2 are ready. Automatic migration is running or waiting for retry.' : 'Waiting for Cloudflare automatic provisioning of DB and MEDIA bindings.');
     $('#migrate').disabled=!(s.d1&&s.r2);
   }
 
@@ -72,8 +76,9 @@
 
   $('#connect').addEventListener('click',()=>{token=$('#token').value.trim(); if(token) sessionStorage.setItem('rg_admin_token',token); load()});
   $('#refresh').addEventListener('click',async()=>{try{const s=await api('/api/admin/m2/status');paint(s);log(s)}catch(e){log(e.message)}});
-  $('#migrate').addEventListener('click',async()=>{if(!confirm('Migrate legacy Homepage/media into D1 + R2 now?'))return;$('#migrate').disabled=true;log('Migrating…');try{const r=await api('/api/admin/m2/migrate',{method:'POST'});log(r);paint(await api('/api/admin/m2/status'))}catch(e){log(e.message)}finally{$('#migrate').disabled=false}});
+  $('#migrate').addEventListener('click',async()=>{if(!confirm('Retry legacy Homepage/media migration into D1 + R2 now?'))return;$('#migrate').disabled=true;log('Migrating…');try{const r=await api('/api/admin/m2/migrate',{method:'POST'});log(r);paint(await api('/api/admin/m2/status'))}catch(e){log(e.message)}finally{$('#migrate').disabled=false}});
   load();
+  setInterval(()=>{ if(!$('#systemPanel').classList.contains('hidden')) api('/api/admin/m2/status').then(paint).catch(()=>{}); },5000);
 </script>
 </body>
 </html>

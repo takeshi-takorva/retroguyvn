@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "retroguyvn",
-  "main": "./src/worker.js",
+  "main": "./src/worker-entry.js",
   "compatibility_date": "2026-09-05",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "workers_dev": true,
@@ -9,6 +9,16 @@
     "directory": "./dist",
     "binding": "ASSETS"
   },
+  "d1_databases": [
+    {
+      "binding": "DB"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA"
+    }
+  ],
   "durable_objects": {
     "bindings": [
       {
@@ -25,7 +35,7 @@
   ],
   "vars": {
     "ADMIN_TOKEN_SHA256": "4177df44062d14b628e4c8b1c24ea780706aa99967fb7544acffc5493cb93c2c",
-    "CMS_ARCHITECTURE": "m2-dual-mode"
+    "CMS_ARCHITECTURE": "m2-auto-provision"
   },
   "observability": {
     "enabled": true
