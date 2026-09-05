@@ -1,6 +1,6 @@
 {
   "name": "retroguyvn-web",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "private": true,
   "type": "module",
   "engines": {
@@ -9,9 +9,9 @@
   "scripts": {
     "dev": "astro dev",
     "prebuild": "node scripts/ensure-cloudflare-resources.mjs",
-    "build": "astro build && node scripts/patch-generated-wrangler.mjs && wrangler deploy --dry-run --outdir .wrangler-dry",
+    "build": "astro build && node scripts/patch-generated-wrangler.mjs && wrangler deploy --dry-run --config dist/server/wrangler.production.json --outdir .wrangler-dry && node scripts/patch-generated-wrangler.mjs",
     "preview": "astro preview",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build && wrangler deploy --config dist/server/wrangler.production.json"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.3.0",
