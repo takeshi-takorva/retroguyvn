@@ -1,34 +1,17 @@
-const DEFAULT_CONTENT = {
-  hero: {
-    eyebrow: 'Retro Guy · Pocket Adventure Device',
-    tagline: 'Open the Portal. Enter the Realm.',
-    description: 'Một thiết bị đồng hành nhỏ gọn để nuôi, huấn luyện, khám phá, chiến đấu và phát triển người bạn đồng hành số. Mang Digital Realm theo bạn — trong lòng bàn tay, trong túi quần, ở bất cứ đâu.',
-    image: '/images/dr-portal/products/product-family.webp'
-  },
-  experience: {
-    titleMain: 'Designed to go',
-    titleAccent: 'with you.',
-    description: 'DR Portal được thiết kế như một thiết bị đồng hành thay vì một máy chơi game cồng kềnh: thân máy nhỏ, các phím vật lý dễ thao tác và trải nghiệm có thể tiếp tục trong những khoảng thời gian ngắn xuyên suốt ngày.',
-    image: '/images/dr-portal/products/lifestyle-hand.webp'
-  },
-  family: {
-    titleMain: 'Choose your',
-    titleAccent: 'portal.',
-    description: 'Từ Navy Edition trầm, kỹ thuật tới Orange Edition nổi bật, thiết kế giữ chung một DNA: thân máy bo mềm, mặt điều khiển tập trung và màn hình dọc dành cho thế giới pixel art.',
-    image: '/images/dr-portal/products/product-family.webp'
-  },
-  hardware: {
-    titleMain: 'Built for',
-    titleAccent: 'pocket play.',
-    description: 'Cấu trúc phần cứng tập trung vào độ gọn, kết nối đơn giản và khả năng mở rộng nội dung. Thiết kế mặt lưng, loa và USB-C được tích hợp để giữ tổng thể liền mạch.',
-    image: '/images/dr-portal/products/hardware.webp'
-  },
-  cta: {
-    titleMain: 'Your digital world',
-    titleAccent: 'is waiting.',
-    description: 'Theo dõi Retro Guy để cập nhật quá trình phát triển DR Portal và Digital Realm.'
-  }
-};
+import { handle } from '@astrojs/cloudflare/handler';
+import {
+  DEFAULT_CONTENT,
+  getHomeBundle,
+  getHomePublished,
+  saveHomeDraft,
+  publishHomeDraft,
+  listMedia,
+  uploadMedia,
+  serveMedia,
+  deleteMedia,
+  migrateLegacyToM2,
+  storageStatus
+} from './cms/m2-core.js';
 
 const MEDIA_FIELDS = [
   ['hero.image', 'Hero'],
@@ -142,23 +125,12 @@ function accessConfigured(env) {
   return Boolean(normalizeTeamDomain(env.ACCESS_TEAM_DOMAIN || '') && String(env.ACCESS_AUD || '').trim());
 }
 
-function cmsStub(env) {
-  const id = env.CMS.idFromName('retroguy-home');
-  return env.CMS.get(id);
-}
-
 function mediaUrl(id) {
   return `/media/${encodeURIComponent(id)}`;
 }
 
 function mediaUsage(content, url) {
   return MEDIA_FIELDS.filter(([path]) => getPath(content, path) === url).map(([, label]) => label);
-}
-
-async function getPublished(env) {
-  const response = await cmsStub(env).fetch('https://cms/content/published');
-  if (!response.ok) return DEFAULT_CONTENT;
-  return await response.json();
 }
 
 class TextHandler {
@@ -171,10 +143,10 @@ class AttrHandler {
   element(element) { if (this.value) element.setAttribute(this.name, this.value); }
 }
 
-async function rewriteHome(request, env) {
-  const source = await env.ASSETS.fetch(request);
+async function rewriteHome(request, env, ctx) {
+  const source = await handle(request, env, ctx);
   if (!source.ok || !source.headers.get('content-type')?.includes('text/html')) return source;
-  const c = await getPublished(env);
+  const c = await getHomePublished(env);
   const expTitle = `${escapeHtml(c.experience?.titleMain)} <em>${escapeHtml(c.experience?.titleAccent)}</em>`;
   const familyTitle = `${escapeHtml(c.family?.titleMain)} <span>${escapeHtml(c.family?.titleAccent)}</span>`;
   const hardwareTitle = `${escapeHtml(c.hardware?.titleMain)} <span>${escapeHtml(c.hardware?.titleAccent)}</span>`;
@@ -199,6 +171,8 @@ async function rewriteHome(request, env) {
     .transform(source);
 }
 
+// Legacy M1.1 Durable Object is intentionally retained during M2.0.
+// It provides zero-downtime fallback and the source for one-time migration into D1/R2.
 export class CMSStore {
   constructor(state) {
     this.state = state;
@@ -309,46 +283,76 @@ export class CMSStore {
   }
 }
 
+function actorFromIdentity(identity) {
+  return identity?.email || identity?.mode || 'admin';
+}
+
+function apiError(error) {
+  return json({ error: error?.message || 'Internal error', usage: error?.usage }, { status: Number(error?.status || 500) });
+}
+
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    if (url.pathname === '/' && request.method === 'GET') {
-      return rewriteHome(request, env);
-    }
-
-    if (url.pathname === '/api/content/home' && request.method === 'GET') {
-      return json(await getPublished(env));
-    }
-
-    if (url.pathname.startsWith('/api/admin/')) {
-      const identity = await getIdentity(request, env);
-      if (!identity) return json({ error: 'Unauthorized', accessConfigured: accessConfigured(env) }, { status: 401 });
-      if (url.pathname === '/api/admin/session' && request.method === 'GET') {
-        return json({ authenticated: true, mode: identity.mode, email: identity.email, accessConfigured: accessConfigured(env) });
+    try {
+      if (url.pathname === '/' && request.method === 'GET') {
+        return rewriteHome(request, env, ctx);
       }
 
-      const stub = cmsStub(env);
-      if (url.pathname === '/api/admin/content/home' && request.method === 'GET') return stub.fetch('https://cms/content/draft');
-      if (url.pathname === '/api/admin/content/home' && request.method === 'PUT') {
-        return stub.fetch(new Request('https://cms/content/draft', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: request.body }));
+      if (url.pathname === '/api/content/home' && request.method === 'GET') {
+        return json(await getHomePublished(env));
       }
-      if (url.pathname === '/api/admin/publish/home' && request.method === 'POST') return stub.fetch('https://cms/content/publish', { method: 'POST' });
-      if (url.pathname === '/api/admin/media' && request.method === 'GET') return stub.fetch('https://cms/media/list');
-      if (url.pathname === '/api/admin/media' && request.method === 'POST') {
-        return stub.fetch(new Request('https://cms/media/upload', { method: 'POST', headers: request.headers, body: request.body }));
-      }
-      if (url.pathname.startsWith('/api/admin/media/') && request.method === 'DELETE') {
-        const id = decodeURIComponent(url.pathname.slice('/api/admin/media/'.length));
-        return stub.fetch(new Request(`https://cms/media/${encodeURIComponent(id)}`, { method: 'DELETE' }));
-      }
-      return json({ error: 'Not found' }, { status: 404 });
-    }
 
-    if (url.pathname.startsWith('/media/') && request.method === 'GET') {
-      return cmsStub(env).fetch(`https://cms${url.pathname}`);
-    }
+      if (url.pathname.startsWith('/api/admin/')) {
+        const identity = await getIdentity(request, env);
+        if (!identity) return json({ error: 'Unauthorized', accessConfigured: accessConfigured(env) }, { status: 401 });
+        if (url.pathname === '/api/admin/session' && request.method === 'GET') {
+          return json({
+            authenticated: true,
+            mode: identity.mode,
+            email: identity.email,
+            accessConfigured: accessConfigured(env),
+            cms: await storageStatus(env)
+          });
+        }
 
-    return env.ASSETS.fetch(request);
+        const actor = actorFromIdentity(identity);
+        if (url.pathname === '/api/admin/content/home' && request.method === 'GET') return json(await getHomeBundle(env));
+        if (url.pathname === '/api/admin/content/home' && request.method === 'PUT') {
+          return json(await saveHomeDraft(env, await request.json(), actor));
+        }
+        if (url.pathname === '/api/admin/publish/home' && request.method === 'POST') {
+          return json(await publishHomeDraft(env, actor));
+        }
+        if (url.pathname === '/api/admin/media' && request.method === 'GET') return json(await listMedia(env));
+        if (url.pathname === '/api/admin/media' && request.method === 'POST') {
+          const form = await request.formData();
+          return json(await uploadMedia(env, form.get('file')));
+        }
+        if (url.pathname.startsWith('/api/admin/media/') && request.method === 'DELETE') {
+          const id = decodeURIComponent(url.pathname.slice('/api/admin/media/'.length));
+          return json(await deleteMedia(env, id));
+        }
+        if (url.pathname === '/api/admin/m2/status' && request.method === 'GET') {
+          return json(await storageStatus(env));
+        }
+        if (url.pathname === '/api/admin/m2/migrate' && request.method === 'POST') {
+          return json(await migrateLegacyToM2(env));
+        }
+        return json({ error: 'Not found' }, { status: 404 });
+      }
+
+      if (url.pathname.startsWith('/media/') && request.method === 'GET') {
+        const id = decodeURIComponent(url.pathname.slice('/media/'.length));
+        return serveMedia(env, id);
+      }
+
+      return handle(request, env, ctx);
+    } catch (error) {
+      if (url.pathname.startsWith('/api/')) return apiError(error);
+      console.error('Worker request failed', error);
+      return handle(request, env, ctx);
+    }
   }
 };
