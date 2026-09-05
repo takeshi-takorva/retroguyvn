@@ -11,12 +11,15 @@
   },
   "d1_databases": [
     {
-      "binding": "DB"
+      "binding": "DB",
+      "database_name": "retroguyvn-db",
+      "database_id": "ee89d627-5e03-49d2-b4bc-30a9be91a9a1"
     }
   ],
   "r2_buckets": [
     {
-      "binding": "MEDIA"
+      "binding": "MEDIA",
+      "bucket_name": "retroguyvn-media"
     }
   ],
   "durable_objects": {
@@ -35,7 +38,7 @@
   ],
   "vars": {
     "ADMIN_TOKEN_SHA256": "4177df44062d14b628e4c8b1c24ea780706aa99967fb7544acffc5493cb93c2c",
-    "CMS_ARCHITECTURE": "m2-auto-provision"
+    "CMS_ARCHITECTURE": "m2-explicit-resources"
   },
   "observability": {
     "enabled": true
