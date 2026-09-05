@@ -1,4 +1,4 @@
 retroguyvn-web fresh build marker
-version=2.0.7
-purpose=r2-not-entitled-safe-deploy
+version=2.0.8
+purpose=r2-disabled-root-config-pin
 created=2026-09-06T00:22:00+07:00

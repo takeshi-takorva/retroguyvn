@@ -14,9 +14,9 @@ const DB_NAME = 'retroguyvn-db';
 const DB_ID = 'ee89d627-5e03-49d2-b4bc-30a9be91a9a1';
 const MEDIA_BINDING = 'MEDIA';
 const MEDIA_BUCKET = 'retroguyvn-media';
-const DEPLOY_FINGERPRINT = 'retroguyvn-web-2.0.7';
-const PIN_ROOT_CONFIG = process.env.CI === 'true' || process.env.WORKERS_CI === '1';
+const DEPLOY_FINGERPRINT = 'retroguyvn-web-2.0.8';
 const R2_DISABLED = existsSync(R2_DISABLED_MARKER);
+const PIN_ROOT_CONFIG = R2_DISABLED || process.env.CI === 'true' || process.env.WORKERS_CI === '1';
 
 if (!existsSync(GENERATED_CONFIG)) {
   console.error(`[wrangler-patch] Generated config not found: ${GENERATED_CONFIG}`);
@@ -81,7 +81,7 @@ if (PIN_ROOT_CONFIG) {
   if (rootConfig.main) rootConfig.main = remapGeneratedPath(rootConfig.main);
   if (rootConfig.assets?.directory) rootConfig.assets.directory = remapGeneratedPath(rootConfig.assets.directory);
   writeFileSync(ROOT_CONFIG, `${JSON.stringify(rootConfig, null, 2)}\n`);
-  console.log(`[wrangler-patch] CI root config pinned for deploy: ${rootConfig.main}.`);
+  console.log(`[wrangler-patch] Root config pinned for deploy: ${rootConfig.main}.`);
 }
 
 const verified = JSON.parse(readFileSync(PRODUCTION_CONFIG, 'utf8'));
@@ -110,7 +110,7 @@ if (PIN_ROOT_CONFIG) {
     (R2_DISABLED && rootMedia) ||
     rootVerified.vars?.DEPLOY_FINGERPRINT !== DEPLOY_FINGERPRINT
   ) {
-    console.error('[wrangler-patch] CI root deployment config verification failed.');
+    console.error('[wrangler-patch] Root deployment config verification failed.');
     process.exit(1);
   }
 }
