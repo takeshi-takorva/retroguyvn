@@ -8,13 +8,15 @@ const PRODUCTION_CONFIG = resolve(GENERATED_DIR, 'wrangler.production.json');
 const ROOT_CONFIG = resolve('wrangler.jsonc');
 const REDIRECT_DIR = resolve('.wrangler/deploy');
 const REDIRECT_CONFIG = resolve('.wrangler/deploy/config.json');
+const R2_DISABLED_MARKER = resolve('.cloudflare-r2-disabled');
 const DB_BINDING = 'DB';
 const DB_NAME = 'retroguyvn-db';
 const DB_ID = 'ee89d627-5e03-49d2-b4bc-30a9be91a9a1';
 const MEDIA_BINDING = 'MEDIA';
 const MEDIA_BUCKET = 'retroguyvn-media';
-const DEPLOY_FINGERPRINT = 'retroguyvn-web-2.0.6';
+const DEPLOY_FINGERPRINT = 'retroguyvn-web-2.0.7';
 const PIN_ROOT_CONFIG = process.env.CI === 'true' || process.env.WORKERS_CI === '1';
+const R2_DISABLED = existsSync(R2_DISABLED_MARKER);
 
 if (!existsSync(GENERATED_CONFIG)) {
   console.error(`[wrangler-patch] Generated config not found: ${GENERATED_CONFIG}`);
@@ -41,16 +43,21 @@ db.database_id = DB_ID;
 delete db.preview_database_id;
 
 config.r2_buckets ??= [];
-let media = config.r2_buckets.find((item) => item?.binding === MEDIA_BINDING);
-if (!media) {
-  media = { binding: MEDIA_BINDING };
-  config.r2_buckets.push(media);
+if (R2_DISABLED) {
+  config.r2_buckets = config.r2_buckets.filter((item) => item?.binding !== MEDIA_BINDING);
+} else {
+  let media = config.r2_buckets.find((item) => item?.binding === MEDIA_BINDING);
+  if (!media) {
+    media = { binding: MEDIA_BINDING };
+    config.r2_buckets.push(media);
+  }
+  media.bucket_name = MEDIA_BUCKET;
+  delete media.preview_bucket_name;
 }
-media.bucket_name = MEDIA_BUCKET;
-delete media.preview_bucket_name;
 
 config.vars ??= {};
-config.vars.CMS_ARCHITECTURE = 'm2-explicit-resources';
+config.vars.CMS_ARCHITECTURE = R2_DISABLED ? 'm2-d1-legacy-media' : 'm2-explicit-resources';
+config.vars.CMS_R2_STATE = R2_DISABLED ? 'not-entitled' : 'ready';
 config.vars.DEPLOY_FINGERPRINT = DEPLOY_FINGERPRINT;
 
 const serialized = `${JSON.stringify(config, null, 2)}\n`;
@@ -84,7 +91,8 @@ const redirect = JSON.parse(readFileSync(REDIRECT_CONFIG, 'utf8'));
 
 if (
   verifiedDb?.database_id !== DB_ID ||
-  verifiedMedia?.bucket_name !== MEDIA_BUCKET ||
+  (!R2_DISABLED && verifiedMedia?.bucket_name !== MEDIA_BUCKET) ||
+  (R2_DISABLED && verifiedMedia) ||
   verified.vars?.DEPLOY_FINGERPRINT !== DEPLOY_FINGERPRINT ||
   redirect?.configPath !== '../../dist/server/wrangler.production.json'
 ) {
@@ -96,13 +104,23 @@ if (PIN_ROOT_CONFIG) {
   const rootVerified = JSON.parse(readFileSync(ROOT_CONFIG, 'utf8'));
   const rootDb = rootVerified.d1_databases?.find((item) => item?.binding === DB_BINDING);
   const rootMedia = rootVerified.r2_buckets?.find((item) => item?.binding === MEDIA_BINDING);
-  if (rootDb?.database_id !== DB_ID || rootMedia?.bucket_name !== MEDIA_BUCKET || rootVerified.vars?.DEPLOY_FINGERPRINT !== DEPLOY_FINGERPRINT) {
+  if (
+    rootDb?.database_id !== DB_ID ||
+    (!R2_DISABLED && rootMedia?.bucket_name !== MEDIA_BUCKET) ||
+    (R2_DISABLED && rootMedia) ||
+    rootVerified.vars?.DEPLOY_FINGERPRINT !== DEPLOY_FINGERPRINT
+  ) {
     console.error('[wrangler-patch] CI root deployment config verification failed.');
     process.exit(1);
   }
 }
 
 console.log(`[wrangler-patch] ${DB_BINDING} pinned to ${DB_NAME} (${DB_ID}).`);
-console.log(`[wrangler-patch] ${MEDIA_BINDING} pinned to R2 bucket ${MEDIA_BUCKET}.`);
+if (R2_DISABLED) {
+  console.log('[wrangler-patch] MEDIA binding omitted because Cloudflare account R2 is not enabled.');
+  console.log('[wrangler-patch] CMS mode: D1 content + legacy Durable Object media fallback.');
+} else {
+  console.log(`[wrangler-patch] ${MEDIA_BINDING} pinned to R2 bucket ${MEDIA_BUCKET}.`);
+}
 console.log('[wrangler-patch] Deploy redirect forced to dist/server/wrangler.production.json.');
 console.log(`[wrangler-patch] Fingerprint: ${DEPLOY_FINGERPRINT}.`);
