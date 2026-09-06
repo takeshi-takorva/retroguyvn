@@ -1,0 +1,174 @@
+---
+import AdminShell from '../../../components/admin/AdminShell.astro';
+const { slug = '' } = Astro.params;
+---
+<AdminShell title="Page editor" subtitle="Dedicated editing workspace. Section builder arrives in M2.1C-B." currentPath={`/admin/pages/${slug}`}>
+  <a slot="topbar-actions" class="admin-button subtle" href="/admin/pages/">← All pages</a>
+
+  <section id="pageEditorRoot" data-slug={slug}>
+    <div class="admin-section-head">
+      <div>
+        <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:6px">
+          <h2 id="editorTitle" style="margin:0">Loading page…</h2>
+          <span class="status-badge muted" id="editorBadge">Loading</span>
+        </div>
+        <p id="editorRoute">Preparing the D1 draft revision.</p>
+      </div>
+      <div class="admin-section-actions">
+        <a class="admin-button" id="publicPreview" href="/" target="_blank" rel="noopener">Open public page ↗</a>
+        <button class="admin-button" id="reloadButton" type="button">Reload</button>
+        <button class="admin-button primary" id="saveButton" type="button">Save draft</button>
+        <button class="admin-button" id="publishButton" type="button" style="border-color:#2ba96b;background:#238d5a">Publish</button>
+      </div>
+    </div>
+
+    <section class="admin-panel editor-panel admin-hidden" id="editorPanel">
+      <div class="editor-summary">
+        <div><span>Draft revision</span><strong id="draftVersion">—</strong></div>
+        <div><span>Published revision</span><strong id="publishedVersion">—</strong></div>
+        <div><span>Editing mode</span><strong>Structured fields</strong></div>
+      </div>
+      <form id="editorForm" class="editor-form"></form>
+    </section>
+
+    <div id="loadingState" class="admin-panel admin-state"><div class="admin-state-spinner"></div><strong>Loading page draft</strong>Reading the latest immutable revision…</div>
+    <div id="errorState" class="admin-panel admin-state error admin-hidden"><strong>Unable to load this page</strong><span id="errorMessage"></span><div style="margin-top:14px"><a class="admin-button" href="/admin/pages/">Back to pages</a></div></div>
+    <section class="admin-login admin-hidden" id="loginPanel"><h3>Admin access required</h3><p>Enter the fallback Admin Token for this browser session.</p><form class="admin-login-form" id="loginForm"><input class="admin-input" id="tokenInput" type="password" placeholder="Admin Token" required /><button class="admin-button primary">Connect</button></form></section>
+  </section>
+
+  <style is:global>
+    .editor-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border-bottom:1px solid var(--admin-line);background:#091522}.editor-summary>div{padding:13px 16px;border-right:1px solid var(--admin-line)}.editor-summary>div:last-child{border-right:0}.editor-summary span{display:block;color:#6e829b;font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.editor-summary strong{display:block;margin-top:3px;color:#e8eef6;font-size:12px}.editor-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;padding:18px}.editor-group-title{grid-column:1/-1;margin:10px 0 -2px;padding-top:15px;border-top:1px solid var(--admin-line);color:#9fb0c5;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.editor-group-title:first-child{margin-top:0;padding-top:0;border-top:0}.editor-field{display:grid;gap:7px}.editor-field.wide{grid-column:1/-1}.editor-field label{color:#e5ebf3;font-size:12px;font-weight:800}.editor-field small{color:#70839a;font-size:10px}.editor-field input,.editor-field textarea{width:100%;min-height:40px;padding:9px 11px;border:1px solid var(--admin-line);border-radius:10px;outline:none;background:#091524;color:#fff}.editor-field textarea{min-height:104px;resize:vertical}.editor-field input:focus,.editor-field textarea:focus{border-color:#49698f;box-shadow:0 0 0 3px rgba(73,105,143,.12)}@media(max-width:720px){.editor-summary{grid-template-columns:1fr}.editor-summary>div{border-right:0;border-bottom:1px solid var(--admin-line)}.editor-summary>div:last-child{border-bottom:0}.editor-form{grid-template-columns:1fr}.editor-field.wide,.editor-group-title{grid-column:auto}}
+  </style>
+
+  <script>
+    const root = document.querySelector('#pageEditorRoot');
+    const slug = root?.dataset.slug || '';
+    const panel = document.querySelector('#editorPanel');
+    const form = document.querySelector('#editorForm');
+    const loading = document.querySelector('#loadingState');
+    const error = document.querySelector('#errorState');
+    const errorMessage = document.querySelector('#errorMessage');
+    const login = document.querySelector('#loginPanel');
+    const loginForm = document.querySelector('#loginForm');
+    const tokenInput = document.querySelector('#tokenInput');
+    const title = document.querySelector('#editorTitle');
+    const route = document.querySelector('#editorRoute');
+    const badge = document.querySelector('#editorBadge');
+    const preview = document.querySelector('#publicPreview');
+    const draftVersion = document.querySelector('#draftVersion');
+    const publishedVersion = document.querySelector('#publishedVersion');
+    const saveButton = document.querySelector('#saveButton');
+    const publishButton = document.querySelector('#publishButton');
+    const reloadButton = document.querySelector('#reloadButton');
+
+    let token = sessionStorage.getItem('rg_admin_token') || '';
+    let bundle = null;
+    let model = null;
+    let dirty = false;
+
+    const headers = json => ({ ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(json ? { 'content-type': 'application/json' } : {}) });
+    const api = async (path, options = {}) => {
+      const response = await fetch(path, { ...options, headers: { ...headers(options.json), ...(options.headers || {}) } });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw Object.assign(new Error(data.error || `HTTP ${response.status}`), { status: response.status });
+      return data;
+    };
+    const humanize = value => String(value).replace(/([A-Z])/g, ' $1').replaceAll('_', ' ').replace(/^./, c => c.toUpperCase());
+    const setPath = (object, path, value) => {
+      const parts = path.split('.');
+      let current = object;
+      for (let index = 0; index < parts.length - 1; index++) current = current[parts[index]];
+      current[parts.at(-1)] = value;
+    };
+    const primitiveFields = (value, path = '', output = []) => {
+      if (typeof value === 'string' || typeof value === 'number') { output.push({ path, value: String(value) }); return output; }
+      if (Array.isArray(value)) { value.forEach((item, index) => primitiveFields(item, path ? `${path}.${index}` : String(index), output)); return output; }
+      if (value && typeof value === 'object') Object.entries(value).forEach(([key, item]) => primitiveFields(item, path ? `${path}.${key}` : key, output));
+      return output;
+    };
+    const groupLabel = group => ({ seo: 'SEO', cards: 'Cards', items: 'Items', hero: 'Hero', footer: 'Footer', nav: 'Navigation' }[group] || humanize(group));
+    const fieldLabel = path => {
+      const parts = path.split('.');
+      const last = parts.at(-1);
+      const parent = parts.at(-2);
+      const grand = parts.at(-3);
+      if (/^\d+$/.test(parent || '')) return `Item ${Number(parent) + 1} · ${humanize(last)}`;
+      if (/^\d+$/.test(last || '')) return `${groupLabel(parent || grand || 'Item')} ${Number(last) + 1}`;
+      return humanize(last);
+    };
+
+    function setDirty(next = true) {
+      dirty = next;
+      badge.textContent = dirty ? 'Unsaved changes' : (bundle?.revisions?.draft?.version === bundle?.revisions?.published?.version ? 'Published' : 'Draft ahead');
+      badge.className = `status-badge ${dirty || bundle?.revisions?.draft?.version !== bundle?.revisions?.published?.version ? 'warn' : 'good'}`;
+    }
+
+    function renderForm() {
+      form.innerHTML = '';
+      let lastGroup = null;
+      primitiveFields(model).forEach(({ path, value }) => {
+        const group = path.split('.')[0] || 'Content';
+        if (group !== lastGroup) {
+          const heading = document.createElement('div');
+          heading.className = 'editor-group-title';
+          heading.textContent = groupLabel(group);
+          form.append(heading);
+          lastGroup = group;
+        }
+        const wrap = document.createElement('label');
+        const long = value.length > 72 || /(description|lede|text)$/i.test(path);
+        wrap.className = `editor-field${long ? ' wide' : ''}`;
+        const label = document.createElement('span');
+        label.textContent = fieldLabel(path);
+        const control = document.createElement(long ? 'textarea' : 'input');
+        control.value = value;
+        control.addEventListener('input', () => { setPath(model, path, control.value); setDirty(true); });
+        wrap.append(label, control);
+        form.append(wrap);
+      });
+    }
+
+    async function load() {
+      loading.classList.remove('admin-hidden'); panel.classList.add('admin-hidden'); error.classList.add('admin-hidden'); login.classList.add('admin-hidden');
+      try {
+        await api('/api/admin/session');
+        bundle = await api(`/api/admin/pages/${encodeURIComponent(slug)}`);
+        model = structuredClone(bundle.draft);
+        title.textContent = bundle.title || slug;
+        route.textContent = bundle.route || `/${slug}`;
+        preview.href = bundle.route || `/${slug}`;
+        draftVersion.textContent = bundle.revisions?.draft?.version ? `v${bundle.revisions.draft.version}` : '—';
+        publishedVersion.textContent = bundle.revisions?.published?.version ? `v${bundle.revisions.published.version}` : '—';
+        renderForm(); setDirty(false);
+        loading.classList.add('admin-hidden'); panel.classList.remove('admin-hidden');
+      } catch (err) {
+        loading.classList.add('admin-hidden');
+        if (err.status === 401) { login.classList.remove('admin-hidden'); return; }
+        errorMessage.textContent = err.message || 'Unknown error'; error.classList.remove('admin-hidden');
+      }
+    }
+
+    async function save() {
+      saveButton.disabled = true;
+      try {
+        await api(`/api/admin/pages/${encodeURIComponent(slug)}`, { method: 'PUT', json: true, body: JSON.stringify(model) });
+        await load();
+      } catch (err) { alert(`Save failed: ${err.message}`); } finally { saveButton.disabled = false; }
+    }
+    async function publish() {
+      if (dirty && !confirm('You have unsaved edits. Save the draft before publishing?')) return;
+      if (!confirm('Publish the current draft to the public website?')) return;
+      publishButton.disabled = true;
+      try { await api(`/api/admin/pages/${encodeURIComponent(slug)}/publish`, { method: 'POST' }); await load(); }
+      catch (err) { alert(`Publish failed: ${err.message}`); }
+      finally { publishButton.disabled = false; }
+    }
+
+    loginForm?.addEventListener('submit', async event => { event.preventDefault(); token = String(tokenInput?.value || '').trim(); if (token) sessionStorage.setItem('rg_admin_token', token); await load(); });
+    reloadButton?.addEventListener('click', () => { if (!dirty || confirm('Discard unsaved changes and reload?')) load(); });
+    saveButton?.addEventListener('click', save);
+    publishButton?.addEventListener('click', publish);
+    window.addEventListener('beforeunload', event => { if (!dirty) return; event.preventDefault(); event.returnValue = ''; });
+    load();
+  </script>
+</AdminShell>
