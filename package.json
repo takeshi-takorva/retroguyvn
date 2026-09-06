@@ -8,7 +8,6 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "prebuild": "node scripts/ensure-cloudflare-resources.mjs",
     "build": "astro build && node scripts/patch-generated-wrangler.mjs && wrangler deploy --dry-run --config dist/server/wrangler.production.json --outdir .wrangler-dry && node scripts/patch-generated-wrangler.mjs",
     "preview": "astro preview",
     "deploy": "npm run build && wrangler deploy --config dist/server/wrangler.production.json"
