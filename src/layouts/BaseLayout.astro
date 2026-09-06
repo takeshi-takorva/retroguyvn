@@ -13,13 +13,13 @@ const {
 
 const path = Astro.url.pathname;
 const nav = [
-  ['/', 'HOME'],
-  ['/digital-realm', 'DIGITAL REALM'],
-  ['/features', 'FEATURES'],
-  ['/gallery', 'MEDIA'],
-  ['/news', 'NEWS'],
-  ['/download', 'DOWNLOAD'],
-  ['/support', 'SUPPORT']
+  ['/', 'HOME', 'nav.home'],
+  ['/digital-realm', 'DIGITAL REALM', 'nav.digitalRealm'],
+  ['/features', 'FEATURES', 'nav.features'],
+  ['/gallery', 'MEDIA', 'nav.media'],
+  ['/news', 'NEWS', 'nav.news'],
+  ['/download', 'DOWNLOAD', 'nav.download'],
+  ['/support', 'SUPPORT', 'nav.support']
 ];
 ---
 <!doctype html>
@@ -27,22 +27,22 @@ const nav = [
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content={description} />
+    <meta name="description" content={description} data-cms-global="seo.description" />
     <meta name="theme-color" content="#06121f" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <title>{title}</title>
+    <title data-cms-global="seo.title">{title}</title>
   </head>
   <body>
     <div class="scanlines" aria-hidden="true"></div>
     <header class="site-header">
       <a class="brand" href="/" aria-label="RetroGuy VN home">
         <span class="brand-mark">RG</span>
-        <span>RETROGUY<span class="accent">VN</span></span>
+        <span data-cms-global="brand">RETROGUY<span class="accent">VN</span></span>
       </a>
       <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">MENU</button>
       <nav class="site-nav" aria-label="Primary navigation">
-        {nav.map(([href, label]) => (
-          <a href={href} class:list={[path === href && 'active']}>{label}</a>
+        {nav.map(([href, label, key]) => (
+          <a href={href} class:list={[path === href && 'active']} data-cms-global={key}>{label}</a>
         ))}
       </nav>
     </header>
@@ -51,15 +51,15 @@ const nav = [
 
     <footer class="site-footer">
       <div>
-        <strong>RETROGUY VN</strong>
-        <p>Retro hardware. Pocket worlds. New adventures.</p>
+        <strong data-cms-global="footer.brand">RETROGUY VN</strong>
+        <p data-cms-global="footer.tagline">Retro hardware. Pocket worlds. New adventures.</p>
       </div>
       <div class="footer-links">
-        <a href="/digital-realm">Digital Realm</a>
-        <a href="/news">Devlog</a>
-        <a href="/support">Support</a>
+        <a href="/digital-realm" data-cms-global="footer.digitalRealm">Digital Realm</a>
+        <a href="/news" data-cms-global="footer.devlog">Devlog</a>
+        <a href="/support" data-cms-global="footer.support">Support</a>
       </div>
-      <small>© {new Date().getFullYear()} RetroGuy VN. All rights reserved.</small>
+      <small>© {new Date().getFullYear()} <span data-cms-global="footer.copyright">RetroGuy VN</span>. All rights reserved.</small>
     </footer>
 
     <script is:inline>
