@@ -168,12 +168,26 @@ export async function ensureM21(env) {
 
 export async function listPages(env) {
   await ensureM21(env);
-  const result = await env.DB.prepare(`SELECT slug, title, template, draft_revision_id, published_revision_id, updated_at
-    FROM pages WHERE slug IN (${PAGE_KEYS.map(() => '?').join(',')}) ORDER BY title`).bind(...PAGE_KEYS).all();
+  const result = await env.DB.prepare(`SELECT
+      p.slug,
+      p.title,
+      p.template,
+      p.draft_revision_id,
+      p.published_revision_id,
+      p.updated_at,
+      draft.version AS draft_version,
+      published.version AS published_version
+    FROM pages p
+    LEFT JOIN page_revisions draft ON draft.id = p.draft_revision_id
+    LEFT JOIN page_revisions published ON published.id = p.published_revision_id
+    WHERE p.slug IN (${PAGE_KEYS.map(() => '?').join(',')})
+    ORDER BY p.title`).bind(...PAGE_KEYS).all();
   return (result.results || []).map(row => ({
     slug: row.slug,
     title: row.title,
     route: PAGE_DEFINITIONS[row.slug]?.route || `/${row.slug}`,
+    draftVersion: row.draft_version == null ? null : Number(row.draft_version),
+    publishedVersion: row.published_version == null ? null : Number(row.published_version),
     updatedAt: row.updated_at,
     hasUnpublishedChanges: row.draft_revision_id !== row.published_revision_id
   }));
