@@ -1,6 +1,5 @@
 ---
 import AdminShell from '../../../components/admin/AdminShell.astro';
-import StatusBadge from '../../../components/admin/StatusBadge.astro';
 ---
 <AdminShell title="Pages" subtitle="Manage published content, drafts and page revisions." currentPath="/admin/pages/">
   <a slot="topbar-actions" class="admin-button subtle" href="/" target="_blank" rel="noopener">Open website ↗</a>
@@ -9,9 +8,6 @@ import StatusBadge from '../../../components/admin/StatusBadge.astro';
     <div>
       <h2>Website pages</h2>
       <p>Edit the structured content behind each public page. Draft changes stay private until you publish them.</p>
-    </div>
-    <div class="admin-section-actions">
-      <a class="admin-button" href="/admin/pages/legacy">Legacy editor</a>
     </div>
   </section>
 
