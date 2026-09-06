@@ -1,4 +1,4 @@
 retroguyvn-web fresh build marker
-version=2.1.0
-purpose=m2.1-all-pages-editor
-created=2026-09-06T10:00:00+07:00
+version=2.1.1
+purpose=m2.1c-a-admin-shell-pages-dashboard
+created=2026-09-06T12:03:00+07:00
