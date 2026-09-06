@@ -1,0 +1,41 @@
+---
+import '../../styles/admin.css';
+import AdminSidebar from './AdminSidebar.astro';
+import AdminTopbar from './AdminTopbar.astro';
+
+interface Props {
+  title: string;
+  subtitle?: string;
+  currentPath?: string;
+  environment?: string;
+}
+const {
+  title,
+  subtitle = '',
+  currentPath = Astro.url.pathname,
+  environment = 'Production'
+} = Astro.props;
+---
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="color-scheme" content="dark" />
+    <title>{title} · RetroGuy CMS</title>
+  </head>
+  <body>
+    <div class="admin-app">
+      <AdminSidebar currentPath={currentPath} />
+      <div class="admin-main">
+        <AdminTopbar title={title} subtitle={subtitle} environment={environment}>
+          <Fragment slot="actions"><slot name="topbar-actions" /></Fragment>
+        </AdminTopbar>
+        <main class="admin-content">
+          <div class="admin-content-inner"><slot /></div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

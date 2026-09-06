@@ -1,0 +1,46 @@
+---
+interface Props {
+  title: string;
+  subtitle?: string;
+  environment?: string;
+}
+const { title, subtitle = '', environment = 'Production' } = Astro.props;
+---
+<header class="admin-topbar">
+  <div style="display:flex;align-items:center;gap:12px;min-width:0">
+    <button class="admin-mobile-toggle" id="adminNavToggle" type="button" aria-label="Open navigation" aria-controls="adminSidebar" aria-expanded="false">☰</button>
+    <div class="admin-topbar-title">
+      <h1>{title}</h1>
+      {subtitle && <p>{subtitle}</p>}
+    </div>
+  </div>
+  <div class="admin-topbar-actions">
+    <span class="admin-env"><span class="admin-env-dot"></span>{environment}</span>
+    <slot name="actions" />
+    <button class="admin-button subtle" id="adminLogoutButton" type="button">Log out</button>
+  </div>
+</header>
+
+<script is:inline>
+  (() => {
+    const toggle = document.querySelector('#adminNavToggle');
+    const logout = document.querySelector('#adminLogoutButton');
+    toggle?.addEventListener('click', () => {
+      const open = document.body.classList.toggle('admin-nav-open');
+      toggle.setAttribute('aria-expanded', String(open));
+    });
+    document.addEventListener('click', event => {
+      if (!document.body.classList.contains('admin-nav-open')) return;
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      const sidebar = document.querySelector('#adminSidebar');
+      if (sidebar?.contains(target) || toggle?.contains(target)) return;
+      document.body.classList.remove('admin-nav-open');
+      toggle?.setAttribute('aria-expanded', 'false');
+    });
+    logout?.addEventListener('click', () => {
+      sessionStorage.removeItem('rg_admin_token');
+      location.href = '/admin/pages/';
+    });
+  })();
+</script>
