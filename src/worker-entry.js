@@ -3,6 +3,53 @@ import { migrateLegacyToM2, storageStatus } from './cms/m2-core.js';
 
 let bootstrapPromise = null;
 
+function wrapD1ExecForSchema(db) {
+  if (!db?.prepare || !db?.exec) return db;
+
+  return new Proxy(db, {
+    get(target, prop) {
+      if (prop === 'exec') {
+        return async (sql) => {
+          if (typeof sql !== 'string' || !sql.includes('CREATE TABLE IF NOT EXISTS pages')) {
+            return target.exec(sql);
+          }
+
+          const statements = sql
+            .split(';')
+            .map(statement => statement.trim())
+            .filter(Boolean)
+            .filter(statement => !/^PRAGMA\s+foreign_keys\s*=\s*ON$/i.test(statement));
+
+          const startedAt = Date.now();
+          for (const statement of statements) {
+            await target.prepare(statement).run();
+          }
+
+          return {
+            count: statements.length,
+            duration: Date.now() - startedAt
+          };
+        };
+      }
+
+      const value = Reflect.get(target, prop, target);
+      return typeof value === 'function' ? value.bind(target) : value;
+    }
+  });
+}
+
+function withD1SchemaCompat(env) {
+  if (!env?.DB) return env;
+  const compatDb = wrapD1ExecForSchema(env.DB);
+
+  return new Proxy(env, {
+    get(target, prop, receiver) {
+      if (prop === 'DB') return compatDb;
+      return Reflect.get(target, prop, receiver);
+    }
+  });
+}
+
 async function bootstrapM2(env) {
   const status = await storageStatus(env);
   if (!status.d1 || !status.r2 || status.migration) return status;
@@ -40,17 +87,19 @@ export { CMSStore };
 
 export default {
   async fetch(request, env, ctx) {
-    // Automatic provisioning makes DB/MEDIA available on the first production
-    // deployment. Migration runs in the background; M1.1 remains the read
-    // fallback until D1/R2 objects are ready.
-    if (env?.DB && env?.MEDIA) {
-      const job = bootstrapM2(env).catch(error => {
+    // D1 currently rejects the multi-statement schema bootstrap emitted by
+    // M2 core. Route all runtime D1 access through a compatibility wrapper
+    // that executes the schema DDL one statement at a time.
+    const runtimeEnv = withD1SchemaCompat(env);
+
+    if (runtimeEnv?.DB && runtimeEnv?.MEDIA) {
+      const job = bootstrapM2(runtimeEnv).catch(error => {
         console.error('[CMS M2.0B] automatic migration failed', error);
       });
       if (ctx?.waitUntil) ctx.waitUntil(job);
       else await job;
     }
 
-    return baseWorker.fetch(request, env, ctx);
+    return baseWorker.fetch(request, runtimeEnv, ctx);
   }
 };
