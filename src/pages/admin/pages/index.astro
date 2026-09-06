@@ -1,0 +1,170 @@
+---
+import AdminShell from '../../../components/admin/AdminShell.astro';
+import StatusBadge from '../../../components/admin/StatusBadge.astro';
+---
+<AdminShell title="Pages" subtitle="Manage published content, drafts and page revisions." currentPath="/admin/pages/">
+  <a slot="topbar-actions" class="admin-button subtle" href="/" target="_blank" rel="noopener">Open website ↗</a>
+
+  <section class="admin-section-head">
+    <div>
+      <h2>Website pages</h2>
+      <p>Edit the structured content behind each public page. Draft changes stay private until you publish them.</p>
+    </div>
+    <div class="admin-section-actions">
+      <a class="admin-button" href="/admin/pages/legacy">Legacy editor</a>
+    </div>
+  </section>
+
+  <section class="admin-panel" id="pagesPanel">
+    <div class="admin-toolbar">
+      <div class="admin-search-wrap">
+        <span class="admin-search-icon" aria-hidden="true">⌕</span>
+        <input class="admin-search" id="pageSearch" type="search" placeholder="Search pages by title or route…" autocomplete="off" />
+      </div>
+      <div class="admin-filter-row">
+        <select class="admin-select" id="pageFilter" aria-label="Filter pages">
+          <option value="all">All pages</option>
+          <option value="draft">Has unpublished changes</option>
+          <option value="published">Published only</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="loadingState" class="admin-state"><div class="admin-state-spinner"></div><strong>Loading pages</strong>Reading the current D1 page index…</div>
+    <div id="errorState" class="admin-state error admin-hidden"><strong>Unable to load pages</strong><span id="errorMessage">Please retry.</span><div style="margin-top:14px"><button class="admin-button" id="retryButton" type="button">Retry</button></div></div>
+    <div id="emptyState" class="admin-state admin-hidden"><strong>No matching pages</strong>Try a different search term or filter.</div>
+    <div id="pageGrid" class="page-grid admin-hidden"></div>
+  </section>
+
+  <section class="admin-login admin-hidden" id="loginPanel">
+    <h3>Admin access required</h3>
+    <p>Cloudflare Access was not detected. Enter the fallback Admin Token for this browser session.</p>
+    <form class="admin-login-form" id="loginForm">
+      <input class="admin-input" id="tokenInput" type="password" placeholder="Admin Token" autocomplete="current-password" required />
+      <button class="admin-button primary" type="submit">Connect</button>
+    </form>
+  </section>
+
+  <template id="pageCardTemplate">
+    <article class="page-card">
+      <div class="page-card-main">
+        <div class="page-card-head">
+          <div class="page-card-title-wrap"><h3 class="page-card-title"></h3><div class="page-card-route"></div></div>
+          <span class="status-badge page-status"></span>
+        </div>
+        <div class="page-card-meta">
+          <div class="page-meta-box"><div class="page-meta-label">Draft</div><div class="page-meta-value page-draft-version"></div></div>
+          <div class="page-meta-box"><div class="page-meta-label">Published</div><div class="page-meta-value page-published-version"></div></div>
+          <div class="page-meta-box"><div class="page-meta-label">Status</div><div class="page-meta-value page-state-text"></div></div>
+        </div>
+      </div>
+      <div class="page-card-foot">
+        <span class="page-updated"></span>
+        <div class="page-card-actions"><a class="admin-button page-preview" target="_blank" rel="noopener">Preview</a><a class="admin-button primary page-edit">Edit</a></div>
+      </div>
+    </article>
+  </template>
+
+  <script>
+    const searchInput = document.querySelector('#pageSearch');
+    const filterInput = document.querySelector('#pageFilter');
+    const grid = document.querySelector('#pageGrid');
+    const loading = document.querySelector('#loadingState');
+    const empty = document.querySelector('#emptyState');
+    const error = document.querySelector('#errorState');
+    const errorMessage = document.querySelector('#errorMessage');
+    const retry = document.querySelector('#retryButton');
+    const login = document.querySelector('#loginPanel');
+    const loginForm = document.querySelector('#loginForm');
+    const tokenInput = document.querySelector('#tokenInput');
+    const template = document.querySelector('#pageCardTemplate');
+
+    let token = sessionStorage.getItem('rg_admin_token') || '';
+    let pages = [];
+
+    const authHeaders = () => token ? { Authorization: `Bearer ${token}` } : {};
+    const api = async path => {
+      const response = await fetch(path, { headers: authHeaders() });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw Object.assign(new Error(data.error || `HTTP ${response.status}`), { status: response.status });
+      return data;
+    };
+    const versionLabel = value => Number.isFinite(Number(value)) ? `v${value}` : '—';
+    const updatedLabel = value => {
+      if (!value) return 'No update timestamp';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return 'Updated recently';
+      return `Updated ${date.toLocaleString()}`;
+    };
+
+    function render() {
+      const query = String(searchInput?.value || '').trim().toLowerCase();
+      const filter = String(filterInput?.value || 'all');
+      const visible = pages.filter(page => {
+        const haystack = `${page.title || ''} ${page.slug || ''} ${page.route || ''}`.toLowerCase();
+        const matchesSearch = !query || haystack.includes(query);
+        const matchesFilter = filter === 'all' || (filter === 'draft' ? page.hasUnpublishedChanges : !page.hasUnpublishedChanges);
+        return matchesSearch && matchesFilter;
+      });
+
+      grid.innerHTML = '';
+      visible.forEach(page => {
+        const node = template.content.firstElementChild.cloneNode(true);
+        node.querySelector('.page-card-title').textContent = page.title || page.slug;
+        node.querySelector('.page-card-route').textContent = page.route || `/${page.slug}`;
+        node.querySelector('.page-draft-version').textContent = versionLabel(page.draftVersion);
+        node.querySelector('.page-published-version').textContent = versionLabel(page.publishedVersion);
+        node.querySelector('.page-state-text').textContent = page.hasUnpublishedChanges ? 'Draft ahead' : 'In sync';
+        node.querySelector('.page-updated').textContent = updatedLabel(page.updatedAt);
+
+        const badge = node.querySelector('.page-status');
+        badge.textContent = page.hasUnpublishedChanges ? 'Unpublished changes' : 'Published';
+        badge.classList.add(page.hasUnpublishedChanges ? 'warn' : 'good');
+
+        const preview = node.querySelector('.page-preview');
+        preview.href = page.route || `/${page.slug}`;
+        const edit = node.querySelector('.page-edit');
+        edit.href = `/admin/pages/${encodeURIComponent(page.slug)}`;
+        grid.append(node);
+      });
+
+      grid.classList.toggle('admin-hidden', visible.length === 0);
+      empty.classList.toggle('admin-hidden', visible.length !== 0);
+    }
+
+    async function load() {
+      loading.classList.remove('admin-hidden');
+      error.classList.add('admin-hidden');
+      empty.classList.add('admin-hidden');
+      grid.classList.add('admin-hidden');
+      login.classList.add('admin-hidden');
+      try {
+        await api('/api/admin/session');
+        const data = await api('/api/admin/pages');
+        pages = Array.isArray(data.pages) ? data.pages : [];
+        loading.classList.add('admin-hidden');
+        render();
+      } catch (err) {
+        loading.classList.add('admin-hidden');
+        if (err.status === 401) {
+          login.classList.remove('admin-hidden');
+          return;
+        }
+        errorMessage.textContent = err.message || 'Unknown error';
+        error.classList.remove('admin-hidden');
+      }
+    }
+
+    searchInput?.addEventListener('input', render);
+    filterInput?.addEventListener('change', render);
+    retry?.addEventListener('click', load);
+    loginForm?.addEventListener('submit', async event => {
+      event.preventDefault();
+      token = String(tokenInput?.value || '').trim();
+      if (token) sessionStorage.setItem('rg_admin_token', token);
+      await load();
+    });
+
+    load();
+  </script>
+</AdminShell>
