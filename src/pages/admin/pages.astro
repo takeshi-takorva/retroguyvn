@@ -1,0 +1,85 @@
+---
+---
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>RetroGuy CMS · Pages</title>
+  <style>
+    :root{--bg:#08111e;--panel:#101b2c;--panel2:#15243a;--line:#2b3c55;--text:#f4f7fb;--muted:#9eacbd;--accent:#d64535;--good:#27895a}*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#07101c,#0b1728);color:var(--text);font:15px/1.5 Inter,system-ui,sans-serif}button,input,textarea,select{font:inherit}.shell{max-width:1180px;margin:auto;padding:26px 20px 80px}.top,.toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}.top{margin-bottom:20px}.brand h1{margin:0;font-size:26px}.brand p{margin:4px 0 0;color:var(--muted)}.links,.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:1px solid var(--line);background:#17263b;color:#fff;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer;text-decoration:none}.btn.primary{background:var(--accent);border-color:var(--accent)}.btn.good{background:var(--good);border-color:var(--good)}.btn:disabled{opacity:.45;cursor:not-allowed}.panel{border:1px solid var(--line);border-radius:18px;background:rgba(16,27,44,.94);overflow:hidden}.toolbar{padding:16px 18px;border-bottom:1px solid var(--line)}.picker{display:flex;align-items:center;gap:10px;min-width:min(100%,560px)}.picker select{flex:1;border:1px solid var(--line);background:#08121f;color:#fff;border-radius:10px;padding:11px}.status{font-size:13px;color:var(--muted)}.form{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:20px}.field{display:grid;gap:7px}.field.wide{grid-column:1/-1}.field label{font-weight:800;font-size:12px;letter-spacing:.02em;color:#dfe7f1}.field small{color:var(--muted)}.field input,.field textarea{width:100%;border:1px solid var(--line);background:#08121f;color:#fff;border-radius:10px;padding:11px 12px;outline:none}.field textarea{min-height:100px;resize:vertical}.field input:focus,.field textarea:focus{border-color:#6680a4}.section-title{grid-column:1/-1;margin-top:8px;padding-top:14px;border-top:1px solid var(--line);font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:#aebbd0}.login{max-width:560px;margin:80px auto;padding:24px;border:1px solid var(--line);border-radius:18px;background:var(--panel)}.login form{display:flex;gap:8px}.login input{flex:1;border:1px solid var(--line);background:#08121f;color:#fff;border-radius:10px;padding:11px}.hidden{display:none!important}.toast{position:fixed;right:18px;bottom:18px;max-width:380px;padding:12px 15px;background:#17253a;border:1px solid var(--line);border-radius:10px;box-shadow:0 16px 50px #0009}.toast.err{border-color:#b84c45}.meta{padding:0 20px 18px;color:var(--muted);font-size:12px}@media(max-width:760px){.form{grid-template-columns:1fr}.field.wide,.section-title{grid-column:auto}.picker{min-width:100%}.login form{flex-direction:column}}
+  </style>
+</head>
+<body>
+<main class="shell">
+  <header class="top">
+    <div class="brand"><h1>CMS M2.1 · All Pages</h1><p>Structured D1 editor · Draft / Publish / Revision</p></div>
+    <nav class="links"><a class="btn" href="/admin">Homepage CMS</a><a class="btn" href="/admin/system">System</a></nav>
+  </header>
+
+  <section id="login" class="login hidden">
+    <h2>Admin access</h2><p class="status">Cloudflare Access hoặc Admin Token dự phòng.</p>
+    <form id="loginForm"><input id="token" type="password" placeholder="Admin Token" autocomplete="current-password" required /><button class="btn primary">Connect</button></form>
+  </section>
+
+  <section id="editor" class="panel hidden">
+    <div class="toolbar">
+      <div class="picker"><strong>Edit</strong><select id="pageSelect"><option value="__globals">Global navigation / footer / SEO</option></select></div>
+      <div class="actions"><a id="preview" class="btn" href="/" target="_blank" rel="noopener">Preview</a><button id="reload" class="btn">Reload</button><button id="save" class="btn primary">Save draft</button><button id="publish" class="btn good">Publish</button></div>
+      <div id="status" class="status">Connecting…</div>
+    </div>
+    <form id="form" class="form"></form>
+    <div id="meta" class="meta"></div>
+  </section>
+</main>
+<div id="toast" class="toast hidden" aria-live="polite"></div>
+<script>
+  const login=document.querySelector('#login'),editor=document.querySelector('#editor'),loginForm=document.querySelector('#loginForm'),tokenInput=document.querySelector('#token'),pageSelect=document.querySelector('#pageSelect'),form=document.querySelector('#form'),statusEl=document.querySelector('#status'),metaEl=document.querySelector('#meta'),preview=document.querySelector('#preview'),toast=document.querySelector('#toast');
+  let token=sessionStorage.getItem('rg_admin_token')||'', pages=[], model=null, current='__globals', bundle=null;
+  const headers=(json=false)=>({...(token?{Authorization:`Bearer ${token}`} : {}),...(json?{'content-type':'application/json'}:{})});
+  const api=async(path,options={})=>{const res=await fetch(path,{...options,headers:{...headers(options.json),...(options.headers||{})}});const data=await res.json().catch(()=>({}));if(!res.ok)throw Object.assign(new Error(data.error||`HTTP ${res.status}`),{status:res.status,data});return data;};
+  const toastMsg=(text,err=false)=>{toast.textContent=text;toast.className=`toast${err?' err':''}`;setTimeout(()=>toast.classList.add('hidden'),3200)};
+  const busy=(yes,text)=>{document.querySelectorAll('button,select,input,textarea').forEach(el=>{if(el!==tokenInput)el.disabled=yes});statusEl.textContent=text||(yes?'Working…':'Ready')};
+  const humanize=s=>String(s).replace(/([A-Z])/g,' $1').replaceAll('_',' ').replace(/^./,m=>m.toUpperCase());
+  const setPath=(root,path,value)=>{const parts=path.split('.');let cur=root;for(let i=0;i<parts.length-1;i++)cur=cur[parts[i]];cur[parts.at(-1)]=value};
+
+  function primitiveFields(value,path='',out=[]){
+    if(typeof value==='string'||typeof value==='number'){out.push({path,value:String(value)});return out}
+    if(Array.isArray(value)){value.forEach((item,i)=>primitiveFields(item,path?`${path}.${i}`:String(i),out));return out}
+    if(value&&typeof value==='object'){Object.entries(value).forEach(([k,v])=>primitiveFields(v,path?`${path}.${k}`:k,out))}
+    return out
+  }
+  function labelFor(path){const parts=path.split('.');const last=parts.at(-1);const parent=parts.at(-2);if(/^\d+$/.test(parent||''))return `${humanize(last)} · Item ${Number(parent)+1}`;if(/^\d+$/.test(last))return `Item ${Number(last)+1}`;return humanize(last)}
+  function render(){
+    form.innerHTML='';
+    const fields=primitiveFields(model);
+    let lastGroup='';
+    fields.forEach(({path,value})=>{
+      const group=path.split('.')[0];
+      if(group!==lastGroup&&['cards','items','nav','footer','seo'].includes(group)){
+        const title=document.createElement('div');title.className='section-title';title.textContent=humanize(group);form.append(title);lastGroup=group;
+      }
+      const wrap=document.createElement('div');const long=value.length>72||/(text|description|lede)$/i.test(path);wrap.className=`field${long?' wide':''}`;
+      const label=document.createElement('label');label.textContent=labelFor(path);
+      const control=document.createElement(long?'textarea':'input');control.value=value;control.dataset.path=path;control.addEventListener('input',()=>setPath(model,path,control.value));
+      const small=document.createElement('small');small.textContent=path;
+      wrap.append(label,control,small);form.append(wrap);
+    });
+  }
+  async function loadList(){const data=await api('/api/admin/pages');pages=data.pages||[];pageSelect.querySelectorAll('option:not(:first-child)').forEach(o=>o.remove());pages.forEach(p=>{const o=document.createElement('option');o.value=p.slug;o.textContent=`${p.title}${p.hasUnpublishedChanges?' • draft':''}`;pageSelect.append(o)})}
+  async function loadCurrent(){busy(true,'Loading…');try{
+    if(current==='__globals'){bundle=await api('/api/admin/globals');model=structuredClone(bundle.draft);preview.href='/';metaEl.textContent=`Global revision ${bundle.revisions?.version||1} · published ${bundle.revisions?.publishedVersion||1}`}
+    else{bundle=await api(`/api/admin/pages/${encodeURIComponent(current)}`);model=structuredClone(bundle.draft);preview.href=bundle.route||`/${current}`;metaEl.textContent=`Draft v${bundle.revisions?.draft?.version||'-'} · Published v${bundle.revisions?.published?.version||'-'}`}
+    render();busy(false,'Ready')
+  }catch(e){busy(false,'Load failed');toastMsg(e.message,true)}}
+  async function save(){busy(true,'Saving draft…');try{if(current==='__globals')await api('/api/admin/globals',{method:'PUT',json:true,body:JSON.stringify(model)});else await api(`/api/admin/pages/${encodeURIComponent(current)}`,{method:'PUT',json:true,body:JSON.stringify(model)});toastMsg('Draft saved');await loadList();await loadCurrent()}catch(e){busy(false,'Save failed');toastMsg(e.message,true)}}
+  async function publish(){if(!confirm('Publish this draft to the public website?'))return;busy(true,'Publishing…');try{if(current==='__globals')await api('/api/admin/globals/publish',{method:'POST'});else await api(`/api/admin/pages/${encodeURIComponent(current)}/publish`,{method:'POST'});toastMsg('Published');await loadList();await loadCurrent()}catch(e){busy(false,'Publish failed');toastMsg(e.message,true)}}
+  async function connect(){try{const s=await api('/api/admin/session');login.classList.add('hidden');editor.classList.remove('hidden');statusEl.textContent=`Authenticated · ${s.mode}`;await loadList();await loadCurrent()}catch(e){if(e.status===401){login.classList.remove('hidden');editor.classList.add('hidden')}else toastMsg(e.message,true)}}
+  loginForm.addEventListener('submit',async e=>{e.preventDefault();token=tokenInput.value.trim();sessionStorage.setItem('rg_admin_token',token);await connect()});
+  pageSelect.addEventListener('change',async()=>{current=pageSelect.value;await loadCurrent()});
+  document.querySelector('#reload').addEventListener('click',loadCurrent);document.querySelector('#save').addEventListener('click',save);document.querySelector('#publish').addEventListener('click',publish);
+  connect();
+</script>
+</body>
+</html>
