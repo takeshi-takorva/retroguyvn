@@ -30,7 +30,7 @@ const {
       <AdminSidebar currentPath={currentPath} />
       <div class="admin-main">
         <AdminTopbar title={title} subtitle={subtitle} environment={environment}>
-          <slot name="topbar-actions" slot="actions" />
+          <Fragment slot="actions"><slot name="topbar-actions" /></Fragment>
         </AdminTopbar>
         <main class="admin-content">
           <div class="admin-content-inner"><slot /></div>
