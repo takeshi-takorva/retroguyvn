@@ -1,4 +1,4 @@
 retroguyvn-web fresh build marker
-version=2.0.8
-purpose=r2-enabled-production-redeploy-retry
-created=2026-09-06T09:33:00+07:00
+version=2.0.9
+purpose=d1-schema-bootstrap-compat
+created=2026-09-06T09:50:00+07:00
