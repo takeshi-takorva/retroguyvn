@@ -133,8 +133,8 @@ export function createReleaseOtaService({ repo, firmwareBucket, now = () => new 
     const release = await repo.getRelease(id);
     if (!release) throw httpError(404, 'release_not_found');
     if (!release.targets?.length) throw httpError(409, 'hardware_target_required');
-    const targetRows = Array.isArray(release.target_hardware) ? release.target_hardware : [];
-    if (!targetRows.some(item => Number(item.enabled))) throw httpError(409, 'no_enabled_hardware_target');
+    const targetRows = Array.isArray(release.target_hardware) ? release.target_hardware : null;
+    if (targetRows && !targetRows.some(item => Number(item.enabled))) throw httpError(409, 'no_enabled_hardware_target');
     if (!Number(release.esp_image_valid)) throw httpError(409, 'firmware_not_validated');
     const object = await firmwareBucket.head(release.r2_key);
     if (!object) throw httpError(409, 'firmware_object_missing');
