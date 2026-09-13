@@ -20,6 +20,9 @@
     {
       "binding": "MEDIA",
       "bucket_name": "retroguyvn-media"
+    },
+    {
+      "binding": "FIRMWARE"
     }
   ],
   "durable_objects": {
