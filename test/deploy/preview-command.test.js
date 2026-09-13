@@ -14,3 +14,9 @@ test('preview wrapper builds missing Astro output before uploading a Worker vers
   assert.match(source, /npm[^\n]*run[^\n]*build/);
   assert.match(source, /wrangler[^\n]*versions[^\n]*upload/);
 });
+
+test('preview upload is pinned to the generated production Wrangler config', async () => {
+  const source = await readFile(new URL('../../scripts/deploy-preview.mjs', import.meta.url), 'utf8');
+  assert.match(source, /\['wrangler', 'versions', 'upload', '--config', CONFIG\]/);
+  assert.match(source, /const CONFIG = 'dist\/server\/wrangler\.production\.json'/);
+});
