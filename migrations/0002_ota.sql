@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS ota_devices (
   last_check_at TEXT,
   last_download_at TEXT,
   last_release_id TEXT,
+  last_release_offered_at TEXT,
   last_ip TEXT,
   last_user_agent TEXT
 );
