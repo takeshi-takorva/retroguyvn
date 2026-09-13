@@ -14,7 +14,9 @@ const DB_NAME = 'retroguyvn-db';
 const DB_ID = 'ee89d627-5e03-49d2-b4bc-30a9be91a9a1';
 const MEDIA_BINDING = 'MEDIA';
 const MEDIA_BUCKET = 'retroguyvn-media';
-const DEPLOY_FINGERPRINT = 'retroguyvn-web-2.1.1';
+const FIRMWARE_BINDING = 'FIRMWARE';
+const FIRMWARE_BUCKET = 'retroguyvn-firmware';
+const DEPLOY_FINGERPRINT = 'retroguyvn-web-2.2.0-ota';
 const PIN_ROOT_CONFIG = process.env.CI === 'true' || process.env.WORKERS_CI === '1';
 const R2_DISABLED = existsSync(R2_DISABLED_MARKER);
 
@@ -44,7 +46,7 @@ delete db.preview_database_id;
 
 config.r2_buckets ??= [];
 if (R2_DISABLED) {
-  config.r2_buckets = config.r2_buckets.filter((item) => item?.binding !== MEDIA_BINDING);
+  config.r2_buckets = config.r2_buckets.filter((item) => ![MEDIA_BINDING, FIRMWARE_BINDING].includes(item?.binding));
 } else {
   let media = config.r2_buckets.find((item) => item?.binding === MEDIA_BINDING);
   if (!media) {
@@ -53,11 +55,20 @@ if (R2_DISABLED) {
   }
   media.bucket_name = MEDIA_BUCKET;
   delete media.preview_bucket_name;
+
+  let firmware = config.r2_buckets.find((item) => item?.binding === FIRMWARE_BINDING);
+  if (!firmware) {
+    firmware = { binding: FIRMWARE_BINDING };
+    config.r2_buckets.push(firmware);
+  }
+  firmware.bucket_name = FIRMWARE_BUCKET;
+  delete firmware.preview_bucket_name;
 }
 
 config.vars ??= {};
 config.vars.CMS_ARCHITECTURE = R2_DISABLED ? 'm2-d1-legacy-media' : 'm2-explicit-resources';
 config.vars.CMS_R2_STATE = R2_DISABLED ? 'not-entitled' : 'ready';
+config.vars.DR_OTA_STORAGE = R2_DISABLED ? 'unavailable' : 'r2-firmware';
 config.vars.DEPLOY_FINGERPRINT = DEPLOY_FINGERPRINT;
 
 const serialized = `${JSON.stringify(config, null, 2)}\n`;
@@ -87,12 +98,14 @@ if (PIN_ROOT_CONFIG) {
 const verified = JSON.parse(readFileSync(PRODUCTION_CONFIG, 'utf8'));
 const verifiedDb = verified.d1_databases?.find((item) => item?.binding === DB_BINDING);
 const verifiedMedia = verified.r2_buckets?.find((item) => item?.binding === MEDIA_BINDING);
+const verifiedFirmware = verified.r2_buckets?.find((item) => item?.binding === FIRMWARE_BINDING);
 const redirect = JSON.parse(readFileSync(REDIRECT_CONFIG, 'utf8'));
 
 if (
   verifiedDb?.database_id !== DB_ID ||
   (!R2_DISABLED && verifiedMedia?.bucket_name !== MEDIA_BUCKET) ||
-  (R2_DISABLED && verifiedMedia) ||
+  (!R2_DISABLED && verifiedFirmware?.bucket_name !== FIRMWARE_BUCKET) ||
+  (R2_DISABLED && (verifiedMedia || verifiedFirmware)) ||
   verified.vars?.DEPLOY_FINGERPRINT !== DEPLOY_FINGERPRINT ||
   redirect?.configPath !== '../../dist/server/wrangler.production.json'
 ) {
@@ -104,10 +117,12 @@ if (PIN_ROOT_CONFIG) {
   const rootVerified = JSON.parse(readFileSync(ROOT_CONFIG, 'utf8'));
   const rootDb = rootVerified.d1_databases?.find((item) => item?.binding === DB_BINDING);
   const rootMedia = rootVerified.r2_buckets?.find((item) => item?.binding === MEDIA_BINDING);
+  const rootFirmware = rootVerified.r2_buckets?.find((item) => item?.binding === FIRMWARE_BINDING);
   if (
     rootDb?.database_id !== DB_ID ||
     (!R2_DISABLED && rootMedia?.bucket_name !== MEDIA_BUCKET) ||
-    (R2_DISABLED && rootMedia) ||
+    (!R2_DISABLED && rootFirmware?.bucket_name !== FIRMWARE_BUCKET) ||
+    (R2_DISABLED && (rootMedia || rootFirmware)) ||
     rootVerified.vars?.DEPLOY_FINGERPRINT !== DEPLOY_FINGERPRINT
   ) {
     console.error('[wrangler-patch] CI root deployment config verification failed.');
@@ -117,10 +132,12 @@ if (PIN_ROOT_CONFIG) {
 
 console.log(`[wrangler-patch] ${DB_BINDING} pinned to ${DB_NAME} (${DB_ID}).`);
 if (R2_DISABLED) {
-  console.log('[wrangler-patch] MEDIA binding omitted because Cloudflare account R2 is not enabled.');
+  console.log('[wrangler-patch] R2 bindings omitted because Cloudflare account R2 is not enabled.');
   console.log('[wrangler-patch] CMS mode: D1 content + legacy Durable Object media fallback.');
+  console.log('[wrangler-patch] DR OTA firmware storage is unavailable until R2 is enabled.');
 } else {
   console.log(`[wrangler-patch] ${MEDIA_BINDING} pinned to R2 bucket ${MEDIA_BUCKET}.`);
+  console.log(`[wrangler-patch] ${FIRMWARE_BINDING} pinned to R2 bucket ${FIRMWARE_BUCKET}.`);
 }
 console.log('[wrangler-patch] Deploy redirect forced to dist/server/wrangler.production.json.');
 console.log(`[wrangler-patch] Fingerprint: ${DEPLOY_FINGERPRINT}.`);
