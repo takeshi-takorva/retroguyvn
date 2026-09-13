@@ -52,6 +52,8 @@ export function createDeviceOtaService({ repo, firmwareBucket, now = () => new D
   }
 
   async function checkForUpdate(input, meta = {}) {
+    if (!firmwareBucket) throw httpError(503, 'firmware_storage_unavailable');
+
     const at = timestamp();
     await repo.upsertDevice({
       deviceId: input.deviceId,
