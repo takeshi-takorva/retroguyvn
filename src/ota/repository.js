@@ -74,6 +74,12 @@ export function createOtaRepository(env) {
       return db.prepare('SELECT * FROM ota_hardware WHERE code = ?').bind(code).first();
     },
 
+    async findReleaseByIdentity(product, version, buildId) {
+      await ready();
+      return db.prepare('SELECT * FROM ota_releases WHERE product = ? AND version = ? AND build_id = ?')
+        .bind(product, version, buildId).first();
+    },
+
     async createRelease(release, hardwareIds) {
       await ready();
       const statements = [db.prepare(`
