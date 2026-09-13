@@ -13,7 +13,9 @@ The public website and CMS keep their existing bindings:
 
 OTA adds one isolated binary store:
 
-- R2 firmware: `FIRMWARE` -> `retroguyvn-firmware`
+- R2 firmware: `FIRMWARE` -> dedicated R2 resource provisioned and retained by Cloudflare Workers Builds / Wrangler.
+
+`FIRMWARE` is the stable application contract. Its physical bucket name is intentionally not hard-coded in source. This allows Cloudflare's resource provisioning to create/link the remote R2 resource on the first authenticated Workers Build and retain that link for later deploys. Do not reuse `MEDIA` for firmware.
 
 Firmware objects are never exposed by raw R2 URL. Device traffic always goes through the Worker so release status, hardware compatibility, offer pinning, ranged download and event logging are enforced in one place.
 
@@ -32,45 +34,54 @@ https://retroguyvn.com/admin/ota
 
 It reuses the existing Cloudflare Access / Admin Token authentication.
 
-## First production provisioning
+## Production provisioning through Workers Builds
 
-Run these commands from an authenticated Cloudflare development environment. Do not create a second D1 database.
+The `retroguyvn` Worker is already connected directly to this GitHub repository through Cloudflare Workers Builds. GitHub Actions is only a test/build gate; Cloudflare performs the authenticated preview/production Worker upload.
 
-```bash
-npx wrangler whoami
-npx wrangler d1 list
-npx wrangler r2 bucket list
+The source-of-truth bindings are:
+
+```text
+DB       -> existing retroguyvn-db (fixed database ID)
+MEDIA    -> existing retroguyvn-media (fixed bucket name)
+FIRMWARE -> dedicated R2 binding with no bucket_name in source
 ```
 
-Confirm `retroguyvn-db` exists. Check whether `retroguyvn-firmware` already exists before creating it.
+`FIRMWARE` deliberately omits `bucket_name`. Wrangler automatic provisioning is enabled by default and creates/links the remote R2 resource during an authenticated Workers Build. The resource remains linked across future deploys even though its generated account-side identifier is not written back to GitHub.
 
-If the firmware bucket is absent:
+Do not add a second GitHub Actions Cloudflare token merely to create this R2 resource. Do not hard-code a new bucket name unless that bucket has already been provisioned in the same Cloudflare account.
 
-```bash
-npx wrangler r2 bucket create retroguyvn-firmware
-```
+### D1 schema behavior
 
-Apply the repository migrations to the existing D1 database:
+OTA uses the existing `retroguyvn-db`; it must never create a second production database. `migrations/0002_ota.sql` remains the canonical schema definition, but the Worker also carries the same schema in `src/ota/schema.js` and creates the OTA tables/indexes idempotently through the existing runtime D1 binding on the first OTA database operation.
+
+This is intentional for the current Workers Builds credential model: the default build token has R2 edit access but is not relied on for D1 administrative migration permission. Runtime schema bootstrap therefore avoids requiring an additional Cloudflare API token in GitHub while still keeping the migration file for manual recovery, local environments and future managed migration workflows.
+
+A manual authenticated operator may still run:
 
 ```bash
 npx wrangler d1 migrations apply retroguyvn-db --remote
 ```
 
-Then verify locally before deployment:
+but this is optional for normal Git-connected deployment.
+
+### Build verification
+
+Before merge, GitHub CI must pass:
 
 ```bash
-npm install
 npm test
 npm run build
 ```
 
-Deploy only after both commands pass:
+The build patcher verifies that generated production Wrangler configuration contains:
 
-```bash
-npm run deploy
+```text
+DB with the fixed retroguyvn-db database ID
+MEDIA with bucket_name=retroguyvn-media
+FIRMWARE with no bucket_name/preview_bucket_name
 ```
 
-The build patcher verifies that generated production Wrangler configuration contains `DB`, `MEDIA`, and `FIRMWARE`. When `.cloudflare-r2-disabled` exists, both R2 bindings are intentionally omitted; OTA binary storage is therefore unavailable until R2 is enabled and that transitional marker is removed.
+When `.cloudflare-r2-disabled` exists, both R2 bindings are intentionally omitted; OTA binary storage is unavailable until R2 is enabled and that transitional marker is removed.
 
 ## Hardware compatibility policy
 
@@ -214,5 +225,7 @@ If a release is suspected unsafe, use Disable immediately. Disabling prevents ne
 ## Security notes
 
 The first backend milestone accepts an ESP application `.bin` and validates structure only at the image-magic level plus checksum/size integrity. Production signed firmware should be generated outside the website. The private signing key must not be stored in frontend code, GitHub source, Worker variables exposed to application code, or the admin browser.
+
+`X-DR-Device-ID` is an identifier, not a secret credential. Offer pinning protects release selection consistency, but a future device-authentication milestone should add a device credential/HMAC or equivalent cryptographic request proof without changing the current D1/R2 release model.
 
 When Secure Boot v2 and anti-rollback are enabled on production devices, `secure_version` and device-side signature validation remain additional defenses; backend hardware targeting is not a replacement for device-side cryptographic verification.
