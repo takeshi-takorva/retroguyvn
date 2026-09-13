@@ -216,8 +216,10 @@ export function createOtaRepository(env) {
 
     async setDeviceOffer(deviceId, releaseIdOrNull) {
       await ready();
-      await db.prepare('UPDATE ota_devices SET last_release_id = ?, last_seen_at = ? WHERE device_id = ?')
-        .bind(releaseIdOrNull || null, nowIso(), deviceId).run();
+      const at = nowIso();
+      const offeredAt = releaseIdOrNull ? at : null;
+      await db.prepare('UPDATE ota_devices SET last_release_id = ?, last_release_offered_at = ?, last_seen_at = ? WHERE device_id = ?')
+        .bind(releaseIdOrNull || null, offeredAt, at, deviceId).run();
     },
 
     async getDevice(deviceId) {
