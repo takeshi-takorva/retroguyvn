@@ -36,7 +36,8 @@ test('OTA feature branch performs a zero-traffic canary only on its exact branch
 test('OTA canary smoke test pins requests to the uploaded version and rolls back on failure', async () => {
   const source = await readFile(new URL('../../scripts/deploy-preview.mjs', import.meta.url), 'utf8');
   assert.match(source, /Cloudflare-Workers-Version-Overrides/);
-  assert.match(source, /https:\/\/retroguyvn\.com\/api\/dr\/ota/);
+  assert.match(source, /const BASE_URL = 'https:\/\/retroguyvn\.com'/);
+  assert.match(source, /requestCanary\('\/api\/dr\/ota'/);
   assert.match(source, /X-DR-Device-ID/);
   assert.match(source, /X-DR-HW-Version/);
   assert.match(source, /rollback/i);
