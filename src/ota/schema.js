@@ -15,7 +15,7 @@ const SCHEMA = [
   `INSERT OR IGNORE INTO ota_hardware (id, code, label, enabled, created_at, updated_at) VALUES ('hw_051','HW0.5.1','Hardware 0.5.1',1,datetime('now'),datetime('now'))`
 ];
 
-let ready = false;
+let readyPromise = null;
 
 async function ensureRuntimeUpgrades(db) {
   const info = await db.prepare('PRAGMA table_info(ota_devices)').all();
@@ -27,11 +27,17 @@ async function ensureRuntimeUpgrades(db) {
 
 export async function ensureOtaSchema(env) {
   if (!env?.DB?.prepare) return false;
-  if (ready) return true;
-  for (const statement of SCHEMA) await env.DB.prepare(statement).run();
-  await ensureRuntimeUpgrades(env.DB);
-  ready = true;
-  return true;
+  if (!readyPromise) {
+    readyPromise = (async () => {
+      for (const statement of SCHEMA) await env.DB.prepare(statement).run();
+      await ensureRuntimeUpgrades(env.DB);
+      return true;
+    })().catch(error => {
+      readyPromise = null;
+      throw error;
+    });
+  }
+  return readyPromise;
 }
 
 export const OTA_SCHEMA_STATEMENTS = SCHEMA;
