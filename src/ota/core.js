@@ -1,5 +1,6 @@
 const VERSION_RE = /^(0|[1-9]\d{0,3})\.(0|[1-9]\d{0,3})\.(0|[1-9]\d{0,3})$/;
 const CHANNELS = new Set(['stable', 'beta', 'dev']);
+export const MAX_FIRMWARE_BYTES = 16 * 1024 * 1024;
 
 export function httpError(status, code, message = code, extra = undefined) {
   const error = new Error(message);
@@ -97,8 +98,9 @@ export async function validateFirmwareFile(file) {
   if (!fileName.toLowerCase().endsWith('.bin')) throw httpError(415, 'firmware_must_be_bin');
   const size = Number(file.size || 0);
   if (!Number.isSafeInteger(size) || size <= 0) throw httpError(400, 'empty_firmware_file');
+  if (size > MAX_FIRMWARE_BYTES) throw httpError(413, 'firmware_too_large');
   const firstByte = new Uint8Array(await file.slice(0, 1).arrayBuffer())[0];
-  if (firstByte !== 0xE9) throw httpError(415, 'invalid_esp_image_magic');
+  if (firstByte !== 0xE9) throw httpError(422, 'invalid_esp_image_magic');
   const bytes = await file.arrayBuffer();
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return {
