@@ -105,7 +105,7 @@ export function createDeviceOtaService({ repo, firmwareBucket, now = () => new D
     if (!firmwareBucket?.head) throw httpError(503, 'firmware_storage_unavailable');
     const release = await repo.getRelease(releaseId);
     if (!release || release.status !== 'published') throw httpError(404, 'release_not_available');
-    if (!release.targets?.includes(hardwareCode)) throw httpError(403, 'hardware_not_authorized');
+    if (!release.targets?.includes(hardwareCode)) throw httpError(409, 'hardware_not_authorized');
     const device = await repo.getDevice(deviceId);
     if (!device) throw httpError(409, 'device_must_check_first');
     if (device.hardware_code !== hardwareCode) throw httpError(409, 'device_hardware_changed');
