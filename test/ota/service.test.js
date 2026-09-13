@@ -117,7 +117,7 @@ test('download authorization requires exact target and latest device offer', asy
 
   await assert.rejects(
     () => service.authorizeDownload({ releaseId: 'rel-1', deviceId: 'DEV001', hardwareCode: 'HW0.5' }),
-    error => error.status === 403
+    error => error.status === 409 && error.code === 'hardware_not_authorized'
   );
   repo._devices.set('DEV001', { device_id: 'DEV001', hardware_code: 'HW0.5.1', last_release_id: 'rel-other' });
   await assert.rejects(
