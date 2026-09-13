@@ -13,6 +13,9 @@ import {
   saveGlobalsDraft,
   publishGlobalsDraft
 } from './cms/m2-pages.js';
+import { createOtaRepository } from './ota/repository.js';
+import { createOtaService } from './ota/service.js';
+import { createOtaHttp } from './ota/http.js';
 
 let bootstrapPromise = null;
 
@@ -207,12 +210,46 @@ async function handleM21Admin(request, env, ctx, pathname) {
   return json({ error: 'Not found' }, { status: 404 });
 }
 
+function buildOtaHttp(env) {
+  const repo = createOtaRepository(env);
+  const service = createOtaService({ repo, firmwareBucket: env?.FIRMWARE });
+  return createOtaHttp({ service });
+}
+
+async function handleOtaRoute(request, env, ctx, pathname) {
+  try {
+    const http = buildOtaHttp(env);
+    if (pathname === '/api/dr/ota' || pathname === '/api/dr/ota/download') {
+      return await http.handleOtaPublic(request, env, ctx);
+    }
+    if (pathname.startsWith('/api/admin/ota/')) {
+      const session = await adminSession(request, env, ctx);
+      return await http.handleOtaAdmin(request, env, ctx, session);
+    }
+    return null;
+  } catch (error) {
+    console.error('[DR OTA] request failed', error);
+    return json({
+      error: error?.code || 'ota_internal_error',
+      message: Number(error?.status || 500) >= 500 ? 'Internal server error' : (error?.message || error?.code || 'Request failed')
+    }, { status: Number(error?.status || 500) });
+  }
+}
+
 export { CMSStore };
 
 export default {
   async fetch(request, env, ctx) {
     const runtimeEnv = withD1SchemaCompat(env);
     const url = new URL(request.url);
+
+    if (
+      url.pathname === '/api/dr/ota' ||
+      url.pathname === '/api/dr/ota/download' ||
+      url.pathname.startsWith('/api/admin/ota/')
+    ) {
+      return handleOtaRoute(request, runtimeEnv, ctx, url.pathname);
+    }
 
     try {
       if (runtimeEnv?.DB && runtimeEnv?.MEDIA) {
