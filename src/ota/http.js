@@ -1,5 +1,6 @@
 import {
   errorResponse,
+  httpError,
   jsonResponse,
   parseSingleRange,
   readDeviceCheckHeaders,
@@ -36,66 +37,94 @@ function actorFromSession(session) {
   return session?.email || session?.mode || 'admin';
 }
 
+function assertMutationOrigin(request) {
+  if (request.method === 'GET' || request.method === 'HEAD' || request.method === 'OPTIONS') return;
+  const origin = request.headers.get('Origin');
+  if (origin && origin !== new URL(request.url).origin) throw httpError(403, 'invalid_origin');
+}
+
+async function readJson(request) {
+  try { return await request.json(); }
+  catch { throw httpError(400, 'invalid_json'); }
+}
+
+async function readFormData(request) {
+  try { return await request.formData(); }
+  catch { throw httpError(400, 'invalid_form_data'); }
+}
+
+function background(ctx, promise) {
+  const safe = Promise.resolve(promise).catch(error => console.error('[DR OTA] background audit failed', error));
+  if (ctx?.waitUntil) ctx.waitUntil(safe);
+  return safe;
+}
+
 export function createOtaHttp({ service }) {
   if (!service) throw new TypeError('service is required');
 
   async function handleCheck(request) {
     const input = readDeviceCheckHeaders(request);
     const result = await service.checkForUpdate(input, requestClientMetadata(request));
-    if (result.update_available && result.download) {
-      result.download = new URL(result.download, request.url).toString();
-    }
+    if (result.update_available && result.download) result.download = new URL(result.download, request.url).toString();
     return jsonResponse(result);
   }
 
   async function handleDownload(request, ctx) {
     const input = readDownloadHeaders(request);
     const meta = requestClientMetadata(request);
-    const release = await service.authorizeDownload(input);
-    const device = await service.getDevice(input.deviceId);
-    let range;
+    let release = null;
+    let device = null;
+
     try {
-      range = parseSingleRange(request.headers.get('Range'), Number(release.size_bytes));
-    } catch (error) {
-      if (Number(error?.status) === 416) {
-        if (service.recordDownloadEvent) {
-          const job = service.recordDownloadEvent('DOWNLOAD_FAIL', {
+      release = await service.authorizeDownload(input);
+      device = await service.getDevice(input.deviceId);
+      let range;
+      try {
+        range = parseSingleRange(request.headers.get('Range'), Number(release.size_bytes));
+      } catch (error) {
+        if (Number(error?.status) === 416) {
+          if (service.recordDownloadEvent) background(ctx, service.recordDownloadEvent('DOWNLOAD_FAIL', {
             release, deviceId: input.deviceId, hardwareCode: input.hardwareCode, device, meta,
-            status: 416, detail: { reason: error.code || 'invalid_range' }
+            status: 416, detail: { reason: error.code || 'invalid_range', requested_release_id: input.releaseId }
+          }));
+          return jsonResponse({ error: error.code || 'range_not_satisfiable' }, {
+            status: 416,
+            headers: { 'content-range': `bytes */${release.size_bytes}`, 'accept-ranges': 'bytes' }
           });
-          if (ctx?.waitUntil) ctx.waitUntil(job); else await job;
         }
-        return jsonResponse({ error: error.code || 'range_not_satisfiable' }, {
-          status: 416,
-          headers: { 'content-range': `bytes */${release.size_bytes}`, 'accept-ranges': 'bytes' }
+        throw error;
+      }
+
+      if (!range && service.recordDownloadEvent) {
+        await service.recordDownloadEvent('DOWNLOAD_START', {
+          release, deviceId: input.deviceId, hardwareCode: input.hardwareCode, device, meta, status: 200
         });
       }
+
+      const object = await service.getFirmwareObject(release, range);
+      const length = range?.length || Number(release.size_bytes);
+      const headers = firmwareHeaders(release, length);
+      const status = range ? 206 : 200;
+      if (range) headers.set('content-range', `bytes ${range.start}-${range.end}/${release.size_bytes}`);
+
+      if (service.recordDownloadEvent) {
+        const type = range ? 'DOWNLOAD_RANGE' : 'DOWNLOAD_COMPLETE';
+        const job = service.recordDownloadEvent(type, {
+          release, deviceId: input.deviceId, hardwareCode: input.hardwareCode, device, meta,
+          status, bytes: length, range
+        });
+        if (range) await job;
+        else background(ctx, job);
+      }
+      return new Response(object.body, { status, headers });
+    } catch (error) {
+      if (service.recordDownloadEvent) background(ctx, service.recordDownloadEvent('DOWNLOAD_FAIL', {
+        release, deviceId: input.deviceId, hardwareCode: input.hardwareCode, device, meta,
+        status: Number(error?.status || 500),
+        detail: { reason: error?.code || 'download_error', requested_release_id: input.releaseId }
+      }));
       throw error;
     }
-
-    if (!range && service.recordDownloadEvent) {
-      await service.recordDownloadEvent('DOWNLOAD_START', {
-        release, deviceId: input.deviceId, hardwareCode: input.hardwareCode, device, meta, status: 200
-      });
-    }
-
-    const object = await service.getFirmwareObject(release, range);
-    const length = range?.length || Number(release.size_bytes);
-    const headers = firmwareHeaders(release, length);
-    const status = range ? 206 : 200;
-    if (range) headers.set('content-range', `bytes ${range.start}-${range.end}/${release.size_bytes}`);
-
-    if (service.recordDownloadEvent) {
-      const type = range ? 'DOWNLOAD_RANGE' : 'DOWNLOAD_COMPLETE';
-      const job = service.recordDownloadEvent(type, {
-        release, deviceId: input.deviceId, hardwareCode: input.hardwareCode, device, meta,
-        status, bytes: length, range
-      });
-      if (range) await job;
-      else if (ctx?.waitUntil) ctx.waitUntil(job);
-      else await job;
-    }
-    return new Response(object.body, { status, headers });
   }
 
   async function handleOtaPublic(request, _env, ctx) {
@@ -115,18 +144,19 @@ export function createOtaHttp({ service }) {
     if (!session) return jsonResponse({ error: 'Unauthorized' }, { status: 401 });
     const actor = actorFromSession(session);
     try {
+      assertMutationOrigin(request);
       if (url.pathname === '/api/admin/ota/hardware') {
         if (request.method === 'GET') return jsonResponse({ items: await service.listHardware({ includeDisabled: true }) });
-        if (request.method === 'POST') return jsonResponse(await service.createHardware(await request.json()), { status: 201 });
+        if (request.method === 'POST') return jsonResponse(await service.createHardware(await readJson(request)), { status: 201 });
       }
       const hardwareMatch = url.pathname.match(/^\/api\/admin\/ota\/hardware\/([^/]+)$/);
       if (hardwareMatch && request.method === 'PATCH') {
-        return jsonResponse(await service.updateHardware(decodeURIComponent(hardwareMatch[1]), await request.json()));
+        return jsonResponse(await service.updateHardware(decodeURIComponent(hardwareMatch[1]), await readJson(request)));
       }
 
       if (url.pathname === '/api/admin/ota/releases') {
         if (request.method === 'GET') return jsonResponse({ items: await service.listReleases(queryFilters(url)) });
-        if (request.method === 'POST') return jsonResponse(await service.createRelease(await request.formData(), actor), { status: 201 });
+        if (request.method === 'POST') return jsonResponse(await service.createRelease(await readFormData(request), actor), { status: 201 });
       }
       const actionMatch = url.pathname.match(/^\/api\/admin\/ota\/releases\/([^/]+)\/(publish|disable)$/);
       if (actionMatch && request.method === 'POST') {
@@ -136,8 +166,11 @@ export function createOtaHttp({ service }) {
       const releaseMatch = url.pathname.match(/^\/api\/admin\/ota\/releases\/([^/]+)$/);
       if (releaseMatch) {
         const id = decodeURIComponent(releaseMatch[1]);
-        if (request.method === 'GET') return jsonResponse(await service.getRelease(id));
-        if (request.method === 'PUT') return jsonResponse(await service.updateRelease(id, await request.json(), actor));
+        if (request.method === 'GET') {
+          const release = await service.getRelease(id);
+          return release ? jsonResponse(release) : jsonResponse({ error: 'release_not_found' }, { status: 404 });
+        }
+        if (request.method === 'PUT') return jsonResponse(await service.updateRelease(id, await readJson(request), actor));
         if (request.method === 'DELETE') return jsonResponse(await service.deleteRelease(id, actor));
       }
 
