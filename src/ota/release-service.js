@@ -28,15 +28,21 @@ function fromInput(input) {
 }
 
 async function resolveTargets(repo, codes) {
-  if (!codes.length) throw httpError(400, 'hardware_target_required');
+  if (!codes.length) throw httpError(422, 'hardware_target_required');
   const rows = [];
   for (const code of codes) {
     const row = await repo.findHardwareByCode(code);
-    if (!row) throw httpError(400, 'unknown_hardware_target', `Unknown hardware: ${code}`);
-    if (!Number(row.enabled)) throw httpError(409, 'hardware_target_disabled', `Hardware disabled: ${code}`);
+    if (!row) throw httpError(422, 'unknown_hardware_target', `Unknown hardware: ${code}`);
+    if (!Number(row.enabled)) throw httpError(422, 'hardware_target_disabled', `Hardware disabled: ${code}`);
     rows.push(row);
   }
   return rows;
+}
+
+function isReleaseIdentityConflict(error) {
+  const text = String(error?.message || error || '');
+  return /UNIQUE constraint failed:\s*ota_releases\.product,\s*ota_releases\.version,\s*ota_releases\.build_id/i.test(text)
+    || /ota_releases.*product.*version.*build_id.*unique/i.test(text);
 }
 
 export function createReleaseOtaService({ repo, firmwareBucket, now = () => new Date(), uuid = () => crypto.randomUUID() }) {
@@ -55,6 +61,11 @@ export function createReleaseOtaService({ repo, firmwareBucket, now = () => new 
     const minBootRaw = String(formData.get('min_boot_version') || '').trim();
     const minBoot = minBootRaw ? parseVersion(minBootRaw).version : null;
     const notes = String(formData.get('release_notes') || '').slice(0, 20000);
+
+    if (repo.findReleaseByIdentity && await repo.findReleaseByIdentity(product, version.version, buildId)) {
+      throw httpError(409, 'release_already_exists');
+    }
+
     const targets = await resolveTargets(repo, fromForm(formData));
     const suffix = String(uuid()).replaceAll('-', '').slice(0, 12);
     const id = `dr-game-${version.version}-${suffix}`;
@@ -98,6 +109,7 @@ export function createReleaseOtaService({ repo, firmwareBucket, now = () => new 
       }, targets.map(item => item.id));
     } catch (error) {
       try { await firmwareBucket.delete(r2Key); } catch {}
+      if (isReleaseIdentityConflict(error)) throw httpError(409, 'release_already_exists');
       throw error;
     }
   }
