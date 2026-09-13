@@ -19,6 +19,12 @@ function fakeRepo(overrides = {}) {
     async findNewestCompatibleRelease() { return null; },
     async listReleases() { return []; },
     async getRelease() { return null; },
+    async createRelease(release, hardwareIds) { return { ...release, target_ids: hardwareIds }; },
+    async updateRelease(id, patch, hardwareIds) { return { id, ...patch, target_ids: hardwareIds || [] }; },
+    async setReleaseStatus(id, status) { return { id, status }; },
+    async deleteRelease() { return true; },
+    async createHardware(value) { return { id: 'hw-new', enabled: 1, ...value }; },
+    async updateHardware(id, patch) { return { id, ...patch }; },
     async markDeviceDownload() {},
     async incrementDownloadCount() {},
     async listHardware() { return [...hardware.values()]; },
@@ -42,6 +48,20 @@ function input(patch = {}) {
     channel: 'stable',
     ...patch
   };
+}
+
+function releaseForm() {
+  const form = new FormData();
+  form.set('file', new File([Uint8Array.from([0xE9, 1, 2, 3])], 'game.bin', { type: 'application/octet-stream' }));
+  form.set('product', 'DR_GAME');
+  form.set('version', '1.10.0');
+  form.set('build_id', 'build-110');
+  form.set('channel', 'stable');
+  form.set('secure_version', '2');
+  form.set('min_boot_version', '1.1.0');
+  form.set('release_notes', 'release test');
+  form.append('hardware', 'HW0.5.1');
+  return form;
 }
 
 const meta = { ip: '127.0.0.1', userAgent: 'DR-Test' };
@@ -104,4 +124,52 @@ test('download authorization requires exact target and latest device offer', asy
     () => service.authorizeDownload({ releaseId: 'rel-1', deviceId: 'DEV001', hardwareCode: 'HW0.5.1' }),
     error => error.status === 409
   );
+});
+
+test('new firmware is stored in R2 and persisted as draft with explicit target', async () => {
+  let stored = null;
+  const bucket = {
+    async put(key, body, options) { stored = { key, body, options }; },
+    async delete() {}
+  };
+  const repo = fakeRepo();
+  const service = createOtaService({ repo, firmwareBucket: bucket, uuid: () => '12345678-1234-1234-1234-123456789abc', now: () => new Date('2026-09-13T10:00:00Z') });
+  const release = await service.createRelease(releaseForm(), 'tester@example.com');
+  assert.equal(release.status, 'draft');
+  assert.deepEqual(release.target_ids, ['hw051']);
+  assert.match(stored.key, /^ota\/dr-game\/dr-game-1\.10\.0-/);
+  assert.equal(stored.options.customMetadata.product, 'DR_GAME');
+});
+
+test('failed D1 release insert compensates by deleting the uploaded R2 object', async () => {
+  let uploadedKey = null;
+  let deletedKey = null;
+  const bucket = {
+    async put(key) { uploadedKey = key; },
+    async delete(key) { deletedKey = key; }
+  };
+  const repo = fakeRepo({ async createRelease() { throw new Error('D1 insert failed'); } });
+  const service = createOtaService({ repo, firmwareBucket: bucket, uuid: () => 'abc12345-0000-0000-0000-000000000000' });
+  await assert.rejects(() => service.createRelease(releaseForm(), 'tester'));
+  assert.ok(uploadedKey);
+  assert.equal(deletedKey, uploadedKey);
+});
+
+test('publish refuses a missing or size-mismatched R2 object', async () => {
+  const release = { id: 'rel-1', status: 'draft', targets: ['HW0.5.1'], esp_image_valid: 1, r2_key: 'ota/a.bin', size_bytes: 4 };
+  const repo = fakeRepo({ async getRelease() { return release; } });
+  let bucket = { async head() { return null; } };
+  let service = createOtaService({ repo, firmwareBucket: bucket });
+  await assert.rejects(() => service.publishRelease('rel-1'), error => error.code === 'firmware_object_missing');
+
+  bucket = { async head() { return { size: 5 }; } };
+  service = createOtaService({ repo, firmwareBucket: bucket });
+  await assert.rejects(() => service.publishRelease('rel-1'), error => error.code === 'firmware_size_mismatch');
+});
+
+test('published release metadata is immutable until disabled', async () => {
+  const release = { id: 'rel-1', status: 'published', version: '1.2.0', build_id: 'b', channel: 'stable', secure_version: 0, release_notes: '' };
+  const repo = fakeRepo({ async getRelease() { return release; } });
+  const service = createOtaService({ repo, firmwareBucket: {} });
+  await assert.rejects(() => service.updateRelease('rel-1', { version: '1.2.1' }), error => error.code === 'published_release_is_immutable');
 });
