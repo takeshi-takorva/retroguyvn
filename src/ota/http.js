@@ -127,6 +127,34 @@ export function createOtaHttp({ service }) {
     }
   }
 
+  async function handleAdminFile(request, releaseId) {
+    if (request.method !== 'GET') {
+      return jsonResponse({ error: 'method_not_allowed' }, { status: 405, headers: { allow: 'GET' } });
+    }
+    const release = await service.getRelease(releaseId);
+    if (!release) return jsonResponse({ error: 'release_not_found' }, { status: 404 });
+
+    let range;
+    try {
+      range = parseSingleRange(request.headers.get('Range'), Number(release.size_bytes));
+    } catch (error) {
+      if (Number(error?.status) === 416) {
+        return jsonResponse({ error: error.code || 'range_not_satisfiable' }, {
+          status: 416,
+          headers: { 'content-range': `bytes */${release.size_bytes}`, 'accept-ranges': 'bytes' }
+        });
+      }
+      throw error;
+    }
+
+    const object = await service.getFirmwareObject(release, range);
+    const length = range?.length || Number(release.size_bytes);
+    const headers = firmwareHeaders(release, length);
+    const status = range ? 206 : 200;
+    if (range) headers.set('content-range', `bytes ${range.start}-${range.end}/${release.size_bytes}`);
+    return new Response(object.body, { status, headers });
+  }
+
   async function handleOtaPublic(request, _env, ctx) {
     const url = new URL(request.url);
     if (url.pathname !== '/api/dr/ota' && url.pathname !== '/api/dr/ota/download') return null;
@@ -157,6 +185,10 @@ export function createOtaHttp({ service }) {
       if (url.pathname === '/api/admin/ota/releases') {
         if (request.method === 'GET') return jsonResponse({ items: await service.listReleases(queryFilters(url)) });
         if (request.method === 'POST') return jsonResponse(await service.createRelease(await readFormData(request), actor), { status: 201 });
+      }
+      const fileMatch = url.pathname.match(/^\/api\/admin\/ota\/releases\/([^/]+)\/file$/);
+      if (fileMatch) {
+        return handleAdminFile(request, decodeURIComponent(fileMatch[1]));
       }
       const actionMatch = url.pathname.match(/^\/api\/admin\/ota\/releases\/([^/]+)\/(publish|disable)$/);
       if (actionMatch && request.method === 'POST') {
