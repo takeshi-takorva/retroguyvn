@@ -15,7 +15,6 @@ const DB_ID = 'ee89d627-5e03-49d2-b4bc-30a9be91a9a1';
 const MEDIA_BINDING = 'MEDIA';
 const MEDIA_BUCKET = 'retroguyvn-media';
 const FIRMWARE_BINDING = 'FIRMWARE';
-const FIRMWARE_BUCKET = 'retroguyvn-firmware';
 const DEPLOY_FINGERPRINT = 'retroguyvn-web-2.2.0-ota';
 const PIN_ROOT_CONFIG = process.env.CI === 'true' || process.env.WORKERS_CI === '1';
 const R2_DISABLED = existsSync(R2_DISABLED_MARKER);
@@ -61,7 +60,10 @@ if (R2_DISABLED) {
     firmware = { binding: FIRMWARE_BINDING };
     config.r2_buckets.push(firmware);
   }
-  firmware.bucket_name = FIRMWARE_BUCKET;
+  // Intentionally omit bucket_name. Workers Builds/Wrangler will provision and retain
+  // a dedicated remote R2 resource for this binding. Hard-coding a bucket name here
+  // makes preview builds fail when that bucket has not been created yet.
+  delete firmware.bucket_name;
   delete firmware.preview_bucket_name;
 }
 
@@ -104,7 +106,7 @@ const redirect = JSON.parse(readFileSync(REDIRECT_CONFIG, 'utf8'));
 if (
   verifiedDb?.database_id !== DB_ID ||
   (!R2_DISABLED && verifiedMedia?.bucket_name !== MEDIA_BUCKET) ||
-  (!R2_DISABLED && verifiedFirmware?.bucket_name !== FIRMWARE_BUCKET) ||
+  (!R2_DISABLED && (!verifiedFirmware || Object.hasOwn(verifiedFirmware, 'bucket_name'))) ||
   (R2_DISABLED && (verifiedMedia || verifiedFirmware)) ||
   verified.vars?.DEPLOY_FINGERPRINT !== DEPLOY_FINGERPRINT ||
   redirect?.configPath !== '../../dist/server/wrangler.production.json'
@@ -121,7 +123,7 @@ if (PIN_ROOT_CONFIG) {
   if (
     rootDb?.database_id !== DB_ID ||
     (!R2_DISABLED && rootMedia?.bucket_name !== MEDIA_BUCKET) ||
-    (!R2_DISABLED && rootFirmware?.bucket_name !== FIRMWARE_BUCKET) ||
+    (!R2_DISABLED && (!rootFirmware || Object.hasOwn(rootFirmware, 'bucket_name'))) ||
     (R2_DISABLED && (rootMedia || rootFirmware)) ||
     rootVerified.vars?.DEPLOY_FINGERPRINT !== DEPLOY_FINGERPRINT
   ) {
@@ -137,7 +139,7 @@ if (R2_DISABLED) {
   console.log('[wrangler-patch] DR OTA firmware storage is unavailable until R2 is enabled.');
 } else {
   console.log(`[wrangler-patch] ${MEDIA_BINDING} pinned to R2 bucket ${MEDIA_BUCKET}.`);
-  console.log(`[wrangler-patch] ${FIRMWARE_BINDING} pinned to R2 bucket ${FIRMWARE_BUCKET}.`);
+  console.log(`[wrangler-patch] ${FIRMWARE_BINDING} uses Workers Builds automatic R2 provisioning.`);
 }
 console.log('[wrangler-patch] Deploy redirect forced to dist/server/wrangler.production.json.');
 console.log(`[wrangler-patch] Fingerprint: ${DEPLOY_FINGERPRINT}.`);
