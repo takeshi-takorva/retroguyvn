@@ -218,13 +218,13 @@ function buildOtaHttp(env) {
 
 async function handleOtaRoute(request, env, ctx, pathname) {
   try {
-    const http = buildOtaHttp(env);
-    if (pathname === '/api/dr/ota' || pathname === '/api/dr/ota/download') {
-      return await http.handleOtaPublic(request, env, ctx);
-    }
     if (pathname.startsWith('/api/admin/ota/')) {
       const session = await adminSession(request, env, ctx);
-      return await http.handleOtaAdmin(request, env, ctx, session);
+      if (!session) return json({ error: 'Unauthorized' }, { status: 401 });
+      return await buildOtaHttp(env).handleOtaAdmin(request, env, ctx, session);
+    }
+    if (pathname === '/api/dr/ota' || pathname === '/api/dr/ota/download') {
+      return await buildOtaHttp(env).handleOtaPublic(request, env, ctx);
     }
     return null;
   } catch (error) {
