@@ -17,6 +17,28 @@ test('preview wrapper builds missing Astro output before uploading a Worker vers
 
 test('preview upload is pinned to the generated production Wrangler config', async () => {
   const source = await readFile(new URL('../../scripts/deploy-preview.mjs', import.meta.url), 'utf8');
-  assert.match(source, /\['wrangler', 'versions', 'upload', '--config', CONFIG\]/);
+  assert.match(source, /'versions', 'upload'/);
+  assert.match(source, /'--config', CONFIG/);
   assert.match(source, /const CONFIG = 'dist\/server\/wrangler\.production\.json'/);
+});
+
+test('OTA feature branch performs a zero-traffic canary only on its exact branch', async () => {
+  const source = await readFile(new URL('../../scripts/deploy-preview.mjs', import.meta.url), 'utf8');
+  assert.match(source, /WORKERS_CI_BRANCH/);
+  assert.match(source, /feature\/dr-ota-cloudflare/);
+  assert.match(source, /'deployments', 'status'/);
+  assert.match(source, /'--json'/);
+  assert.match(source, /'versions', 'deploy'/);
+  assert.match(source, /@0%/);
+  assert.match(source, /@100%/);
+});
+
+test('OTA canary smoke test pins requests to the uploaded version and rolls back on failure', async () => {
+  const source = await readFile(new URL('../../scripts/deploy-preview.mjs', import.meta.url), 'utf8');
+  assert.match(source, /Cloudflare-Workers-Version-Overrides/);
+  assert.match(source, /https:\/\/retroguyvn\.com\/api\/dr\/ota/);
+  assert.match(source, /X-DR-Device-ID/);
+  assert.match(source, /X-DR-HW-Version/);
+  assert.match(source, /rollback/i);
+  assert.match(source, /@100%/);
 });
