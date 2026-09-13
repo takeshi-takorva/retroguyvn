@@ -2,7 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createOtaHttp } from '../../src/ota/http.js';
 
-function ctx() { return { waitUntil() {} }; }
+function ctx() {
+  const pending = [];
+  return { pending, waitUntil(promise) { pending.push(Promise.resolve(promise)); } };
+}
 
 function bytesBody(bytes) {
   return new Blob([bytes]).stream();
@@ -88,4 +91,51 @@ test('invalid range returns 416 with unsatisfied content range', async () => {
   const response = await http.handleOtaPublic(request, {}, ctx());
   assert.equal(response.status, 416);
   assert.equal(response.headers.get('content-range'), 'bytes */100');
+});
+
+test('download failures are audited without replacing the original HTTP error', async () => {
+  const events = [];
+  const context = ctx();
+  const service = {
+    async authorizeDownload() { const error = new Error('not offered'); error.status = 409; error.code = 'release_not_latest_offer'; throw error; },
+    async recordDownloadEvent(type, value) { events.push({ type, value }); }
+  };
+  const http = createOtaHttp({ service });
+  const request = new Request('https://retroguyvn.com/api/dr/ota/download', { headers: {
+    'X-DR-Release-ID': 'rel-old', 'X-DR-Device-ID': 'DEV1', 'X-DR-HW-Version': 'HW0.5.1'
+  }});
+  const response = await http.handleOtaPublic(request, {}, context);
+  await Promise.all(context.pending);
+  assert.equal(response.status, 409);
+  assert.equal((await response.json()).error, 'release_not_latest_offer');
+  assert.equal(events[0].type, 'DOWNLOAD_FAIL');
+  assert.equal(events[0].value.detail.requested_release_id, 'rel-old');
+});
+
+test('admin mutation rejects cross-origin browser requests', async () => {
+  let called = false;
+  const service = { async createHardware() { called = true; } };
+  const http = createOtaHttp({ service });
+  const request = new Request('https://retroguyvn.com/api/admin/ota/hardware', {
+    method: 'POST',
+    headers: { Origin: 'https://evil.example', 'content-type': 'application/json' },
+    body: JSON.stringify({ code: 'HW9', label: 'bad' })
+  });
+  const response = await http.handleOtaAdmin(request, {}, ctx(), { mode: 'token' });
+  assert.equal(response.status, 403);
+  assert.equal(called, false);
+});
+
+test('admin invalid JSON returns 400 and missing release returns 404', async () => {
+  const service = {
+    async createHardware() { throw new Error('must not run'); },
+    async getRelease() { return null; }
+  };
+  const http = createOtaHttp({ service });
+  const badJson = new Request('https://retroguyvn.com/api/admin/ota/hardware', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: '{'
+  });
+  assert.equal((await http.handleOtaAdmin(badJson, {}, ctx(), { mode: 'token' })).status, 400);
+  const missing = new Request('https://retroguyvn.com/api/admin/ota/releases/nope');
+  assert.equal((await http.handleOtaAdmin(missing, {}, ctx(), { mode: 'token' })).status, 404);
 });
