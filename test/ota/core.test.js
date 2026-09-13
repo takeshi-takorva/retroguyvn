@@ -41,4 +41,31 @@ test('firmware validation requires .bin and ESP magic', async () => {
   const meta = await validateFirmwareFile(good);
   assert.equal(meta.size, 4);
   assert.match(meta.sha256, /^[0-9a-f]{64}$/);
+
+  const badMagic = new File([Uint8Array.from([0x00, 1, 2, 3])], 'bad.bin', { type: 'application/octet-stream' });
+  await assert.rejects(
+    () => validateFirmwareFile(badMagic),
+    error => error.status === 422 && error.code === 'invalid_esp_image_magic'
+  );
+});
+
+test('firmware validation rejects files above 16 MiB before buffering them', async () => {
+  let fullBufferRead = false;
+  const oversized = {
+    name: 'too-large.bin',
+    size: 16 * 1024 * 1024 + 1,
+    async arrayBuffer() {
+      fullBufferRead = true;
+      return new ArrayBuffer(0);
+    },
+    slice() {
+      return { async arrayBuffer() { return Uint8Array.from([0xE9]).buffer; } };
+    }
+  };
+
+  await assert.rejects(
+    () => validateFirmwareFile(oversized),
+    error => error.status === 413 && error.code === 'firmware_too_large'
+  );
+  assert.equal(fullBufferRead, false);
 });
