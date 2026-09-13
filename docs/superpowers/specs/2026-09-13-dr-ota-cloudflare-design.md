@@ -230,11 +230,14 @@ last_seen_at TEXT NOT NULL
 last_check_at TEXT
 last_download_at TEXT
 last_release_id TEXT
+last_release_offered_at TEXT
 last_ip TEXT
 last_user_agent TEXT
 ```
 
 `device_id` is treated as an opaque stable identifier supplied by the device. The backend must not derive identity from IP address or COM port.
+
+`last_release_id` is the release most recently offered by a successful update check. It is a device-specific download pin, not merely a dashboard field. A no-update check clears the pin.
 
 ### 6.5 `ota_events`
 
@@ -352,6 +355,15 @@ Validation:
 
 The endpoint upserts `ota_devices`, writes a `CHECK` event, selects the newest compatible published release and then writes either `UPDATE_AVAILABLE` or `NO_UPDATE`.
 
+When an update is available, the device row is updated atomically/serially with:
+
+```text
+last_release_id = selected release
+last_release_offered_at = now
+```
+
+When no update is available, both fields are cleared. Therefore only a release actually offered to that device can be downloaded through the device endpoint.
+
 ### 8.2 Release selection
 
 Candidate release must satisfy all of:
@@ -438,16 +450,19 @@ X-DR-Device-ID
 X-DR-HW-Version
 ```
 
-The Worker must verify:
+The Worker must verify all of the following:
 
 1. release exists;
 2. release status is `published`;
 3. exact supplied hardware code is a target of that release;
-4. supplied hardware code matches the latest known hardware code for the device when a device record already exists;
-5. R2 object exists;
-6. R2 object size agrees with D1 metadata.
+4. device record exists from a preceding check;
+5. supplied hardware code matches the device record hardware code;
+6. supplied release ID exactly equals `ota_devices.last_release_id` for that device;
+7. the pinned release is still published and compatible when download begins;
+8. R2 object exists;
+9. R2 object size agrees with D1 metadata.
 
-A device cannot download an arbitrary unpublished or incompatible firmware object by guessing an R2 key or release ID.
+A device therefore cannot download an arbitrary old, unpublished or incompatible firmware by guessing a release ID. A fresh check is required before download. Repeated range requests for the same pinned release remain valid until a later check changes/clears the pin or the admin disables the release.
 
 ### 9.1 Range support
 
@@ -566,6 +581,8 @@ If the D1 write fails after R2 upload, the Worker must delete the just-uploaded 
 
 The admin does not manually enter SHA-256 or file size.
 
+The v1 upload limit is 16 MiB. It is acceptable for the authenticated admin upload path to hold a file up to that configured ceiling in memory while validating/hashing it. The device download path must still stream from R2 and must never buffer the complete firmware body.
+
 ### 11.2 Editing releases
 
 Allowed while `draft` or `disabled`:
@@ -602,7 +619,7 @@ status = published
 published_at = now
 ```
 
-More than one release may remain published for the same hardware/channel. Selection always picks the highest compatible version, allowing older releases to remain downloadable by their pinned `release_id` when needed.
+More than one release may remain published for the same hardware/channel. Selection always picks the highest compatible version. An older published release is not automatically downloadable by a device: the device download endpoint additionally requires that release to be the current `last_release_id` offered to that device.
 
 ### 11.4 Disable
 
@@ -612,7 +629,7 @@ Disable changes only release availability:
 status = disabled
 ```
 
-Disabled releases are never returned by device check and cannot be downloaded through the device endpoint.
+Disabled releases are never returned by device check and cannot be downloaded through the device endpoint, even when a device still has that release pinned from an earlier check.
 
 ### 11.5 Delete
 
@@ -658,7 +675,7 @@ Actions follow status:
 ```text
 draft:    Edit | Publish | Delete
 published: Disable
- disabled: Edit | Publish | Delete
+disabled: Edit | Publish | Delete
 ```
 
 ### 12.3 Create/edit release form
@@ -733,6 +750,7 @@ Pagination is server-side with a bounded default page size. The admin page must 
 - Device IP/user-agent are operational logs; they are not used as device identity.
 - Release binary is immutable after creation.
 - Hardware matching is exact and explicit.
+- Device download requires a current server-side release pin from a preceding successful check.
 - No wildcard hardware target exists in v1.
 
 ## 14. Worker/module boundaries
@@ -850,7 +868,7 @@ Representative statuses:
 ```text
 400 missing/malformed device headers or version
 404 unknown release ID on download
-409 device hardware conflicts with known device record
+409 device hardware conflicts with known device record or release is not the current device pin
 416 invalid byte range
 500 unexpected D1/R2 failure
 503 FIRMWARE binding/storage unavailable
@@ -898,17 +916,18 @@ Implementation is accepted when all of the following are true.
 7. `GET /api/dr/ota` selects the latest compatible release by hardware, channel, current version and minimum boot version.
 8. No-update responses are deterministic and machine readable.
 9. Download URL remains fixed at `/api/dr/ota/download` and uses `X-DR-Release-ID` to pin the selected release.
-10. Full firmware download works directly from R2 through the Worker without buffering the complete firmware in application memory.
-11. Single-range requests return valid `206`, `Content-Range`, `Content-Length` and exact bytes.
-12. Invalid ranges return `416`.
-13. A device cannot download a disabled, draft or hardware-incompatible release.
-14. Device registry updates on check/download.
-15. Check and download activity appears in immutable OTA event history.
-16. Existing website, CMS, `/admin`, D1 CMS tables and `MEDIA` R2 behavior continue to work.
-17. Build passes in GitHub Actions.
-18. OTA unit/integration tests pass in CI.
-19. Missing `FIRMWARE` binding degrades OTA endpoints with an explicit error without breaking the rest of the site.
-20. No firmware signing private key is committed to GitHub or stored in frontend code.
+10. A download is rejected unless the requested release is exactly the release most recently offered to that device by the server.
+11. Full firmware download works directly from R2 through the Worker without buffering the complete firmware in application memory.
+12. Single-range requests return valid `206`, `Content-Range`, `Content-Length` and exact bytes.
+13. Invalid ranges return `416`.
+14. A device cannot download a disabled, draft or hardware-incompatible release.
+15. Device registry updates on check/download.
+16. Check and download activity appears in immutable OTA event history.
+17. Existing website, CMS, `/admin`, D1 CMS tables and `MEDIA` R2 behavior continue to work.
+18. Build passes in GitHub Actions.
+19. OTA unit/integration tests pass in CI.
+20. Missing `FIRMWARE` binding degrades OTA endpoints with an explicit error without breaking the rest of the site.
+21. No firmware signing private key is committed to GitHub or stored in frontend code.
 
 ## 22. Out of scope for this milestone
 
