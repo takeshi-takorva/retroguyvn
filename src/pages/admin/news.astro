@@ -1,0 +1,57 @@
+---
+---
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>News Manager — RetroGuy Admin</title>
+  <link rel="stylesheet" href="/admin/news.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div><p class="eyebrow">RetroGuy Admin</p><h1>NEWS MANAGER</h1><p class="muted">Text · Image · Gallery · Video · Draft / Publish</p></div>
+      <div class="top-actions"><a class="btn" href="/admin">Admin Home</a><a class="btn" href="/news" target="_blank" rel="noopener">Open News</a><span class="pill" id="connection">Checking access…</span></div>
+    </header>
+
+    <section class="login hidden" id="loginPanel">
+      <h2>Admin access</h2><p class="muted">Cloudflare Access chưa được nhận diện. Có thể dùng Admin Token dự phòng.</p>
+      <form id="loginForm" class="inline"><input id="tokenInput" type="password" placeholder="Admin Token" autocomplete="current-password" required /><button class="btn primary">Connect</button></form>
+    </section>
+
+    <section class="workspace hidden" id="workspace">
+      <aside class="sidebar">
+        <div class="sidebar-head"><div><strong>Posts</strong><div class="muted small" id="postCount"></div></div><button class="btn primary" id="newBtn" type="button">+ New post</button></div>
+        <div class="filters"><input id="searchInput" placeholder="Search posts…" /><select id="statusFilter"><option value="all">All status</option><option value="draft">Draft</option><option value="published">Published</option></select></div>
+        <div id="postList" class="post-list"></div>
+      </aside>
+
+      <section class="editor">
+        <div class="editor-empty" id="emptyState"><h2>Select a post</h2><p class="muted">Chọn một bài bên trái hoặc tạo bài mới.</p></div>
+        <form id="postForm" class="hidden">
+          <div class="editor-bar"><div><strong id="editorLabel">New post</strong><div class="muted small" id="saveState">Ready</div></div><div class="inline"><button class="btn" id="previewBtn" type="button">Preview</button><button class="btn" id="unpublishBtn" type="button">Unpublish</button><button class="btn danger" id="deleteBtn" type="button">Delete</button><button class="btn" id="saveBtn" type="button">Save draft</button><button class="btn good" id="publishBtn" type="button">Publish</button></div></div>
+
+          <section class="panel"><h2>Post information</h2><div class="grid">
+            <label class="field wide"><span>Title</span><input id="titleInput" maxlength="160" required /></label>
+            <label class="field"><span>Slug</span><input id="slugInput" maxlength="120" placeholder="auto-from-title" /></label>
+            <label class="field"><span>Category</span><input id="categoryInput" maxlength="60" value="Development" /></label>
+            <label class="field wide"><span>Excerpt</span><textarea id="excerptInput" maxlength="320"></textarea></label>
+            <label class="field wide"><span>Tags <small>(cách nhau bằng dấu phẩy)</small></span><input id="tagsInput" /></label>
+            <label class="field wide"><span>Cover image</span><select id="coverInput"><option value="">No cover</option></select></label>
+          </div></section>
+
+          <section class="panel"><div class="section-head"><div><h2>Content blocks</h2><p class="muted small">Dùng ↑ ↓ để đổi thứ tự block.</p></div><div class="block-tools"><button type="button" data-add="text">+ Text</button><button type="button" data-add="heading">+ Heading</button><button type="button" data-add="image">+ Image</button><button type="button" data-add="gallery">+ Gallery</button><button type="button" data-add="video">+ Video</button><button type="button" data-add="quote">+ Quote</button><button type="button" data-add="link">+ Link</button></div></div><div id="blockList" class="block-list"></div></section>
+
+          <section class="panel"><div class="section-head"><div><h2>Media</h2><p class="muted small">Ảnh tối đa 5 MB · Video MP4/WebM/MOV tối đa 50 MB.</p></div><div class="inline"><input id="mediaFile" type="file" accept="image/*,video/mp4,video/webm,video/quicktime" /><button class="btn" id="uploadBtn" type="button">Upload</button></div></div><div id="mediaStrip" class="media-strip"></div></section>
+
+          <section class="panel hidden" id="previewPanel"><div class="section-head"><h2>Draft preview</h2><button class="btn" id="closePreviewBtn" type="button">Close</button></div><div id="previewBody" class="preview-body"></div></section>
+        </form>
+      </section>
+    </section>
+  </main>
+  <div id="toast" class="toast hidden" aria-live="polite"></div>
+  <script type="module" src="/admin/news.js"></script>
+</body>
+</html>

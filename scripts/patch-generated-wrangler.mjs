@@ -15,7 +15,9 @@ const DB_ID = 'ee89d627-5e03-49d2-b4bc-30a9be91a9a1';
 const MEDIA_BINDING = 'MEDIA';
 const MEDIA_BUCKET = 'retroguyvn-media';
 const FIRMWARE_BINDING = 'FIRMWARE';
-const DEPLOY_FINGERPRINT = 'retroguyvn-web-2.2.0-ota';
+const CUSTOM_WORKER_MAIN = '../../src/news-worker-entry.js';
+const ROOT_CUSTOM_WORKER_MAIN = './src/news-worker-entry.js';
+const DEPLOY_FINGERPRINT = 'retroguyvn-web-2.2.0-news-m1';
 const PIN_ROOT_CONFIG = process.env.CI === 'true' || process.env.WORKERS_CI === '1';
 const R2_DISABLED = existsSync(R2_DISABLED_MARKER);
 
@@ -32,6 +34,11 @@ try {
   console.error(error);
   process.exit(1);
 }
+
+// Astro generates its own server entrypoint, but this project intentionally uses a
+// custom Worker that wraps Astro so CMS, OTA and News routes share one runtime.
+// The production config must therefore point Wrangler at the custom source Worker.
+config.main = CUSTOM_WORKER_MAIN;
 
 config.d1_databases ??= [];
 let db = config.d1_databases.find((item) => item?.binding === DB_BINDING);
@@ -91,10 +98,10 @@ function remapGeneratedPath(value) {
 if (PIN_ROOT_CONFIG) {
   const rootConfig = structuredClone(config);
   rootConfig.$schema = './node_modules/wrangler/config-schema.json';
-  if (rootConfig.main) rootConfig.main = remapGeneratedPath(rootConfig.main);
+  rootConfig.main = ROOT_CUSTOM_WORKER_MAIN;
   if (rootConfig.assets?.directory) rootConfig.assets.directory = remapGeneratedPath(rootConfig.assets.directory);
   writeFileSync(ROOT_CONFIG, `${JSON.stringify(rootConfig, null, 2)}\n`);
-  console.log(`[wrangler-patch] CI root config pinned for deploy: ${rootConfig.main}.`);
+  console.log(`[wrangler-patch] CI root config pinned to custom Worker: ${rootConfig.main}.`);
 }
 
 const verified = JSON.parse(readFileSync(PRODUCTION_CONFIG, 'utf8'));
@@ -104,6 +111,7 @@ const verifiedFirmware = verified.r2_buckets?.find((item) => item?.binding === F
 const redirect = JSON.parse(readFileSync(REDIRECT_CONFIG, 'utf8'));
 
 if (
+  verified.main !== CUSTOM_WORKER_MAIN ||
   verifiedDb?.database_id !== DB_ID ||
   (!R2_DISABLED && verifiedMedia?.bucket_name !== MEDIA_BUCKET) ||
   (!R2_DISABLED && (!verifiedFirmware || Object.hasOwn(verifiedFirmware, 'bucket_name'))) ||
@@ -121,6 +129,7 @@ if (PIN_ROOT_CONFIG) {
   const rootMedia = rootVerified.r2_buckets?.find((item) => item?.binding === MEDIA_BINDING);
   const rootFirmware = rootVerified.r2_buckets?.find((item) => item?.binding === FIRMWARE_BINDING);
   if (
+    rootVerified.main !== ROOT_CUSTOM_WORKER_MAIN ||
     rootDb?.database_id !== DB_ID ||
     (!R2_DISABLED && rootMedia?.bucket_name !== MEDIA_BUCKET) ||
     (!R2_DISABLED && (!rootFirmware || Object.hasOwn(rootFirmware, 'bucket_name'))) ||
@@ -132,6 +141,7 @@ if (PIN_ROOT_CONFIG) {
   }
 }
 
+console.log(`[wrangler-patch] Production Worker main: ${CUSTOM_WORKER_MAIN}.`);
 console.log(`[wrangler-patch] ${DB_BINDING} pinned to ${DB_NAME} (${DB_ID}).`);
 if (R2_DISABLED) {
   console.log('[wrangler-patch] R2 bindings omitted because Cloudflare account R2 is not enabled.');

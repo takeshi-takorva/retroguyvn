@@ -1,0 +1,47 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+const slug = Astro.params.slug || '';
+---
+<BaseLayout title="News — RetroGuy VN" description="RetroGuy VN development news and updates.">
+  <article class="article-shell" id="newsArticle" data-slug={slug}>
+    <div class="article-loading" id="articleStatus">Loading article…</div>
+  </article>
+
+  <style>
+    .article-shell{width:min(920px,calc(100% - 32px));margin:52px auto 88px}.article-loading{padding:26px;border:1px solid #2a3950;border-radius:16px;color:#9eacbd}.article-head{margin-bottom:30px}.article-meta{display:flex;gap:12px;flex-wrap:wrap;text-transform:uppercase;letter-spacing:.08em;color:#9eacbd;font-size:13px}.article-head h1{font-size:clamp(38px,7vw,72px);line-height:.98;margin:14px 0 18px}.article-excerpt{font-size:19px;line-height:1.65;color:#b9c4d2;max-width:760px}.article-cover{width:100%;max-height:560px;object-fit:cover;border-radius:18px;border:1px solid #2a3950;margin:12px 0 38px;background:#07101c}.article-content{display:grid;gap:22px;font-size:17px;line-height:1.75}.article-content p{margin:0;white-space:pre-line}.article-content h2,.article-content h3{margin:18px 0 0;line-height:1.15}.article-content h2{font-size:34px}.article-content h3{font-size:26px}.article-media{margin:8px 0}.article-media img,.article-media video{display:block;width:100%;border-radius:14px;border:1px solid #2a3950;background:#07101c}.article-media figcaption,.gallery-caption{color:#9eacbd;font-size:14px;margin-top:8px}.article-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.article-gallery img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:12px;border:1px solid #2a3950}.article-quote{margin:8px 0;padding:22px 24px;border-left:3px solid #d64535;background:#101b2c;border-radius:0 14px 14px 0}.article-quote p{font-size:21px}.article-quote cite{display:block;margin-top:10px;color:#9eacbd;font-style:normal}.article-link{display:inline-flex;width:max-content;max-width:100%;padding:11px 15px;border:1px solid #435d80;border-radius:10px;color:#fff;text-decoration:none;background:#17253a}@media(max-width:620px){.article-shell{margin-top:32px}.article-gallery{grid-template-columns:1fr}}
+  </style>
+
+  <script is:inline>
+    const root=document.querySelector('#newsArticle');
+    const slug=root?.dataset.slug||'';
+    const statusEl=document.querySelector('#articleStatus');
+    const fmt=date=>date?new Intl.DateTimeFormat('en',{year:'numeric',month:'long',day:'numeric'}).format(new Date(date)):'';
+    const el=(tag,className,text)=>{const node=document.createElement(tag);if(className)node.className=className;if(text!=null)node.textContent=text;return node;};
+    const figure=(url,caption,video=false)=>{const fig=el('figure','article-media');const media=document.createElement(video?'video':'img');media.src=url;if(video){media.controls=true;media.preload='metadata';}else{media.loading='lazy';media.alt='';}fig.append(media);if(caption)fig.append(el('figcaption','',caption));return fig;};
+    fetch(`/api/news/${encodeURIComponent(slug)}`).then(async response=>{
+      const post=await response.json();
+      if(!response.ok)throw new Error(post.error||'Article not found');
+      statusEl.remove();
+      document.title=`${post.title} — RetroGuy VN`;
+      const head=el('header','article-head');
+      const meta=el('div','article-meta');meta.append(el('span','',post.category||'News'),el('span','',fmt(post.publishedAt)));head.append(meta,el('h1','',post.title));
+      if(post.excerpt)head.append(el('p','article-excerpt',post.excerpt));root.append(head);
+      if(post.coverUrl){const cover=document.createElement('img');cover.className='article-cover';cover.src=post.coverUrl;cover.alt='';root.append(cover);}
+      const content=el('div','article-content');
+      for(const block of Array.isArray(post.blocks)?post.blocks:[]){
+        if(block.type==='text')content.append(el('p','',block.text));
+        else if(block.type==='heading')content.append(el(block.level===3?'h3':'h2','',block.text));
+        else if(block.type==='image'&&block.mediaId)content.append(figure(`/media/${encodeURIComponent(block.mediaId)}`,block.caption,false));
+        else if(block.type==='video'&&block.mediaId)content.append(figure(`/media/${encodeURIComponent(block.mediaId)}`,block.caption,true));
+        else if(block.type==='gallery'){
+          const wrap=el('div','');const grid=el('div','article-gallery');for(const id of block.mediaIds||[]){const img=document.createElement('img');img.src=`/media/${encodeURIComponent(id)}`;img.alt='';img.loading='lazy';grid.append(img);}wrap.append(grid);if(block.caption)wrap.append(el('div','gallery-caption',block.caption));content.append(wrap);
+        }else if(block.type==='quote'){
+          const quote=el('blockquote','article-quote');quote.append(el('p','',block.text));if(block.attribution)quote.append(el('cite','',block.attribution));content.append(quote);
+        }else if(block.type==='link'){
+          const link=el('a','article-link',block.label||'Open link');link.href=block.url;link.rel='noopener';content.append(link);
+        }
+      }
+      root.append(content);
+    }).catch(error=>{statusEl.textContent=error.message;statusEl.style.color='#ffb6b0';});
+  </script>
+</BaseLayout>

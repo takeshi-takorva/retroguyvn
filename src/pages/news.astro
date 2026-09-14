@@ -1,13 +1,39 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
-<BaseLayout title="News & Devlog — RetroGuy VN">
-  <section class="page-hero"><p class="eyebrow">Development journal</p><h1>NEWS</h1><p class="lede">Milestones, hardware revisions, firmware progress and major Digital Realm updates will live here.</p></section>
-  <section class="section">
-    <div class="timeline">
-      <article><time>V1 WEBSITE</time><h3>RetroGuy VN web foundation</h3><p>Astro-based public site prepared for Cloudflare deployment and future backend services.</p></article>
-      <article><time>NEXT</time><h3>Product media integration</h3><p>Replace V1 placeholders with final product renders, screenshots and launch-facing content.</p></article>
-      <article><time>PLANNED</time><h3>Connected services</h3><p>Device registration, OTA, cloud save and online PvP will be introduced as independent service phases.</p></article>
-    </div>
+<BaseLayout title="News & Devlog — RetroGuy VN" description="Development updates, hardware revisions and Digital Realm news from RetroGuy VN.">
+  <section class="page-hero news-hero">
+    <p class="eyebrow">Development journal</p>
+    <h1>NEWS</h1>
+    <p class="lede">Milestones, hardware revisions, firmware progress and major Digital Realm updates.</p>
   </section>
+
+  <section class="section news-shell">
+    <div id="newsStatus" class="news-status">Loading news…</div>
+    <div id="featuredNews"></div>
+    <div id="newsGrid" class="news-grid" aria-live="polite"></div>
+  </section>
+
+  <style>
+    .news-shell{display:grid;gap:28px}.news-status{padding:18px;border:1px solid rgba(255,255,255,.13);border-radius:14px;color:#9eacbd}.news-featured{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(260px,.8fr);background:#101b2c;border:1px solid #2a3950;border-radius:20px;overflow:hidden;text-decoration:none;color:inherit}.news-featured-media{min-height:340px;background:#07101c}.news-featured-media img{width:100%;height:100%;object-fit:cover;display:block}.news-featured-body{padding:30px;display:flex;flex-direction:column;justify-content:center}.news-meta{display:flex;gap:10px;flex-wrap:wrap;color:#9eacbd;font-size:13px;text-transform:uppercase;letter-spacing:.08em}.news-featured h2{font-size:clamp(30px,5vw,54px);line-height:1.02;margin:14px 0}.news-featured p{color:#b9c4d2}.news-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.news-card{border:1px solid #2a3950;background:#0d1828;border-radius:16px;overflow:hidden;text-decoration:none;color:inherit;transition:transform .15s ease,border-color .15s ease}.news-card:hover{transform:translateY(-3px);border-color:#576b87}.news-card-media{aspect-ratio:16/10;background:#07101c}.news-card-media img{width:100%;height:100%;display:block;object-fit:cover}.news-card-body{padding:18px}.news-card h3{font-size:21px;margin:10px 0 8px}.news-card p{margin:0;color:#9eacbd}.news-empty{padding:48px 20px;text-align:center;border:1px dashed #2a3950;border-radius:18px;color:#9eacbd}@media(max-width:860px){.news-featured{grid-template-columns:1fr}.news-featured-media{min-height:240px}.news-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:580px){.news-grid{grid-template-columns:1fr}.news-featured-body{padding:22px}}
+  </style>
+
+  <script is:inline>
+    const statusEl=document.querySelector('#newsStatus');
+    const featuredEl=document.querySelector('#featuredNews');
+    const gridEl=document.querySelector('#newsGrid');
+    const fmt=date=>date?new Intl.DateTimeFormat('en',{year:'numeric',month:'short',day:'numeric'}).format(new Date(date)):'';
+    const media=item=>item.coverUrl?`<img src="${item.coverUrl}" alt="" loading="lazy">`:'';
+    const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
+    fetch('/api/news').then(async response=>{
+      const data=await response.json();
+      if(!response.ok)throw new Error(data.error||'Unable to load news');
+      const items=Array.isArray(data.items)?data.items:[];
+      statusEl.remove();
+      if(!items.length){gridEl.innerHTML='<div class="news-empty">No published news yet.</div>';return;}
+      const first=items[0];
+      featuredEl.innerHTML=`<a class="news-featured" href="${esc(first.url)}"><div class="news-featured-media">${media(first)}</div><div class="news-featured-body"><div class="news-meta"><span>${esc(first.category)}</span><span>${esc(fmt(first.publishedAt))}</span></div><h2>${esc(first.title)}</h2><p>${esc(first.excerpt)}</p></div></a>`;
+      gridEl.innerHTML=items.slice(1).map(item=>`<a class="news-card" href="${esc(item.url)}"><div class="news-card-media">${media(item)}</div><div class="news-card-body"><div class="news-meta"><span>${esc(item.category)}</span><span>${esc(fmt(item.publishedAt))}</span></div><h3>${esc(item.title)}</h3><p>${esc(item.excerpt)}</p></div></a>`).join('');
+    }).catch(error=>{statusEl.textContent=error.message;statusEl.style.color='#ffb6b0';});
+  </script>
 </BaseLayout>
