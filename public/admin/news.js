@@ -3,27 +3,29 @@ import { newBlock,renderBlockCard } from './news-blocks.js';
 import { renderDraftPreview } from './news-preview.js';
 
 const $=selector=>document.querySelector(selector);
-const ui={login:$('#loginPanel'),workspace:$('#workspace'),loginForm:$('#loginForm'),token:$('#tokenInput'),connection:$('#connection'),postList:$('#postList'),postCount:$('#postCount'),search:$('#searchInput'),filter:$('#statusFilter'),empty:$('#emptyState'),form:$('#postForm'),label:$('#editorLabel'),saveState:$('#saveState'),title:$('#titleInput'),slug:$('#slugInput'),category:$('#categoryInput'),excerpt:$('#excerptInput'),tags:$('#tagsInput'),cover:$('#coverInput'),blocks:$('#blockList'),media:$('#mediaStrip'),mediaFile:$('#mediaFile'),previewPanel:$('#previewPanel'),previewBody:$('#previewBody'),toast:$('#toast')};
+const ui={login:$('#loginPanel'),workspace:$('#workspace'),loginForm:$('#loginForm'),token:$('#tokenInput'),connection:$('#connection'),postList:$('#postList'),postCount:$('#postCount'),search:$('#searchInput'),filter:$('#statusFilter'),empty:$('#emptyState'),form:$('#postForm'),label:$('#editorLabel'),saveState:$('#saveState'),title:$('#titleInput'),slug:$('#slugInput'),category:$('#categoryInput'),publishAt:$('#publishAtInput'),excerpt:$('#excerptInput'),tags:$('#tagsInput'),cover:$('#coverInput'),blocks:$('#blockList'),media:$('#mediaStrip'),mediaFile:$('#mediaFile'),previewPanel:$('#previewPanel'),previewBody:$('#previewBody'),toast:$('#toast')};
 let posts=[],media=[],current=null,busy=false;
 
 const emptyDraft=()=>({title:'',slug:'',excerpt:'',category:'Development',tags:[],coverMediaId:null,blocks:[]});
 const toast=(message,error=false)=>{ui.toast.textContent=message;ui.toast.className=`toast${error?' error':''}`;setTimeout(()=>ui.toast.classList.add('hidden'),3200);};
 const setBusy=(value,text='')=>{busy=value;document.querySelectorAll('button').forEach(button=>button.disabled=value);ui.saveState.textContent=text||(value?'Working…':'Ready');};
 const fmt=value=>value?new Date(value).toLocaleString():'—';
+const toLocalDateTime=value=>{const date=value?new Date(value):new Date();if(Number.isNaN(date.getTime()))return'';const shifted=new Date(date.getTime()-date.getTimezoneOffset()*60000);return shifted.toISOString().slice(0,16);};
+const publishIsoFromForm=()=>{if(!ui.publishAt.value)return null;const date=new Date(ui.publishAt.value);if(Number.isNaN(date.getTime()))throw new Error('Invalid publish date/time');return date.toISOString();};
 
 function draftFromForm(){
   return {title:ui.title.value.trim(),slug:ui.slug.value.trim(),excerpt:ui.excerpt.value.trim(),category:ui.category.value.trim()||'Development',tags:ui.tags.value.split(',').map(v=>v.trim()).filter(Boolean),coverMediaId:ui.cover.value||null,blocks:current?.draft?.blocks||[]};
 }
 
-function syncForm(){
-  const draft=current?.draft||emptyDraft();ui.title.value=draft.title||'';ui.slug.value=draft.slug||'';ui.excerpt.value=draft.excerpt||'';ui.category.value=draft.category||'Development';ui.tags.value=(draft.tags||[]).join(', ');renderMediaOptions();ui.cover.value=draft.coverMediaId||'';renderBlocks();ui.label.textContent=current?.id?`${current.title||draft.title||'Post'} · ${current.status}`:'New post';$('#unpublishBtn').disabled=current?.status!=='published';$('#deleteBtn').disabled=!current?.id;
+function syncForm(preservePublishTime=''){
+  const draft=current?.draft||emptyDraft();ui.title.value=draft.title||'';ui.slug.value=draft.slug||'';ui.excerpt.value=draft.excerpt||'';ui.category.value=draft.category||'Development';ui.tags.value=(draft.tags||[]).join(', ');renderMediaOptions();ui.cover.value=draft.coverMediaId||'';renderBlocks();ui.label.textContent=current?.id?`${current.title||draft.title||'Post'} · ${current.status}`:'New post';$('#unpublishBtn').disabled=current?.status!=='published';$('#deleteBtn').disabled=!current?.id;ui.publishAt.value=preservePublishTime||toLocalDateTime(current?.publishedAt||new Date().toISOString());
 }
 
 function renderPosts(){
   const query=ui.search.value.trim().toLowerCase(),status=ui.filter.value;const filtered=posts.filter(post=>(status==='all'||post.status===status)&&(!query||`${post.title} ${post.slug} ${post.category}`.toLowerCase().includes(query)));
   ui.postCount.textContent=`${filtered.length} / ${posts.length}`;ui.postList.innerHTML='';
   if(!filtered.length){const div=document.createElement('div');div.className='editor-empty';div.textContent='No posts found.';ui.postList.append(div);return;}
-  filtered.forEach(post=>{const button=document.createElement('button');button.type='button';button.className=`post-card${current?.id===post.id?' active':''}`;button.innerHTML=`<div class="post-title"></div><div class="post-meta"><span class="status-dot ${post.status}"></span><span>${post.status}</span><span>·</span><span>${post.category||'Development'}</span></div>`;button.querySelector('.post-title').textContent=post.title||'Untitled';button.addEventListener('click',()=>openPost(post.id));ui.postList.append(button);});
+  filtered.forEach(post=>{const button=document.createElement('button');button.type='button';button.className=`post-card${current?.id===post.id?' active':''}`;button.innerHTML=`<div class="post-title"></div><div class="post-meta"><span class="status-dot ${post.status}"></span><span>${post.status}</span><span>·</span><span>${post.category||'Development'}</span><span>·</span><span>${fmt(post.publishedAt||post.createdAt)}</span></div>`;button.querySelector('.post-title').textContent=post.title||'Untitled';button.addEventListener('click',()=>openPost(post.id));ui.postList.append(button);});
 }
 
 function renderMediaOptions(){
@@ -39,15 +41,15 @@ function renderBlocks(){ui.blocks.innerHTML='';const blocks=current?.draft?.bloc
 async function refreshPosts(){const data=await listPosts();posts=data.items||[];renderPosts();}
 async function refreshMedia(){const data=await listMedia();media=data.items||[];renderMediaOptions();if(current)renderBlocks();}
 async function openPost(id){if(busy)return;setBusy(true,'Loading…');try{current=await getPost(id);ui.empty.classList.add('hidden');ui.form.classList.remove('hidden');syncForm();renderPosts();}catch(error){toast(error.message,true);}finally{setBusy(false);}}
-function newPostEditor(){current={id:null,status:'draft',draft:emptyDraft()};ui.empty.classList.add('hidden');ui.form.classList.remove('hidden');syncForm();renderPosts();}
+function newPostEditor(){current={id:null,status:'draft',publishedAt:null,draft:emptyDraft()};ui.empty.classList.add('hidden');ui.form.classList.remove('hidden');syncForm();renderPosts();}
 
 async function persistDraft(){
-  if(!current)throw new Error('No post selected');const body=draftFromForm();if(!body.title)throw new Error('Title is required');current.draft={...body,blocks:current.draft.blocks};
-  if(current.id)current=await savePost(current.id,current.draft);else current=await createPost(current.draft);await refreshPosts();syncForm();return current;
+  if(!current)throw new Error('No post selected');const body=draftFromForm();if(!body.title)throw new Error('Title is required');const publishValue=ui.publishAt.value;current.draft={...body,blocks:current.draft.blocks};
+  if(current.id)current=await savePost(current.id,current.draft);else current=await createPost(current.draft);await refreshPosts();syncForm(publishValue);return current;
 }
 
 async function doSave(){setBusy(true,'Saving draft…');try{await persistDraft();toast('Draft saved.');}catch(error){toast(error.message,true);}finally{setBusy(false);}}
-async function doPublish(){setBusy(true,'Publishing…');try{await persistDraft();const result=await publishPost(current.id);current=result.post;await refreshPosts();syncForm();toast('Post published.');}catch(error){toast(error.message,true);}finally{setBusy(false);}}
+async function doPublish(){let publishedAt;try{publishedAt=publishIsoFromForm();}catch(error){return toast(error.message,true);}setBusy(true,'Publishing…');try{await persistDraft();const result=await publishPost(current.id,publishedAt);current=result.post;await refreshPosts();syncForm();toast('Post published.');}catch(error){toast(error.message,true);}finally{setBusy(false);}}
 async function doUnpublish(){if(!current?.id)return;setBusy(true,'Unpublishing…');try{const result=await unpublishPost(current.id);current=result.post;await refreshPosts();syncForm();toast('Post unpublished.');}catch(error){toast(error.message,true);}finally{setBusy(false);}}
 async function doRemove(){if(!current?.id||!confirm(`Delete “${current.title||current.draft.title}”?`))return;setBusy(true,'Deleting…');try{await removePost(current.id);current=null;ui.form.classList.add('hidden');ui.empty.classList.remove('hidden');await refreshPosts();toast('Post deleted.');}catch(error){toast(error.message,true);}finally{setBusy(false);}}
 async function doUpload(){const file=ui.mediaFile.files?.[0];if(!file)return toast('Choose a file first.',true);setBusy(true,'Uploading media…');try{await uploadMedia(file);ui.mediaFile.value='';await refreshMedia();toast('Media uploaded.');}catch(error){toast(error.message,true);}finally{setBusy(false);}}
