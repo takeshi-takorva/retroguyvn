@@ -7,6 +7,12 @@ const json = (data, status = 200) => new Response(JSON.stringify(data), {
   headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }
 });
 
+function mutationOriginAllowed(request, url) {
+  if (request.method === 'GET' || request.method === 'HEAD' || request.method === 'OPTIONS') return true;
+  const origin = request.headers.get('origin');
+  return !origin || origin === url.origin;
+}
+
 async function newsAdminSession(request, env, ctx) {
   const url = new URL(request.url);
   url.pathname = '/api/admin/session';
@@ -28,12 +34,14 @@ export default {
     }
 
     if (url.pathname === '/api/admin/news' || url.pathname.startsWith('/api/admin/news/')) {
+      if (!mutationOriginAllowed(request, url)) return json({ error: 'Cross-origin admin mutation rejected' }, 403);
       const session = await newsAdminSession(request, env, ctx);
       if (!session) return json({ error: 'Unauthorized' }, 401);
       return dispatchNewsAdmin(request, env, session.email || session.mode || 'admin');
     }
 
     if (request.method === 'DELETE' && url.pathname.startsWith('/api/admin/media/')) {
+      if (!mutationOriginAllowed(request, url)) return json({ error: 'Cross-origin admin mutation rejected' }, 403);
       const session = await newsAdminSession(request, env, ctx);
       if (!session) return json({ error: 'Unauthorized' }, 401);
       const mediaId = decodeURIComponent(url.pathname.slice('/api/admin/media/'.length));
