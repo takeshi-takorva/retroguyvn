@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "retroguyvn",
-  "main": "./src/worker-entry.js",
+  "main": "./src/news-worker-entry.js",
   "compatibility_date": "2026-09-05",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "workers_dev": true,
