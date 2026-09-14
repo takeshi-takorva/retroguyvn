@@ -37,12 +37,13 @@
             <label class="field wide"><span>Title</span><input id="titleInput" maxlength="160" required /></label>
             <label class="field"><span>Slug</span><input id="slugInput" maxlength="120" placeholder="auto-from-title" /></label>
             <label class="field"><span>Category</span><input id="categoryInput" maxlength="60" value="Development" /></label>
+            <label class="field"><span>Publish date &amp; time</span><input id="publishAtInput" type="datetime-local" step="60" /><small class="muted">Dùng khi nhấn Publish; có thể backdate bài viết.</small></label>
             <label class="field wide"><span>Excerpt</span><textarea id="excerptInput" maxlength="320"></textarea></label>
             <label class="field wide"><span>Tags <small>(cách nhau bằng dấu phẩy)</small></span><input id="tagsInput" /></label>
             <label class="field wide"><span>Cover image</span><select id="coverInput"><option value="">No cover</option></select></label>
           </div></section>
 
-          <section class="panel"><div class="section-head"><div><h2>Content blocks</h2><p class="muted small">Dùng ↑ ↓ để đổi thứ tự block.</p></div><div class="block-tools"><button type="button" data-add="text">+ Text</button><button type="button" data-add="heading">+ Heading</button><button type="button" data-add="image">+ Image</button><button type="button" data-add="gallery">+ Gallery</button><button type="button" data-add="video">+ Video</button><button type="button" data-add="quote">+ Quote</button><button type="button" data-add="link">+ Link</button></div></div><div id="blockList" class="block-list"></div></section>
+          <section class="panel"><div class="section-head"><div><h2>Content blocks</h2><p class="muted small">Dùng ↑ ↓ để đổi thứ tự block. Text và Quote tối đa 2000 từ cho mỗi block.</p></div><div class="block-tools"><button type="button" data-add="text">+ Text</button><button type="button" data-add="heading">+ Heading</button><button type="button" data-add="image">+ Image</button><button type="button" data-add="gallery">+ Gallery</button><button type="button" data-add="video">+ Video</button><button type="button" data-add="quote">+ Quote</button><button type="button" data-add="link">+ Link</button></div></div><div id="blockList" class="block-list"></div></section>
 
           <section class="panel"><div class="section-head"><div><h2>Media</h2><p class="muted small">Ảnh tối đa 5 MB · Video MP4/WebM/MOV tối đa 50 MB.</p></div><div class="inline"><input id="mediaFile" type="file" accept="image/*,video/mp4,video/webm,video/quicktime" /><button class="btn" id="uploadBtn" type="button">Upload</button></div></div><div id="mediaStrip" class="media-strip"></div></section>
 
