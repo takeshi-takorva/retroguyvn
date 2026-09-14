@@ -1,4 +1,4 @@
-import { cleanMediaId, cleanText, newsError } from './model.js';
+import { cleanMediaId, cleanText, enforceWordLimit, newsError } from './model.js';
 
 function safeUrl(value) {
   const url = cleanText(value, 2048);
@@ -12,9 +12,9 @@ function safeUrl(value) {
 
 export function normalizeNewsBlock(block = {}) {
   const type = cleanText(block.type, 20).toLowerCase();
-  if (type === 'text') return { type, text: cleanText(block.text, 30000) };
+  if (type === 'text') return { type, text: enforceWordLimit(block.text, 2000, 'Text block') };
   if (type === 'heading') return { type, level: [2, 3].includes(Number(block.level)) ? Number(block.level) : 2, text: cleanText(block.text, 300) };
-  if (type === 'quote') return { type, text: cleanText(block.text, 4000), attribution: cleanText(block.attribution, 160) };
+  if (type === 'quote') return { type, text: enforceWordLimit(block.text, 2000, 'Quote block'), attribution: cleanText(block.attribution, 160) };
   if (type === 'image') return { type, mediaId: cleanMediaId(block.mediaId), alt: cleanText(block.alt, 240), caption: cleanText(block.caption, 500) };
   if (type === 'video') return { type, mediaId: cleanMediaId(block.mediaId), caption: cleanText(block.caption, 500) };
   if (type === 'gallery') {
