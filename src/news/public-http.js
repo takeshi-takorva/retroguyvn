@@ -11,8 +11,11 @@ export async function handleNewsPublic(request, env) {
     const url = new URL(request.url);
     if (request.method !== 'GET') return json({ error: 'Method not allowed' }, { status: 405 });
     if (url.pathname === '/api/news') {
-      const limit = Number(url.searchParams.get('limit') || 50);
-      return json({ items: await listPublishedNews(env, { limit }) });
+      const page = Number(url.searchParams.get('page') || 1);
+      const pageSize = Number(url.searchParams.get('pageSize') || url.searchParams.get('limit') || 50);
+      const result = await listPublishedNews(env, { page, pageSize });
+      const { items, page: currentPage, pageSize: resolvedPageSize, totalItems, totalPages } = result;
+      return json({ items, page: currentPage, pageSize: resolvedPageSize, totalItems, totalPages });
     }
     const match = url.pathname.match(/^\/api\/news\/([^/]+)$/);
     if (match) {
