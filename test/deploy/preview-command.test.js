@@ -4,8 +4,8 @@ import { readFile } from 'node:fs/promises';
 
 const packageJson = JSON.parse(await readFile(new URL('../../package.json', import.meta.url), 'utf8'));
 
-test('preview deploy uses the repository wrapper', () => {
-  assert.equal(packageJson.scripts['deploy:preview'], 'node scripts/deploy-preview.mjs');
+test('preview deploy uses the branch gate wrapper', () => {
+  assert.equal(packageJson.scripts['deploy:preview'], 'node scripts/deploy-preview-gate.mjs');
 });
 
 test('preview wrapper builds missing Astro output before uploading a Worker version', async () => {
@@ -20,6 +20,14 @@ test('preview upload is pinned to the generated production Wrangler config', asy
   assert.match(source, /'versions', 'upload'/);
   assert.match(source, /'--config', CONFIG/);
   assert.match(source, /const CONFIG = 'dist\/server\/wrangler\.production\.json'/);
+});
+
+test('non-OTA Workers Builds branches skip Worker version upload before importing deploy-preview', async () => {
+  const source = await readFile(new URL('../../scripts/deploy-preview-gate.mjs', import.meta.url), 'utf8');
+  assert.match(source, /WORKERS_CI_BRANCH/);
+  assert.match(source, /Skipping Worker version upload for non-OTA preview branch/);
+  assert.match(source, /branch !== CANARY_BRANCH/);
+  assert.match(source, /await import\('\.\/deploy-preview\.mjs'\)/);
 });
 
 test('OTA feature branch performs a zero-traffic canary only on its exact branch', async () => {
