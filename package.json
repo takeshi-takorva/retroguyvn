@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "astro dev",
     "test": "node --test",
-    "build": "astro build && node scripts/patch-generated-wrangler.mjs && wrangler deploy --dry-run --config dist/server/wrangler.production.json --outdir .wrangler-dry && node scripts/patch-generated-wrangler.mjs",
+    "build": "astro build && node scripts/patch-deployment-wrangler.mjs && wrangler deploy --dry-run --config dist/server/wrangler.production.json --outdir .wrangler-dry && node scripts/patch-deployment-wrangler.mjs",
     "preview": "astro preview",
     "deploy:preview": "node scripts/deploy-preview.mjs",
     "deploy": "npm run build && wrangler deploy --config dist/server/wrangler.production.json"
