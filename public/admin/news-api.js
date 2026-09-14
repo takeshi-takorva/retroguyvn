@@ -18,7 +18,7 @@ export const listPosts=()=>api('/api/admin/news');
 export const getPost=id=>api(`/api/admin/news/${encodeURIComponent(id)}`);
 export const createPost=body=>api('/api/admin/news',{method:'POST',json:true,body});
 export const savePost=(id,body)=>api(`/api/admin/news/${encodeURIComponent(id)}`,{method:'PUT',json:true,body});
-export const publishPost=id=>api(`/api/admin/news/${encodeURIComponent(id)}/publish`,{method:'POST'});
+export const publishPost=(id,publishedAt)=>api(`/api/admin/news/${encodeURIComponent(id)}/publish`,{method:'POST',json:true,body:{publishedAt:publishedAt||null}});
 export const unpublishPost=id=>api(`/api/admin/news/${encodeURIComponent(id)}/unpublish`,{method:'POST'});
 export const removePost=id=>api(`/api/admin/news/${encodeURIComponent(id)}/remove`,{method:'POST'});
 export const listMedia=()=>api('/api/admin/media');
