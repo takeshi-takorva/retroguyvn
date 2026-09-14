@@ -4,6 +4,33 @@ export function newsError(message, status = 400, extra = {}) {
 
 const cleanText = (value, max = 10000) => String(value ?? '').trim().slice(0, max);
 
+export function countWords(value) {
+  const text = String(value ?? '').trim();
+  return text ? text.split(/\s+/u).length : 0;
+}
+
+export function enforceWordLimit(value, maxWords = 2000, label = 'Content') {
+  const text = String(value ?? '').trim();
+  if (countWords(text) > maxWords) throw newsError(`${label} can contain at most ${maxWords} words`);
+  return text;
+}
+
+export function normalizePublishTime(value, fallback = new Date().toISOString()) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return fallback;
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) throw newsError('Invalid publish date/time');
+  return parsed.toISOString();
+}
+
+export function normalizeNewsPagination({ page = 1, pageSize = 50 } = {}) {
+  const parsedPage = Math.floor(Number(page));
+  const parsedPageSize = Math.floor(Number(pageSize));
+  const safePage = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  const safePageSize = Number.isFinite(parsedPageSize) && parsedPageSize > 0 ? Math.min(parsedPageSize, 50) : 50;
+  return { page: safePage, pageSize: safePageSize, offset: (safePage - 1) * safePageSize };
+}
+
 export function cleanMediaId(value) {
   const id = cleanText(value, 160);
   if (!id) return null;
