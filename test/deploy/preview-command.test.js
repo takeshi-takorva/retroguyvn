@@ -22,6 +22,13 @@ test('preview upload is pinned to the generated production Wrangler config', asy
   assert.match(source, /const CONFIG = 'dist\/server\/wrangler\.production\.json'/);
 });
 
+test('non-OTA Workers Builds branches skip Worker version upload', async () => {
+  const source = await readFile(new URL('../../scripts/deploy-preview.mjs', import.meta.url), 'utf8');
+  assert.match(source, /WORKERS_CI_BRANCH/);
+  assert.match(source, /Skipping Worker version upload for non-OTA preview branch/);
+  assert.match(source, /if \(process\.env\.WORKERS_CI === '1' && branch && branch !== CANARY_BRANCH\)/);
+});
+
 test('OTA feature branch performs a zero-traffic canary only on its exact branch', async () => {
   const source = await readFile(new URL('../../scripts/deploy-preview.mjs', import.meta.url), 'utf8');
   assert.match(source, /WORKERS_CI_BRANCH/);
