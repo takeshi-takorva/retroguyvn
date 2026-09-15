@@ -70,6 +70,15 @@ export function normalizeProductDraft(input = {}) {
 
 export function productRevisionContent(product) {
   return {
+    name: product.name,
+    slug: product.slug,
+    subtitle: product.subtitle || '',
+    excerpt: product.excerpt || '',
+    category: product.category || 'Handheld',
+    availability: product.availability || 'development',
+    featured: Boolean(product.featured),
+    sortOrder: Number(product.sortOrder || 0),
+    coverMediaId: product.coverMediaId || null,
     description: product.description || '',
     features: product.features || [],
     specs: product.specs || [],
