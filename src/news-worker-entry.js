@@ -1,6 +1,7 @@
 import worker, { CMSStore } from './worker-entry.js';
 import { dispatchNewsPublic, dispatchNewsAdmin } from './news/dispatch.js';
 import { assertNewsMediaNotInUse } from './news/delete.js';
+import { dispatchProductPublic, dispatchProductAdmin } from './products/dispatch.js';
 import { assertProductMediaNotInUse } from './products/media.js';
 import { ensureProductSchema } from './products/schema.js';
 
@@ -15,7 +16,7 @@ function mutationOriginAllowed(request, url) {
   return !origin || origin === url.origin;
 }
 
-async function newsAdminSession(request, env, ctx) {
+async function adminSession(request, env, ctx) {
   const url = new URL(request.url);
   url.pathname = '/api/admin/session';
   url.search = '';
@@ -35,16 +36,27 @@ export default {
       return dispatchNewsPublic(request, env);
     }
 
+    if (url.pathname === '/api/products' || url.pathname.startsWith('/api/products/')) {
+      return dispatchProductPublic(request, env);
+    }
+
     if (url.pathname === '/api/admin/news' || url.pathname.startsWith('/api/admin/news/')) {
       if (!mutationOriginAllowed(request, url)) return json({ error: 'Cross-origin admin mutation rejected' }, 403);
-      const session = await newsAdminSession(request, env, ctx);
+      const session = await adminSession(request, env, ctx);
       if (!session) return json({ error: 'Unauthorized' }, 401);
       return dispatchNewsAdmin(request, env, session.email || session.mode || 'admin');
     }
 
+    if (url.pathname === '/api/admin/products' || url.pathname.startsWith('/api/admin/products/')) {
+      if (!mutationOriginAllowed(request, url)) return json({ error: 'Cross-origin admin mutation rejected' }, 403);
+      const session = await adminSession(request, env, ctx);
+      if (!session) return json({ error: 'Unauthorized' }, 401);
+      return dispatchProductAdmin(request, env, session.email || session.mode || 'admin');
+    }
+
     if (request.method === 'DELETE' && url.pathname.startsWith('/api/admin/media/')) {
       if (!mutationOriginAllowed(request, url)) return json({ error: 'Cross-origin admin mutation rejected' }, 403);
-      const session = await newsAdminSession(request, env, ctx);
+      const session = await adminSession(request, env, ctx);
       if (!session) return json({ error: 'Unauthorized' }, 401);
       const mediaId = decodeURIComponent(url.pathname.slice('/api/admin/media/'.length));
       try {
