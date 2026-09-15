@@ -1,0 +1,52 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { env } from 'cloudflare:workers';
+import { bootstrapProductCatalogue } from '../../products/bootstrap.js';
+import { getPublishedProduct } from '../../products/public-get.js';
+
+const slug = Astro.params.slug || '';
+let product = null;
+try {
+  await bootstrapProductCatalogue(env);
+  product = await getPublishedProduct(env, slug);
+} catch {
+  product = null;
+}
+if (!product) Astro.response.status = 404;
+const title = product?.name ? `${product.name} — RetroGuy VN` : 'Product not found — RetroGuy VN';
+const description = product?.excerpt || 'RetroGuy VN product detail.';
+---
+<BaseLayout title={title} description={description}>
+  <main class="product-detail-shell" id="productDetail" data-product-slug={slug}>
+    <section class:list={['product-not-found', { hidden: !!product }]} id="productNotFound">
+      <p class="eyebrow">Product catalogue</p>
+      <h1>PRODUCT NOT FOUND</h1>
+      <p class="lede">This product is unavailable or has not been published.</p>
+      <div class="actions"><a class="button" href="/product">Back to products</a></div>
+    </section>
+
+    <div class:list={['product-live', { hidden: !product }]} id="productLive">
+      <section class="product-hero-detail">
+        <div class="product-cover" id="productCover"></div>
+        <div class="product-copy">
+          <div class="product-meta"><span class="tag" id="productCategory"></span><span id="productAvailability"></span></div>
+          <h1 id="productName"></h1>
+          <p class="product-subtitle" id="productSubtitle"></p>
+          <p class="lede" id="productExcerpt"></p>
+          <div class="actions" id="productCta"></div>
+        </div>
+      </section>
+
+      <section class="section detail-section" id="productDescription"><p class="eyebrow">Overview</p><h2>Description</h2><p class="detail-copy" id="productDescriptionText"></p></section>
+      <section class="section detail-section"><p class="eyebrow">Highlights</p><h2>Features</h2><div class="feature-grid" id="productFeatures"></div></section>
+      <section class="section detail-section"><p class="eyebrow">Technical</p><h2>Specifications</h2><dl class="spec-list" id="productSpecs"></dl></section>
+      <section class="section detail-section"><p class="eyebrow">Media</p><h2>Gallery</h2><div class="gallery-grid" id="productGallery"></div></section>
+    </div>
+  </main>
+
+  <script type="module" src="/product/detail.js"></script>
+
+  <style>
+    .hidden{display:none!important}.product-detail-shell{min-height:60vh}.product-not-found{max-width:var(--max);margin:auto;padding:100px 24px}.product-not-found h1{font-size:clamp(2.8rem,7vw,6rem);margin:0;line-height:.95}.product-hero-detail{max-width:var(--max);margin:auto;padding:80px 24px 38px;display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,.9fr);gap:42px;align-items:center}.product-cover{aspect-ratio:1/1;border:1px solid rgba(255,255,255,.12);background:#07101c;display:grid;place-items:center;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.product-cover img{width:100%;height:100%;object-fit:cover}.product-copy h1{font-size:clamp(3rem,7vw,6.2rem);line-height:.9;letter-spacing:-.055em;margin:18px 0 10px;text-transform:uppercase}.product-meta{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:.74rem;text-transform:uppercase;letter-spacing:.08em}.product-subtitle{color:var(--cyan);font-weight:900;text-transform:uppercase;letter-spacing:.08em}.detail-section{padding-top:54px;padding-bottom:54px}.detail-section h2{margin-bottom:24px}.detail-copy{white-space:pre-line;color:#bfd0df;max-width:860px;font-size:1.05rem}.feature-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.feature-card{padding:22px;border:1px solid rgba(255,255,255,.1);background:rgba(15,32,52,.7)}.feature-card h3{margin:0 0 8px}.feature-card p{margin:0;color:var(--muted)}.spec-list{display:grid;grid-template-columns:minmax(160px,.35fr) 1fr;margin:0;border-top:1px solid rgba(255,255,255,.1)}.spec-list dt,.spec-list dd{margin:0;padding:14px 12px;border-bottom:1px solid rgba(255,255,255,.1)}.spec-list dt{color:var(--cyan);font-weight:800}.spec-list dd{color:#bfd0df}.gallery-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.gallery-grid img{width:100%;aspect-ratio:1/1;object-fit:cover;border:1px solid rgba(255,255,255,.1);background:#07101c}@media(max-width:850px){.product-hero-detail{grid-template-columns:1fr}.feature-grid,.gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.feature-grid,.gallery-grid{grid-template-columns:1fr}.spec-list{grid-template-columns:1fr}.spec-list dt{border-bottom:0;padding-bottom:3px}.spec-list dd{padding-top:3px}}
+  </style>
+</BaseLayout>
