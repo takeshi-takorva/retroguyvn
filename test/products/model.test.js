@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeProductDraft } from '../../src/products/content.js';
+import { normalizeProductDraft, productRevisionContent } from '../../src/products/content.js';
 import { slugifyProduct } from '../../src/products/model.js';
 
 test('slugifies Vietnamese product names', () => {
@@ -24,6 +24,16 @@ test('normalizes product draft and deduplicates gallery media', () => {
   assert.equal(out.featured, true);
   assert.equal(out.sortOrder, 4);
   assert.equal(out.cta.href, '/support');
+});
+
+test('revision snapshots include catalogue metadata so published content is isolated from draft edits', () => {
+  const normalized = normalizeProductDraft({ name: 'DR Portal', subtitle: 'Pocket Adventure Device', excerpt: 'First release', category: 'Handheld', availability: 'coming-soon', featured: true, sortOrder: 7, coverMediaId: 'cover1' });
+  const snapshot = productRevisionContent(normalized);
+  assert.equal(snapshot.name, 'DR Portal');
+  assert.equal(snapshot.subtitle, 'Pocket Adventure Device');
+  assert.equal(snapshot.featured, true);
+  assert.equal(snapshot.sortOrder, 7);
+  assert.equal(snapshot.coverMediaId, 'cover1');
 });
 
 test('rejects invalid availability and external CTA paths', () => {
