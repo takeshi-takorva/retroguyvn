@@ -1,13 +1,74 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+const faqs = [
+  ['GETTING STARTED','How do I start using my device?','Charge the device, power it on and follow the first-run flow shown on screen. Product-specific setup guides will be added as hardware releases become public.'],
+  ['GETTING STARTED','How should I charge the device?','Use a stable USB power source and the supported charging connection for your hardware revision. Detailed charging guidance will be published with each product manual.'],
+  ['SOFTWARE','How will firmware updates work?','Stable firmware and update instructions will be published through RetroGuy support channels. Device-specific OTA information will be documented before public release.'],
+  ['HARDWARE','What should I do if the device does not power on?','Check charging power, cable connection and the hardware power switch first. If the issue remains, use the contact form once direct support tickets are enabled.'],
+];
 ---
-<BaseLayout title="Support — RetroGuy VN">
-  <section class="page-hero"><p class="eyebrow" data-cms="eyebrow">Help & contact</p><h1 data-cms="heading">SUPPORT</h1><p class="lede" data-cms="lede">Support V1 provides a clear home for setup guidance, troubleshooting, warranty information and contact channels as they become available.</p></section>
-  <section class="section">
-    <div class="grid">
-      <article class="card"><span class="num" data-cms="cards.0.badge">START</span><h3 data-cms="cards.0.title">Quick start</h3><p data-cms="cards.0.text">Device setup, controls, charging, storage and first-run instructions will be published here.</p></article>
-      <article class="card"><span class="num" data-cms="cards.1.badge">FIX</span><h3 data-cms="cards.1.title">Troubleshooting</h3><p data-cms="cards.1.text">Known issues, recovery steps and firmware-specific notes will be maintained alongside releases.</p></article>
-      <article class="card"><span class="num" data-cms="cards.2.badge">CONTACT</span><h3 data-cms="cards.2.title">Get in touch</h3><p data-cms="cards.2.text">Official community and support contact details will be added before public launch.</p></article>
-    </div>
+<BaseLayout title="Support — RetroGuy VN" description="RetroGuy VN product support, frequently asked questions, setup guidance and contact options.">
+  <section class="page-hero support-hero">
+    <p class="eyebrow">Help & contact</p>
+    <h1>SUPPORT</h1>
+    <p class="lede">Find setup guidance, common answers and product support information in one place.</p>
+    <label class="support-search"><span>Search support</span><input id="faqSearch" type="search" placeholder="Search questions…" autocomplete="off" /></label>
   </section>
+
+  <section class="section support-layout">
+    <div class="faq-column">
+      <div class="section-head"><div><p class="eyebrow">FAQ</p><h2>Common questions</h2></div><p>Answers are grouped around setup, hardware and software. Managed FAQ publishing will connect to this layout in the Support backend milestone.</p></div>
+      <div class="faq-list" id="faqList">
+        {faqs.map(([category,question,answer]) => (
+          <details class="faq-item" data-faq={`${category} ${question} ${answer}`.toLowerCase()}>
+            <summary><span><small>{category}</small>{question}</span><b>+</b></summary>
+            <p>{answer}</p>
+          </details>
+        ))}
+      </div>
+      <p class="faq-empty" id="faqEmpty" hidden>No matching support questions.</p>
+    </div>
+
+    <aside class="contact-panel" aria-labelledby="contact-title">
+      <span class="tag">Contact support</span>
+      <h2 id="contact-title">Still need help?</h2>
+      <p>Send us the details so the future Support Inbox can keep the full conversation tied to one ticket.</p>
+      <form id="supportForm" class="support-form">
+        <label><span>Name</span><input name="name" type="text" maxlength="120" required /></label>
+        <label><span>Email</span><input name="email" type="email" maxlength="254" required /></label>
+        <label><span>Topic</span><select name="topic" required><option value="">Select a topic</option><option>Product support</option><option>Hardware</option><option>Software / firmware</option><option>Order / availability</option><option>Other</option></select></label>
+        <label><span>Message</span><textarea name="message" rows="7" maxlength="4000" required></textarea></label>
+        <button class="button" type="submit">SEND QUESTION</button>
+        <p class="support-status" id="supportStatus" aria-live="polite">Direct ticket delivery will be enabled with the Support backend. This M1 form does not send data yet.</p>
+      </form>
+    </aside>
+  </section>
+
+  <style>
+    .support-hero{padding-bottom:34px}.support-search{display:grid;gap:8px;max-width:700px;margin-top:28px}.support-search span,.support-form label>span{font-size:.72rem;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}.support-search input,.support-form input,.support-form select,.support-form textarea{width:100%;border:1px solid rgba(255,255,255,.14);background:#07111f;color:var(--text);padding:13px 14px;font:inherit;outline:none}.support-search input:focus,.support-form input:focus,.support-form select:focus,.support-form textarea:focus{border-color:var(--cyan)}.support-layout{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);gap:34px;align-items:start}.faq-list{display:grid;gap:10px}.faq-item{border:1px solid rgba(255,255,255,.1);background:rgba(15,32,52,.65)}.faq-item summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px 20px;font-weight:800}.faq-item summary::-webkit-details-marker{display:none}.faq-item summary span{display:grid;gap:4px}.faq-item summary small{color:var(--cyan);font-size:.64rem;letter-spacing:.1em}.faq-item summary b{color:var(--cyan);font-size:1.35rem}.faq-item[open] summary b{transform:rotate(45deg)}.faq-item p{margin:0;padding:0 20px 20px;color:var(--muted)}.faq-empty{color:var(--muted)}.contact-panel{position:sticky;top:96px;padding:26px;border:1px solid rgba(66,230,255,.2);background:linear-gradient(160deg,rgba(15,32,52,.95),rgba(5,9,20,.92))}.contact-panel h2{margin:14px 0 8px;font-size:2rem}.contact-panel>p{color:var(--muted)}.support-form{display:grid;gap:14px;margin-top:22px}.support-form label{display:grid;gap:7px}.support-form textarea{resize:vertical}.support-status{margin:0;color:var(--muted);font-size:.78rem;line-height:1.5}@media(max-width:850px){.support-layout{grid-template-columns:1fr}.contact-panel{position:static}}
+  </style>
+
+  <script is:inline>
+    const search = document.querySelector('#faqSearch');
+    const faqItems = [...document.querySelectorAll('.faq-item')];
+    const faqEmpty = document.querySelector('#faqEmpty');
+    search?.addEventListener('input', () => {
+      const query = search.value.trim().toLowerCase();
+      let visible = 0;
+      faqItems.forEach(item => {
+        const match = !query || item.dataset.faq.includes(query);
+        item.hidden = !match;
+        if (match) visible += 1;
+      });
+      faqEmpty.hidden = visible !== 0;
+    });
+
+    const form = document.querySelector('#supportForm');
+    const status = document.querySelector('#supportStatus');
+    form?.addEventListener('submit', event => {
+      event.preventDefault();
+      status.textContent = 'Support ticket delivery is not active in M1 yet. No message was sent.';
+      status.style.color = '#ffd85a';
+    });
+  </script>
 </BaseLayout>

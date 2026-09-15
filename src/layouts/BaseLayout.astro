@@ -1,5 +1,7 @@
 ---
 import '../styles/global.css';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
 
 interface Props {
   title?: string;
@@ -8,19 +10,8 @@ interface Props {
 
 const {
   title = 'RetroGuy VN',
-  description = 'RetroGuy VN — retro-inspired hardware, Digital Realm, development updates and downloads.'
+  description = 'RetroGuy VN — product hardware, news, support and development updates.'
 } = Astro.props;
-
-const path = Astro.url.pathname;
-const nav = [
-  ['/', 'HOME', 'nav.home'],
-  ['/digital-realm', 'DIGITAL REALM', 'nav.digitalRealm'],
-  ['/features', 'FEATURES', 'nav.features'],
-  ['/gallery', 'MEDIA', 'nav.media'],
-  ['/news', 'NEWS', 'nav.news'],
-  ['/download', 'DOWNLOAD', 'nav.download'],
-  ['/support', 'SUPPORT', 'nav.support']
-];
 ---
 <!doctype html>
 <html lang="en">
@@ -34,41 +25,8 @@ const nav = [
   </head>
   <body>
     <div class="scanlines" aria-hidden="true"></div>
-    <header class="site-header">
-      <a class="brand" href="/" aria-label="RetroGuy VN home">
-        <span class="brand-mark">RG</span>
-        <span data-cms-global="brand">RETROGUY<span class="accent">VN</span></span>
-      </a>
-      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">MENU</button>
-      <nav class="site-nav" aria-label="Primary navigation">
-        {nav.map(([href, label, key]) => (
-          <a href={href} class:list={[path === href && 'active']} data-cms-global={key}>{label}</a>
-        ))}
-      </nav>
-    </header>
-
+    <SiteHeader pathname={Astro.url.pathname} />
     <main><slot /></main>
-
-    <footer class="site-footer">
-      <div>
-        <strong data-cms-global="footer.brand">RETROGUY VN</strong>
-        <p data-cms-global="footer.tagline">Retro hardware. Pocket worlds. New adventures.</p>
-      </div>
-      <div class="footer-links">
-        <a href="/digital-realm" data-cms-global="footer.digitalRealm">Digital Realm</a>
-        <a href="/news" data-cms-global="footer.devlog">Devlog</a>
-        <a href="/support" data-cms-global="footer.support">Support</a>
-      </div>
-      <small>© {new Date().getFullYear()} <span data-cms-global="footer.copyright">RetroGuy VN</span>. All rights reserved.</small>
-    </footer>
-
-    <script is:inline>
-      const button = document.querySelector('.nav-toggle');
-      const nav = document.querySelector('.site-nav');
-      button?.addEventListener('click', () => {
-        const open = nav?.classList.toggle('open') ?? false;
-        button.setAttribute('aria-expanded', String(open));
-      });
-    </script>
+    <SiteFooter />
   </body>
 </html>
