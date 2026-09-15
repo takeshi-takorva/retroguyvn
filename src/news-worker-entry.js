@@ -1,6 +1,8 @@
 import worker, { CMSStore } from './worker-entry.js';
 import { dispatchNewsPublic, dispatchNewsAdmin } from './news/dispatch.js';
 import { assertNewsMediaNotInUse } from './news/delete.js';
+import { assertProductMediaNotInUse } from './products/media.js';
+import { ensureProductSchema } from './products/schema.js';
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
   status,
@@ -47,6 +49,8 @@ export default {
       const mediaId = decodeURIComponent(url.pathname.slice('/api/admin/media/'.length));
       try {
         await assertNewsMediaNotInUse(env, mediaId);
+        await ensureProductSchema(env);
+        await assertProductMediaNotInUse(env, mediaId);
       } catch (error) {
         return json({ error: error.message, usage: error.usage || [] }, Number(error.status || 409));
       }
