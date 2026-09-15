@@ -1,0 +1,67 @@
+---
+---
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Product Manager — RetroGuy Admin</title>
+  <link rel="stylesheet" href="/admin/news.css" />
+  <style>
+    .product-workspace{grid-template-columns:320px minmax(0,1fr)}.product-card{width:100%;text-align:left}.product-meta{display:flex;gap:7px;flex-wrap:wrap;color:var(--muted);font-size:12px}.toggle-row{display:flex;align-items:center;gap:9px}.toggle-row input{width:auto}.repeat-list{display:grid;gap:10px}.repeat-row{display:grid;grid-template-columns:minmax(150px,.35fr) 1fr auto;gap:9px;align-items:start}.repeat-row input,.repeat-row textarea,.gallery-row select{width:100%}.gallery-row{display:grid;grid-template-columns:1fr auto;gap:9px}.section-tools{display:flex;gap:8px;align-items:center;justify-content:space-between}.empty-repeat{padding:16px;border:1px dashed var(--line);color:var(--muted)}@media(max-width:900px){.product-workspace{grid-template-columns:1fr}.repeat-row{grid-template-columns:1fr}.gallery-row{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div><p class="eyebrow">RetroGuy Admin</p><h1>PRODUCT MANAGER</h1><p class="muted">Catalogue · Product detail · Draft / Publish</p></div>
+      <div class="top-actions"><a class="btn" href="/admin">Admin Home</a><a class="btn" href="/product" target="_blank" rel="noopener">Open Products</a><span class="pill" id="connection">Checking access…</span></div>
+    </header>
+
+    <section class="login hidden" id="loginPanel">
+      <h2>Admin access</h2><p class="muted">Cloudflare Access chưa được nhận diện. Có thể dùng Admin Token dự phòng.</p>
+      <form id="loginForm" class="inline"><input id="tokenInput" type="password" placeholder="Admin Token" autocomplete="current-password" required /><button class="btn primary">Connect</button></form>
+    </section>
+
+    <section class="workspace product-workspace hidden" id="workspace">
+      <aside class="sidebar">
+        <div class="sidebar-head"><div><strong>Products</strong><div class="muted small" id="productCount"></div></div><button class="btn primary" id="newBtn" type="button">+ New product</button></div>
+        <div class="filters"><input id="searchInput" placeholder="Search products…" /><select id="statusFilter"><option value="all">All status</option><option value="draft">Draft</option><option value="published">Published</option></select></div>
+        <div id="productList" class="post-list"></div>
+      </aside>
+
+      <section class="editor">
+        <div class="editor-empty" id="emptyState"><h2>Select a product</h2><p class="muted">Chọn sản phẩm bên trái hoặc tạo sản phẩm mới.</p></div>
+        <form id="productForm" class="hidden">
+          <div class="editor-bar"><div><strong id="editorLabel">New product</strong><div class="muted small" id="saveState">Ready</div></div><div class="inline"><a class="btn hidden" id="openPublicLink" href="/product" target="_blank" rel="noopener">Open public</a><button class="btn" id="unpublishBtn" type="button">Unpublish</button><button class="btn danger" id="deleteBtn" type="button">Remove</button><button class="btn" id="saveBtn" type="button">Save draft</button><button class="btn good" id="publishBtn" type="button">Publish</button></div></div>
+
+          <section class="panel"><h2>Product information</h2><div class="grid">
+            <label class="field wide"><span>Name</span><input id="nameInput" maxlength="120" required /></label>
+            <label class="field"><span>Slug</span><input id="slugInput" maxlength="120" placeholder="auto-from-name" /></label>
+            <label class="field"><span>Category</span><input id="categoryInput" maxlength="80" value="Handheld" /></label>
+            <label class="field wide"><span>Subtitle</span><input id="subtitleInput" maxlength="180" /></label>
+            <label class="field wide"><span>Excerpt</span><textarea id="excerptInput" maxlength="500"></textarea></label>
+            <label class="field"><span>Availability</span><select id="availabilityInput"><option value="development">Development</option><option value="coming-soon">Coming soon</option><option value="available">Available</option><option value="discontinued">Discontinued</option></select></label>
+            <label class="field"><span>Sort order</span><input id="sortOrderInput" type="number" step="1" value="0" /></label>
+            <label class="field wide toggle-row"><input id="featuredInput" type="checkbox" /><span>Featured product</span></label>
+            <label class="field wide"><span>Cover image</span><select id="coverInput"><option value="">No cover</option></select></label>
+          </div></section>
+
+          <section class="panel"><h2>Description</h2><label class="field"><span>Long description <small>· max 4000 words</small></span><textarea id="descriptionInput" rows="12"></textarea></label></section>
+
+          <section class="panel"><div class="section-tools"><div><h2>Features</h2><p class="muted small">Maximum 20 feature highlights.</p></div><button class="btn" id="addFeatureBtn" type="button">+ Add feature</button></div><div class="repeat-list" id="featureList"></div></section>
+
+          <section class="panel"><div class="section-tools"><div><h2>Specifications</h2><p class="muted small">Maximum 40 label/value rows.</p></div><button class="btn" id="addSpecBtn" type="button">+ Add spec</button></div><div class="repeat-list" id="specList"></div></section>
+
+          <section class="panel"><div class="section-tools"><div><h2>Gallery</h2><p class="muted small">Choose up to 20 images from the shared Media Library.</p></div><button class="btn" id="addGalleryBtn" type="button">+ Add image</button></div><div class="repeat-list" id="galleryList"></div></section>
+
+          <section class="panel"><h2>Call to action</h2><div class="grid"><label class="field"><span>CTA label</span><input id="ctaLabelInput" maxlength="80" value="Get support" /></label><label class="field"><span>CTA path</span><input id="ctaHrefInput" maxlength="240" value="/support" /></label></div></section>
+        </form>
+      </section>
+    </section>
+  </main>
+  <div id="toast" class="toast hidden" aria-live="polite"></div>
+  <script type="module" src="/admin/products.js"></script>
+</body>
+</html>
