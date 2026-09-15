@@ -13,6 +13,7 @@ const home = variant === 'home';
   <header class="nav">
     <div class="wrap navin">
       <a href="/" aria-label="Retro Guy home"><img class="logo" src="/images/brand/retroguy-wordmark.webp" alt="Retro Guy" /></a>
+      <button class="home-nav-toggle" aria-label="Toggle navigation" aria-expanded="false">MENU</button>
       <nav class="links" aria-label="Primary navigation">
         {PUBLIC_NAV.map(item => <a href={item.href} aria-current={isActivePublicRoute(pathname, item.href) ? 'page' : undefined}>{item.label}</a>)}
       </nav>
@@ -33,7 +34,16 @@ const home = variant === 'home';
   </header>
 )}
 
-{!home && (
+{home ? (
+  <script is:inline>
+    const button = document.querySelector('.home-nav-toggle');
+    const nav = document.querySelector('.links');
+    button?.addEventListener('click', () => {
+      const open = nav?.classList.toggle('open') ?? false;
+      button.setAttribute('aria-expanded', String(open));
+    });
+  </script>
+) : (
   <script is:inline>
     const button = document.querySelector('.nav-toggle');
     const nav = document.querySelector('.site-nav');
