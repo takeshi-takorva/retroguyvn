@@ -2,7 +2,8 @@ import { getAdminPost } from './admin-read.js';
 import { assertPostChannel, contentError, normalizePublishTime } from './model.js';
 import { ensureContentSchema } from './schema.js';
 import { SQL } from './sql.js';
-import { nowIso, postRevision, validatePostMedia } from './store.js';
+import { validatePostMedia } from './media.js';
+import { nowIso, postRevision } from './store.js';
 
 export async function publishPost(env, channel, id, actor = 'admin', options = {}) {
   const normalizedChannel = assertPostChannel(channel);
