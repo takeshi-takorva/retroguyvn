@@ -1,0 +1,30 @@
+---
+import { PUBLIC_NAV } from '../site/navigation.js';
+
+interface Props {
+  variant?: 'default' | 'home';
+}
+
+const { variant = 'default' } = Astro.props;
+const home = variant === 'home';
+const year = new Date().getFullYear();
+---
+{home ? (
+  <footer class="footer">
+    <div class="wrap footerin">
+      <img src="/images/brand/retroguy-wordmark.webp" alt="Retro Guy" />
+      <span>© {year} Retro Guy VN · DR Portal</span>
+    </div>
+  </footer>
+) : (
+  <footer class="site-footer">
+    <div>
+      <strong data-cms-global="footer.brand">RETROGUY VN</strong>
+      <p data-cms-global="footer.tagline">Retro hardware. Pocket worlds. New adventures.</p>
+    </div>
+    <div class="footer-links">
+      {PUBLIC_NAV.filter(item => item.href !== '/').map(item => <a href={item.href}>{item.label}</a>)}
+    </div>
+    <small>© {year} <span data-cms-global="footer.copyright">RetroGuy VN</span>. All rights reserved.</small>
+  </footer>
+)}
