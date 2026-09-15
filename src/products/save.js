@@ -4,6 +4,7 @@ import { getAdminProduct } from './admin-read.js';
 import { SQL } from './sql.js';
 import { assertProductSlugAvailable, nowIso, uid } from './store.js';
 import { productError } from './model.js';
+import { indexProductMediaUsage, validateProductMedia } from './media.js';
 
 export async function saveProductDraft(env, id, input, actor = 'admin') {
   await ensureProductSchema(env);
@@ -11,15 +12,17 @@ export async function saveProductDraft(env, id, input, actor = 'admin') {
   if (!row) throw productError('Product not found', 404);
   const content = normalizeProductDraft(input);
   await assertProductSlugAvailable(env, content.slug, id);
+  await validateProductMedia(env, content);
   const latest = await env.DB.prepare(SQL.maxVersion).bind(id).first();
   const version = Number(latest?.version || 0) + 1;
   const revisionId = uid('prev');
   const updatedAt = nowIso();
+  const revisionContent = productRevisionContent(content);
   const revision = env.DB.prepare(SQL.insertRevision).bind(
     revisionId,
     id,
     version,
-    JSON.stringify(productRevisionContent(content)),
+    JSON.stringify(revisionContent),
     updatedAt,
     actor
   );
@@ -38,5 +41,6 @@ export async function saveProductDraft(env, id, input, actor = 'admin') {
     id
   );
   await env.DB.batch([revision, update]);
+  await indexProductMediaUsage(env, revisionId, revisionContent);
   return getAdminProduct(env, id);
 }
