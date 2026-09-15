@@ -4,12 +4,14 @@ import { readFile } from 'node:fs/promises';
 
 const read = path => readFile(new URL(`../../${path}`, import.meta.url), 'utf8');
 
-test('Product page provides featured product and catalogue-ready layout', async () => {
+test('Product page preserves featured and catalogue-ready layout for the CMS-driven catalogue', async () => {
   const page = await read('src/pages/product.astro');
   assert.match(page, /PRODUCTS?/i);
-  assert.match(page, /DR PORTAL/i);
   assert.match(page, /product-featured/);
   assert.match(page, /product-grid/);
+  assert.match(page, /productFeatured/);
+  assert.match(page, /productGrid/);
+  assert.doesNotMatch(page, /<h3>DR Portal<\/h3>/i);
 });
 
 test('Dev Log page defines development journal taxonomy without reusing the News API in M1', async () => {
