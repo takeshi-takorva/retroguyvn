@@ -1,0 +1,27 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const categories = ['HARDWARE','SOFTWARE','GAME','DESIGN','PROTOTYPE','MANUFACTURING'];
+---
+<BaseLayout title="Dev Log — RetroGuy VN" description="Behind-the-scenes development notes from RetroGuy VN across hardware, software, game design, prototyping and manufacturing.">
+  <section class="page-hero devlog-hero">
+    <p class="eyebrow">Behind the development</p>
+    <h1>DEV LOG</h1>
+    <p class="lede">A focused journal for how RetroGuy products are designed, prototyped, tested and refined — separate from public announcements in News.</p>
+  </section>
+
+  <section class="section devlog-shell">
+    <div class="devlog-filter" aria-label="Development categories">
+      {categories.map(category => <span>{category}</span>)}
+    </div>
+    <div class="devlog-empty">
+      <span class="tag">Development journal</span>
+      <h2>Build stories will live here.</h2>
+      <p>Hardware revisions, firmware architecture, game systems, industrial design, prototypes and manufacturing notes will be published as dedicated Dev Log entries.</p>
+      <a class="button secondary" href="/news">View current News</a>
+    </div>
+  </section>
+
+  <style>
+    .devlog-hero{padding-bottom:36px}.devlog-shell{padding-top:28px}.devlog-filter{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:26px}.devlog-filter span{border:1px solid rgba(66,230,255,.25);background:rgba(66,230,255,.04);padding:8px 11px;color:var(--cyan);font-size:.7rem;font-weight:900;letter-spacing:.08em}.devlog-empty{padding:48px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(160deg,rgba(15,32,52,.78),rgba(5,9,20,.7))}.devlog-empty h2{margin:16px 0 12px;font-size:clamp(2rem,5vw,4rem)}.devlog-empty p{max-width:760px;color:var(--muted);font-size:1.02rem}.devlog-empty .button{margin-top:18px}
+  </style>
+</BaseLayout>
