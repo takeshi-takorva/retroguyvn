@@ -5,13 +5,8 @@ import { bootstrapProducts } from '../../products/bootstrap.js';
 import { getPublishedProduct } from '../../products/public-get.js';
 
 const slug = Astro.params.slug || '';
-let product = null;
-try {
-  await bootstrapProducts(env);
-  product = await getPublishedProduct(env, slug);
-} catch {
-  product = null;
-}
+await bootstrapProducts(env);
+const product = await getPublishedProduct(env, slug);
 if (!product) Astro.response.status = 404;
 const title = product?.name ? `${product.name} — RetroGuy VN` : 'Product not found — RetroGuy VN';
 const description = product?.excerpt || 'RetroGuy VN product detail.';
