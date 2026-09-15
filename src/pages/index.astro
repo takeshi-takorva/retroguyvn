@@ -1,4 +1,7 @@
 ---
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+
 const stats = [
   ['300+', 'Living Digital Monsters'],
   ['500+', 'Branching Evolutions'],
@@ -31,7 +34,7 @@ const features = [
 </head>
 <body>
   <div class="site-bg" aria-hidden="true"></div>
-  <header class="nav"><div class="wrap navin"><a href="/"><img class="logo" src="/images/brand/retroguy-wordmark.webp" alt="Retro Guy" /></a><nav class="links"><a href="#experience">Experience</a><a href="#features">Features</a><a href="#hardware">Hardware</a><a href="/digital-realm">Digital Realm</a><a href="/news">Devlog</a></nav></div></header>
+  <SiteHeader variant="home" pathname={Astro.url.pathname} />
   <main>
     <section class="hero"><div class="wrap hero-grid"><div class="reveal"><div class="eyebrow">Retro Guy · Pocket Adventure Device</div><h1><span class="dr">DR</span><span>Portal</span></h1><p class="tagline">Open the Portal. Enter the Realm.</p><p class="lead">Một thiết bị đồng hành nhỏ gọn để nuôi, huấn luyện, khám phá, chiến đấu và phát triển người bạn đồng hành số. Mang Digital Realm theo bạn — trong lòng bàn tay, trong túi quần, ở bất cứ đâu.</p><div class="actions"><a class="btn primary" href="#features">Explore Features</a><a class="btn" href="#experience">View Product</a></div></div><div class="hero-media reveal"><img src="/images/dr-portal/products/product-family.webp" alt="DR Portal product family" fetchpriority="high" /><div class="hero-badge">DR PORTAL · PRODUCT FAMILY</div></div></div></section>
     <section class="stats"><div class="wrap statgrid">{stats.map(([n,l]) => <div class="stat"><strong>{n}</strong><span>{l}</span></div>)}</div></section>
@@ -40,8 +43,8 @@ const features = [
     <section class="section"><div class="wrap family"><img src="/images/dr-portal/products/product-family.webp" alt="DR Portal colorways" loading="lazy" /><div><div class="kicker">Product Family</div><h3>One device. <span>Many identities.</span></h3><div class="swatches"><span class="swatch navy"></span><span class="swatch orange"></span><span class="swatch purple"></span></div><p>Colorway có thể phát triển theo edition, event hoặc collaboration trong tương lai trong khi vẫn giữ cấu trúc phần cứng và trải nghiệm cốt lõi thống nhất.</p></div></div></section>
     <section class="section" id="hardware"><div class="wrap hardware"><div><div class="kicker">Hardware</div><h3>Built for <span>pocket play.</span></h3><p>Cấu trúc phần cứng tập trung vào độ gọn, điều khiển trực quan, phản hồi vật lý và khả năng mở rộng nội dung.</p></div><div class="hardware-grid"><article class="hw"><small>Interface</small><b>Physical Controls</b><p>D-pad và các nút chức năng đặt trong vùng ngón tay thao tác tự nhiên.</p></article><article class="hw"><small>Connection</small><b>USB-C</b><p>Cổng kết nối hiện đại cho nguồn và workflow cập nhật.</p></article><article class="hw"><small>Feedback</small><b>Speaker + Vibration</b><p>Phản hồi trực tiếp bằng âm thanh và rung trong gameplay.</p></article><article class="hw"><small>Content</small><b>microSD Assets</b><p>Không gian asset linh hoạt cho map, sprite, SFX và nội dung mở rộng.</p></article><article class="hw"><small>Display</small><b>Portrait Pixel UI</b><p>Màn hình dọc phù hợp với VPet và thế giới pixel art.</p></article><article class="hw"><small>Ergonomics</small><b>Rounded Shell</b><p>Thân máy bo mềm, thân thiện với cầm nắm lâu và mang theo hằng ngày.</p></article></div></div></section>
     <section class="section"><div class="wrap"><div class="head"><div><div class="kicker">Gameplay Loop</div><h2>Raise. Train. Explore. Battle. Evolve.</h2></div><p>Mỗi hành động tạo ra tiến trình cho nhân vật, mở thêm lựa chọn và đưa người chơi quay lại thế giới Digital Realm theo một nhịp tự nhiên.</p></div><div class="journey">{['RAISE','TRAIN','EXPLORE','BATTLE','EVOLVE'].map((x,i)=><div class="step"><b>{x}</b><p>{['Chăm sóc và tương tác.','Phát triển chỉ số.','Khám phá thế giới.','Thử thách đội hình.','Mở nhánh tiến hóa.'][i]}</p></div>)}</div></div></section>
-    <section class="cta"><div class="wrap"><img src="/images/brand/retroguy-wordmark.webp" alt="Retro Guy" loading="lazy" /><h2>Your digital world <span>is waiting.</span></h2><p>DR Portal là điểm chạm để bước vào Digital Realm — một thiết bị nhỏ gọn dành cho hành trình đồng hành số lâu dài.</p><div class="actions" style="justify-content:center"><a class="btn primary" href="/digital-realm">Enter Digital Realm</a><a class="btn" href="/news">Follow Development</a></div></div></section>
+    <section class="cta"><div class="wrap"><img src="/images/brand/retroguy-wordmark.webp" alt="Retro Guy" loading="lazy" /><h2>Your digital world <span>is waiting.</span></h2><p>DR Portal là điểm chạm để bước vào Digital Realm — một thiết bị nhỏ gọn dành cho hành trình đồng hành số lâu dài.</p><div class="actions" style="justify-content:center"><a class="btn primary" href="/product">View Products</a><a class="btn" href="/devlog">Follow Development</a></div></div></section>
   </main>
-  <footer class="footer"><div class="wrap footerin"><img src="/images/brand/retroguy-wordmark.webp" alt="Retro Guy" /><span>© 2026 Retro Guy VN · DR Portal / Digital Realm</span></div></footer>
+  <SiteFooter variant="home" />
 </body>
 </html>
