@@ -3,7 +3,8 @@ import { assertPostChannel } from './model.js';
 import { ensureContentSchema } from './schema.js';
 import { getAdminPost } from './admin-read.js';
 import { SQL } from './sql.js';
-import { assertPostSlugAvailable, indexPostMediaUsage, nowIso, uid, validatePostMedia } from './store.js';
+import { indexPostMediaUsage, validatePostMedia } from './media.js';
+import { assertPostSlugAvailable, nowIso, uid } from './store.js';
 
 export async function createPost(env, channel, input, actor = 'admin') {
   const normalizedChannel = assertPostChannel(channel);
