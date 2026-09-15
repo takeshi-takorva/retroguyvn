@@ -1,0 +1,45 @@
+---
+import { PUBLIC_NAV, isActivePublicRoute } from '../site/navigation.js';
+
+interface Props {
+  variant?: 'default' | 'home';
+  pathname?: string;
+}
+
+const { variant = 'default', pathname = Astro.url.pathname } = Astro.props;
+const home = variant === 'home';
+---
+{home ? (
+  <header class="nav">
+    <div class="wrap navin">
+      <a href="/" aria-label="Retro Guy home"><img class="logo" src="/images/brand/retroguy-wordmark.webp" alt="Retro Guy" /></a>
+      <nav class="links" aria-label="Primary navigation">
+        {PUBLIC_NAV.map(item => <a href={item.href} aria-current={isActivePublicRoute(pathname, item.href) ? 'page' : undefined}>{item.label}</a>)}
+      </nav>
+    </div>
+  </header>
+) : (
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="RetroGuy VN home">
+      <span class="brand-mark">RG</span>
+      <span data-cms-global="brand">RETROGUY<span class="accent">VN</span></span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">MENU</button>
+    <nav class="site-nav" aria-label="Primary navigation">
+      {PUBLIC_NAV.map(item => (
+        <a href={item.href} class:list={[isActivePublicRoute(pathname, item.href) && 'active']}>{item.label}</a>
+      ))}
+    </nav>
+  </header>
+)}
+
+{!home && (
+  <script is:inline>
+    const button = document.querySelector('.nav-toggle');
+    const nav = document.querySelector('.site-nav');
+    button?.addEventListener('click', () => {
+      const open = nav?.classList.toggle('open') ?? false;
+      button.setAttribute('aria-expanded', String(open));
+    });
+  </script>
+)}
