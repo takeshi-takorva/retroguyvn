@@ -1,54 +1,27 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
-<BaseLayout title="Products — RetroGuy VN" description="Explore hardware products from RetroGuy VN, beginning with the DR Portal pocket adventure device.">
+<BaseLayout title="Products — RetroGuy VN" description="Explore published hardware products from RetroGuy VN.">
   <section class="page-hero product-hero">
     <p class="eyebrow">RetroGuy hardware</p>
     <h1>PRODUCTS</h1>
-    <p class="lede">Purpose-built handheld hardware for pocket-sized digital worlds. Browse current products and future releases from RetroGuy VN.</p>
+    <p class="lede">Purpose-built handheld hardware for pocket-sized digital worlds. Browse the current RetroGuy VN product catalogue.</p>
   </section>
 
-  <section class="section product-featured" aria-labelledby="featured-product-title">
-    <div class="product-featured-media">
-      <img src="/images/dr-portal/products/product-family.webp" alt="DR Portal product family" loading="eager" />
-    </div>
-    <div class="product-featured-copy">
-      <span class="tag">Featured product</span>
-      <h2 id="featured-product-title">DR PORTAL</h2>
-      <p class="product-kicker">Pocket Adventure Device</p>
-      <p class="lede">A compact dedicated handheld built around physical controls, portable play, speaker and vibration feedback, and a persistent Digital Realm experience.</p>
-      <div class="product-points">
-        <span>Physical controls</span>
-        <span>Portable form factor</span>
-        <span>Speaker + vibration</span>
-        <span>Expandable content</span>
-      </div>
-      <div class="actions">
-        <a class="button" href="/#experience">View product showcase</a>
-        <a class="button secondary" href="/support">Support</a>
-      </div>
-    </div>
-  </section>
+  <section class="section product-featured hidden" id="productFeatured" aria-live="polite"></section>
 
   <section class="section" aria-labelledby="catalogue-title">
     <div class="section-head">
       <div><p class="eyebrow">Product catalogue</p><h2 id="catalogue-title">Current lineup</h2></div>
-      <p>The catalogue grid is structured for future RetroGuy hardware while keeping each product presentation visually consistent.</p>
+      <p>Published products are loaded directly from the RetroGuy Product CMS.</p>
     </div>
-    <div class="product-grid">
-      <article class="product-card">
-        <div class="product-card-media"><img src="/images/dr-portal/products/product-family.webp" alt="DR Portal" loading="lazy" /></div>
-        <div class="product-card-body">
-          <span class="tag">Handheld</span>
-          <h3>DR Portal</h3>
-          <p>RetroGuy VN's pocket adventure device for a persistent digital companion experience.</p>
-          <a class="product-link" href="/#experience">Explore DR Portal →</a>
-        </div>
-      </article>
-    </div>
+    <div class="product-grid" id="productGrid" aria-live="polite"></div>
+    <div class="product-empty hidden" id="productEmpty">No published products are available yet.</div>
   </section>
 
+  <script type="module" src="/product/catalogue.js"></script>
+
   <style>
-    .product-hero{padding-bottom:38px}.product-featured{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);gap:38px;align-items:center}.product-featured-media{border:1px solid rgba(255,255,255,.12);background:#07101c;overflow:hidden}.product-featured-media img{width:100%;aspect-ratio:1/1;object-fit:cover}.product-featured-copy h2{font-size:clamp(2.8rem,6vw,5.5rem);line-height:.9;margin:18px 0 8px;letter-spacing:-.05em}.product-kicker{margin:0 0 18px;color:var(--cyan);font-weight:900;letter-spacing:.08em;text-transform:uppercase}.product-points{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}.product-points span{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);padding:7px 10px;color:#bfd0df;font-size:.76rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em}.product-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.product-card{border:1px solid rgba(255,255,255,.1);background:linear-gradient(160deg,rgba(15,32,52,.92),rgba(5,9,20,.8));overflow:hidden}.product-card-media{aspect-ratio:1/1;background:#07101c}.product-card-media img{width:100%;height:100%;object-fit:cover}.product-card-body{padding:22px}.product-card h3{font-size:1.55rem;margin:12px 0 7px}.product-card p{color:var(--muted);margin:0 0 18px}.product-link{color:var(--cyan);font-size:.76rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase}@media(max-width:850px){.product-featured{grid-template-columns:1fr}.product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.product-grid{grid-template-columns:1fr}}
+    .hidden{display:none!important}.product-hero{padding-bottom:38px}.product-featured{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);gap:38px;align-items:center}.product-featured-media{border:1px solid rgba(255,255,255,.12);background:#07101c;overflow:hidden;min-height:280px}.product-featured-media img{width:100%;aspect-ratio:1/1;object-fit:cover}.product-featured-copy h2{font-size:clamp(2.8rem,6vw,5.5rem);line-height:.9;margin:18px 0 8px;letter-spacing:-.05em}.product-kicker{margin:0 0 18px;color:var(--cyan);font-weight:900;letter-spacing:.08em;text-transform:uppercase}.product-points{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}.product-points span{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);padding:7px 10px;color:#bfd0df;font-size:.76rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em}.product-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.product-card{border:1px solid rgba(255,255,255,.1);background:linear-gradient(160deg,rgba(15,32,52,.92),rgba(5,9,20,.8));overflow:hidden}.product-card-media{aspect-ratio:1/1;background:#07101c;display:grid;place-items:center;color:var(--muted);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase}.product-card-media img{width:100%;height:100%;object-fit:cover}.product-card-body{padding:22px}.product-card h3{font-size:1.55rem;margin:12px 0 7px}.product-card p{color:var(--muted);margin:0 0 18px}.product-link{color:var(--cyan);font-size:.76rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.product-empty{padding:34px;border:1px dashed rgba(255,255,255,.16);color:var(--muted);text-align:center}.availability{display:inline-block;margin-left:8px;color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.06em}@media(max-width:850px){.product-featured{grid-template-columns:1fr}.product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.product-grid{grid-template-columns:1fr}}
   </style>
 </BaseLayout>
