@@ -1,13 +1,13 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { env } from 'cloudflare:workers';
-import { bootstrapProductCatalogue } from '../../products/bootstrap.js';
+import { bootstrapProducts } from '../../products/bootstrap.js';
 import { getPublishedProduct } from '../../products/public-get.js';
 
 const slug = Astro.params.slug || '';
 let product = null;
 try {
-  await bootstrapProductCatalogue(env);
+  await bootstrapProducts(env);
   product = await getPublishedProduct(env, slug);
 } catch {
   product = null;
