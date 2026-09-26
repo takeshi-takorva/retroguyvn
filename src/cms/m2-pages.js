@@ -3,94 +3,40 @@ const uid = prefix => `${prefix}_${crypto.randomUUID()}`;
 const clone = value => JSON.parse(JSON.stringify(value));
 
 export const PAGE_DEFINITIONS = {
-  'digital-realm': {
-    title: 'Digital Realm',
-    route: '/digital-realm',
-    content: {
-      seoTitle: 'Digital Realm — RetroGuy VN',
-      seoDescription: "Discover Digital Realm, RetroGuy VN's connected pocket-world project.",
-      eyebrow: 'Flagship project',
-      heading: 'DIGITAL REALM',
-      lede: 'A connected virtual-pet adventure built around exploration, care, collection and team combat — designed for a dedicated handheld instead of a phone screen.',
-      showcaseLabel: 'Product artwork / video placeholder',
-      tag: 'Portable world',
-      showcaseHeading: 'Carry the realm with you.',
-      showcaseText: 'The device is the portal. Your companion lives, grows and travels with you while the world expands through maps, events, quests and future network services.',
-      primaryAction: 'Explore features',
-      secondaryAction: 'View media',
-      cards: [
-        { badge: 'WORLD', title: 'Explore', text: 'Connected regions with distinct climates, cities, NPC roles, resources, quests and activities.' },
-        { badge: 'COMPANION', title: 'Raise', text: 'Care routines, training, evolution and long-term progression give your character a persistent life.' },
-        { badge: 'COMBAT', title: 'Team battle', text: 'A 3v3 combat foundation supports solo, team and future online competitive modes.' }
-      ]
-    }
+  home: {
+    title: 'Home',
+    route: '/',
+    managerRoute: '/admin',
+    managerLabel: 'Homepage CMS',
+    content: {}
   },
-  features: {
-    title: 'Features',
-    route: '/features',
-    content: {
-      seoTitle: 'Features — RetroGuy VN',
-      seoDescription: 'Explore the Digital Realm feature set and product experience.',
-      eyebrow: 'Digital Realm',
-      heading: 'FEATURES',
-      lede: 'The V1 feature map focuses on the experience players touch every day while keeping the architecture ready for network services later.',
-      items: [
-        { badge: '01', title: 'Pocket-first design', text: 'Compact dedicated hardware focused on comfortable one-handed play and quick daily interactions.' },
-        { badge: '02', title: 'Virtual companion', text: 'Care, clean, train, evolve and build persistent progress over time.' },
-        { badge: '03', title: 'Realm exploration', text: 'Travel through multiple regions with NPCs, shops, quests, weather and local activities.' },
-        { badge: '04', title: '3v3 combat', text: 'A team-based combat architecture designed to support PvE, local PvP and future online play.' },
-        { badge: '05', title: 'Mini-games', text: 'Fishing, training and other location-based activities expand progression beyond combat.' },
-        { badge: '06', title: 'Connected future', text: 'Device accounts, OTA updates, cloud save, events, ranking and online matchmaking are planned as web services.' }
-      ],
-      roadmapLabel: 'Roadmap note:',
-      roadmapText: 'Account, OTA, cloud save and online PvP are backend phases. This public website V1 does not expose unfinished services as available features.'
-    }
+  product: {
+    title: 'Product',
+    route: '/product',
+    managerRoute: '/admin/products',
+    managerLabel: 'Product CMS',
+    content: {}
   },
-  gallery: {
-    title: 'Media',
-    route: '/gallery',
-    content: {
-      seoTitle: 'Media — RetroGuy VN',
-      seoDescription: 'Product photography, gameplay captures, concept art and development media from RetroGuy VN.',
-      eyebrow: 'Screenshots & media',
-      heading: 'MEDIA',
-      lede: 'A dedicated space for product photography, game captures, concept art and development videos.',
-      items: ['Product photography', 'Gameplay capture', 'World / map art', 'Development video']
-    }
-  },
-  download: {
-    title: 'Download',
-    route: '/download',
-    content: {
-      seoTitle: 'Downloads — RetroGuy VN',
-      seoDescription: 'Verified RetroGuy VN firmware, manuals and future device content packages.',
-      eyebrow: 'Firmware & resources',
-      heading: 'DOWNLOAD',
-      lede: 'This area is reserved for verified firmware, manuals and future device content packages.',
-      statusLabel: 'V1 status:',
-      statusText: 'Public firmware downloads are not enabled yet. OTA and signed release delivery will be added in a later backend phase.',
-      items: [
-        { title: 'Firmware releases', text: 'Future stable firmware packages grouped by hardware revision with release notes and checksums.' },
-        { title: 'Manuals & guides', text: 'Quick-start instructions, controls, troubleshooting and product documentation.' },
-        { title: 'Content packages', text: 'Future verified assets and game content updates distributed separately from firmware where possible.' }
-      ]
-    }
+  news: {
+    title: 'News',
+    route: '/news',
+    managerRoute: null,
+    managerLabel: 'News Post Engine (M3)',
+    content: {}
   },
   support: {
     title: 'Support',
     route: '/support',
-    content: {
-      seoTitle: 'Support — RetroGuy VN',
-      seoDescription: 'Setup, troubleshooting, warranty and contact information for RetroGuy VN products.',
-      eyebrow: 'Help & contact',
-      heading: 'SUPPORT',
-      lede: 'Support V1 provides a clear home for setup guidance, troubleshooting, warranty information and contact channels as they become available.',
-      cards: [
-        { badge: 'START', title: 'Quick start', text: 'Device setup, controls, charging, storage and first-run instructions will be published here.' },
-        { badge: 'FIX', title: 'Troubleshooting', text: 'Known issues, recovery steps and firmware-specific notes will be maintained alongside releases.' },
-        { badge: 'CONTACT', title: 'Get in touch', text: 'Official community and support contact details will be added before public launch.' }
-      ]
-    }
+    managerRoute: null,
+    managerLabel: 'Support workflow (M4)',
+    content: {}
+  },
+  devlog: {
+    title: 'Dev Log',
+    route: '/devlog',
+    managerRoute: '/admin/devlog',
+    managerLabel: 'Dev Log CMS',
+    content: {}
   }
 };
 
@@ -98,23 +44,22 @@ export const GLOBAL_DEFAULTS = {
   brand: 'RETROGUY VN',
   nav: {
     home: 'HOME',
-    digitalRealm: 'DIGITAL REALM',
-    features: 'FEATURES',
-    media: 'MEDIA',
+    product: 'PRODUCT',
     news: 'NEWS',
-    download: 'DOWNLOAD',
-    support: 'SUPPORT'
+    support: 'SUPPORT',
+    devlog: 'DEV LOG'
   },
   footer: {
     brand: 'RETROGUY VN',
     tagline: 'Retro hardware. Pocket worlds. New adventures.',
-    digitalRealm: 'Digital Realm',
-    devlog: 'Devlog',
-    support: 'Support'
+    product: 'Product',
+    news: 'News',
+    support: 'Support',
+    devlog: 'Dev Log'
   },
   seo: {
     defaultTitle: 'RetroGuy VN',
-    defaultDescription: 'RetroGuy VN — retro-inspired hardware, Digital Realm, development updates and downloads.'
+    defaultDescription: 'RetroGuy VN — pocket hardware, products, official news, support and development logs.'
   }
 };
 
@@ -180,17 +125,23 @@ export async function listPages(env) {
     FROM pages p
     LEFT JOIN page_revisions draft ON draft.id = p.draft_revision_id
     LEFT JOIN page_revisions published ON published.id = p.published_revision_id
-    WHERE p.slug IN (${PAGE_KEYS.map(() => '?').join(',')})
-    ORDER BY p.title`).bind(...PAGE_KEYS).all();
-  return (result.results || []).map(row => ({
-    slug: row.slug,
-    title: row.title,
-    route: PAGE_DEFINITIONS[row.slug]?.route || `/${row.slug}`,
-    draftVersion: row.draft_version == null ? null : Number(row.draft_version),
-    publishedVersion: row.published_version == null ? null : Number(row.published_version),
-    updatedAt: row.updated_at,
-    hasUnpublishedChanges: row.draft_revision_id !== row.published_revision_id
-  }));
+    WHERE p.slug IN (${PAGE_KEYS.map(() => '?').join(',')})`).bind(...PAGE_KEYS).all();
+  const rows = new Map((result.results || []).map(row => [row.slug, row]));
+  return PAGE_KEYS.map(slug => {
+    const def = PAGE_DEFINITIONS[slug];
+    const row = rows.get(slug) || {};
+    return {
+      slug,
+      title: def.title,
+      route: def.route,
+      editorRoute: def.managerRoute,
+      managerLabel: def.managerLabel,
+      draftVersion: row.draft_version == null ? null : Number(row.draft_version),
+      publishedVersion: row.published_version == null ? null : Number(row.published_version),
+      updatedAt: row.updated_at || null,
+      hasUnpublishedChanges: Boolean(row.draft_revision_id && row.draft_revision_id !== row.published_revision_id)
+    };
+  });
 }
 
 export async function getPageBundle(env, slug) {
