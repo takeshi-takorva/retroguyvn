@@ -14,7 +14,7 @@ test('legacy development posts render under Dev Log, not News', async () => {
   assert.match(devlog, /\/api\/news/);
   assert.match(devlog, /\/devlog\//);
   assert.match(devlogDetail, /\/api\/news\//);
-  assert.match(newsDetail, /Astro\.redirect\([^\n]*\/devlog\//);
+  assert.match(newsDetail, /Astro\.redirect\([^\n]*\/devlog\/[^\n]*,\s*302\)/);
 });
 
 test('legacy post admin is exposed as Dev Log Manager', async () => {
