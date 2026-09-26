@@ -26,3 +26,11 @@ test('legacy public page names are absent from CMS navigation defaults and Pages
   assert.match(pageIndex, /editorRoute/);
   assert.doesNotMatch(pageIndex, /\/admin\/pages\/\$\{encodeURIComponent\(page\.slug\)\}/);
 });
+
+
+test('dedicated page route no longer exposes the disconnected generic page editor', async () => {
+  const editorRoute = await read('src/pages/admin/pages/[slug].astro');
+  assert.match(editorRoute, /PAGE_DEFINITIONS/);
+  assert.match(editorRoute, /managerRoute/);
+  assert.doesNotMatch(editorRoute, /\/api\/admin\/pages\/\$\{encodeURIComponent\(slug\)\}/);
+});
