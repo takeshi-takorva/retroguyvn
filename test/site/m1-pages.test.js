@@ -14,13 +14,14 @@ test('Product page preserves featured and catalogue-ready layout for the CMS-dri
   assert.doesNotMatch(page, /<h3>DR Portal<\/h3>/i);
 });
 
-test('Dev Log page defines development journal taxonomy without reusing the News API in M1', async () => {
+test('Dev Log page defines taxonomy and consumes the legacy development post API', async () => {
   const page = await read('src/pages/devlog.astro');
   assert.match(page, /DEV LOG/);
   for (const category of ['HARDWARE', 'SOFTWARE', 'GAME', 'DESIGN', 'PROTOTYPE', 'MANUFACTURING']) {
     assert.match(page, new RegExp(category));
   }
-  assert.doesNotMatch(page, /\/api\/news/);
+  assert.match(page, /\/api\/news/);
+  assert.match(page, /\/devlog\//);
 });
 
 test('Support page exposes FAQ and complete contact form shell', async () => {
