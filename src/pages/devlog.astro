@@ -6,22 +6,48 @@ const categories = ['HARDWARE','SOFTWARE','GAME','DESIGN','PROTOTYPE','MANUFACTU
   <section class="page-hero devlog-hero">
     <p class="eyebrow">Behind the development</p>
     <h1>DEV LOG</h1>
-    <p class="lede">A focused journal for how RetroGuy products are designed, prototyped, tested and refined — separate from public announcements in News.</p>
+    <p class="lede">Milestones, hardware revisions, firmware progress, game systems, prototypes and manufacturing notes.</p>
   </section>
 
   <section class="section devlog-shell">
     <div class="devlog-filter" aria-label="Development categories">
       {categories.map(category => <span>{category}</span>)}
     </div>
-    <div class="devlog-empty">
-      <span class="tag">Development journal</span>
-      <h2>Build stories will live here.</h2>
-      <p>Hardware revisions, firmware architecture, game systems, industrial design, prototypes and manufacturing notes will be published as dedicated Dev Log entries.</p>
-      <a class="button secondary" href="/news">View current News</a>
-    </div>
+    <div id="devlogStatus" class="devlog-status">Loading Dev Log…</div>
+    <div id="devlogList" class="devlog-list" aria-live="polite"></div>
+    <nav id="devlogPagination" class="devlog-pagination" aria-label="Dev Log pages"></nav>
   </section>
 
   <style>
-    .devlog-hero{padding-bottom:36px}.devlog-shell{padding-top:28px}.devlog-filter{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:26px}.devlog-filter span{border:1px solid rgba(66,230,255,.25);background:rgba(66,230,255,.04);padding:8px 11px;color:var(--cyan);font-size:.7rem;font-weight:900;letter-spacing:.08em}.devlog-empty{padding:48px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(160deg,rgba(15,32,52,.78),rgba(5,9,20,.7))}.devlog-empty h2{margin:16px 0 12px;font-size:clamp(2rem,5vw,4rem)}.devlog-empty p{max-width:760px;color:var(--muted);font-size:1.02rem}.devlog-empty .button{margin-top:18px}
+    .devlog-hero{padding-bottom:36px}.devlog-shell{padding-top:28px;display:grid;gap:28px}.devlog-filter{display:flex;gap:9px;flex-wrap:wrap}.devlog-filter span{border:1px solid rgba(66,230,255,.25);background:rgba(66,230,255,.04);padding:8px 11px;color:var(--cyan);font-size:.7rem;font-weight:900;letter-spacing:.08em}.devlog-status{padding:18px;border:1px solid rgba(255,255,255,.13);border-radius:14px;color:#9eacbd}.devlog-list{display:grid;gap:24px}.devlog-row{display:grid;grid-template-columns:minmax(260px,500px) minmax(0,1fr);gap:30px;align-items:stretch;border:1px solid #2a3950;background:#0d1828;border-radius:20px;overflow:hidden;text-decoration:none;color:inherit;transition:transform .15s ease,border-color .15s ease}.devlog-row:hover{transform:translateY(-2px);border-color:#576b87}.devlog-cover{width:100%;max-width:500px;aspect-ratio:1 / 1;background:linear-gradient(135deg,#07101c,#14263f);overflow:hidden}.devlog-cover img{width:100%;height:100%;display:block;object-fit:cover}.devlog-cover-placeholder{width:100%;height:100%;display:grid;place-items:center;color:#60718a;font-size:13px;letter-spacing:.16em;text-transform:uppercase}.devlog-body{padding:34px 34px 34px 0;display:flex;flex-direction:column;justify-content:center;min-width:0}.devlog-meta{display:flex;gap:10px;flex-wrap:wrap;color:#9eacbd;font-size:13px;text-transform:uppercase;letter-spacing:.08em}.devlog-row h2{font-size:clamp(28px,4vw,46px);line-height:1.08;margin:14px 0 12px;overflow-wrap:anywhere}.devlog-row p{margin:0;color:#b9c4d2;font-size:17px;line-height:1.65}.devlog-read{margin-top:20px;font-weight:700;color:#d8e8ff}.devlog-pagination{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap}.devlog-pagination a,.devlog-pagination span{min-width:42px;height:42px;padding:0 13px;border:1px solid #2a3950;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;color:#c9d5e5;background:#0d1828}.devlog-pagination a:hover{border-color:#576b87}.devlog-pagination .current{background:#d8e8ff;color:#07101c;border-color:#d8e8ff;font-weight:800}.devlog-pagination .disabled{opacity:.4;pointer-events:none}.devlog-empty{padding:48px 20px;text-align:center;border:1px dashed #2a3950;border-radius:18px;color:#9eacbd}@media(max-width:900px){.devlog-row{grid-template-columns:minmax(220px,42vw) minmax(0,1fr);gap:22px}.devlog-body{padding:24px 24px 24px 0}.devlog-row h2{font-size:clamp(24px,4vw,36px)}}@media(max-width:680px){.devlog-row{grid-template-columns:1fr;gap:0}.devlog-cover{max-width:500px;margin:0 auto}.devlog-body{padding:22px}.devlog-row p{font-size:16px}}
   </style>
+
+  <script is:inline>
+    const statusEl=document.querySelector('#devlogStatus');
+    const listEl=document.querySelector('#devlogList');
+    const paginationEl=document.querySelector('#devlogPagination');
+    const params=new URLSearchParams(window.location.search);
+    const requestedPage=Math.max(1,Number(params.get('page'))||1);
+    const fmt=date=>date?new Intl.DateTimeFormat('en',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(date)):'';
+    const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
+    const media=item=>item.coverUrl?`<img src="${esc(item.coverUrl)}" alt="" loading="lazy" width="500" height="500">`:'<div class="devlog-cover-placeholder">RetroGuy Dev Log</div>';
+    const pageHref=page=>`/devlog?page=${page}`;
+    function renderPagination(page,totalPages){
+      if(totalPages<=1){paginationEl.innerHTML='';return;}
+      const parts=[];
+      parts.push(page>1?`<a href="${pageHref(page-1)}">Back</a>`:'<span class="disabled">Back</span>');
+      for(let index=1;index<=totalPages;index+=1){parts.push(index===page?`<span class="current" aria-current="page">${index}</span>`:`<a href="${pageHref(index)}">${index}</a>`);}
+      parts.push(page<totalPages?`<a href="${pageHref(page+1)}">Next</a>`:'<span class="disabled">Next</span>');
+      paginationEl.innerHTML=parts.join('');
+    }
+    fetch(`/api/news?page=${requestedPage}&pageSize=50`).then(async response=>{
+      const data=await response.json();
+      if(!response.ok)throw new Error(data.error||'Unable to load Dev Log');
+      const items=Array.isArray(data.items)?data.items:[];
+      statusEl.remove();
+      if(!items.length){listEl.innerHTML='<div class="devlog-empty">No published Dev Log entries yet.</div>';paginationEl.innerHTML='';return;}
+      listEl.innerHTML=items.map(item=>`<a class="devlog-row" href="/devlog/${encodeURIComponent(item.slug)}"><div class="devlog-cover">${media(item)}</div><div class="devlog-body"><div class="devlog-meta"><span>${esc(item.category)}</span><span>${esc(fmt(item.publishedAt))}</span></div><h2>${esc(item.title)}</h2><p>${esc(item.excerpt)}</p><span class="devlog-read">Read Dev Log →</span></div></a>`).join('');
+      renderPagination(Number(data.page)||1,Number(data.totalPages)||0);
+    }).catch(error=>{statusEl.textContent=error.message;statusEl.style.color='#ffb6b0';});
+  </script>
 </BaseLayout>
