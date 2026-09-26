@@ -40,6 +40,6 @@ export function toPublishedSummary(id, publishedAt, content) {
     coverMediaId: content.coverMediaId || null,
     coverUrl: mediaUrl(content.coverMediaId),
     publishedAt,
-    url: `/news/${encodeURIComponent(content.slug)}`
+    url: `/devlog/${encodeURIComponent(content.slug)}`
   };
 }
