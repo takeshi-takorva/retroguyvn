@@ -28,3 +28,55 @@ const year = new Date().getFullYear();
     <small>© {year} <span data-cms-global="footer.copyright">RetroGuy VN</span>. All rights reserved.</small>
   </footer>
 )}
+
+<style>
+  .footer {
+    border-top: 1px solid var(--line, rgba(255,255,255,.1));
+    padding: 28px 0 42px;
+    color: #8795a8;
+    font-size: 13px;
+  }
+
+  .footerin {
+    width: min(var(--max, 1180px), calc(100% - 40px));
+    margin: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .footer img {
+    display: block;
+    width: 160px;
+    max-width: 100%;
+    height: auto;
+    flex: 0 0 auto;
+  }
+
+  .footer span {
+    text-align: right;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 560px) {
+    .footer {
+      padding: 24px 0 32px;
+    }
+
+    .footerin {
+      width: min(calc(100% - 26px), var(--max, 1180px));
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .footer img {
+      width: 150px;
+    }
+
+    .footer span {
+      text-align: left;
+    }
+  }
+</style>
