@@ -3,12 +3,13 @@ interface Props {
   currentPath?: string;
 }
 const { currentPath = Astro.url.pathname } = Astro.props;
-const items = [
+const contentItems = [
   { href: '/admin', label: 'Homepage', icon: 'HM' },
   { href: '/admin/pages/', label: 'Pages', icon: 'PG' },
-  { href: '/admin/global', label: 'Global Content', icon: 'GL', disabled: true },
-  { href: '/admin/media', label: 'Media Library', icon: 'MD', disabled: true },
-  { href: '/admin/devlog', label: 'Developer Log', icon: 'DL', disabled: true },
+  { href: '/admin/products', label: 'Products', icon: 'PR' },
+  { href: '/admin/devlog', label: 'Developer Log', icon: 'DL' }
+];
+const platformItems = [
   { href: '/admin/ota', label: 'OTA Firmware', icon: 'OT' },
   { href: '/admin/system', label: 'System', icon: 'SY' }
 ];
@@ -19,19 +20,13 @@ const activeFor = (href: string) => href === '/admin'
 <aside class="admin-sidebar" id="adminSidebar">
   <a class="admin-brand" href="/admin/pages/" aria-label="RetroGuy CMS">
     <span class="admin-brand-mark">RG</span>
-    <span class="admin-brand-copy"><strong>RetroGuy CMS</strong><span>M2 content workspace</span></span>
+    <span class="admin-brand-copy"><strong>RetroGuy CMS</strong><span>Current site workspace</span></span>
   </a>
 
   <div class="admin-nav-group">
     <div class="admin-nav-label">Content</div>
     <nav class="admin-nav" aria-label="Admin navigation">
-      {items.slice(0, 5).map(item => item.disabled ? (
-        <span class="admin-nav-item disabled" aria-disabled="true" title="Available in the next M2.1C stages">
-          <span class="admin-nav-icon">{item.icon}</span>
-          <span class="admin-nav-text">{item.label}</span>
-          <span class="admin-nav-badge">SOON</span>
-        </span>
-      ) : (
+      {contentItems.map(item => (
         <a class:list={['admin-nav-item', activeFor(item.href) && 'active']} href={item.href}>
           <span class="admin-nav-icon">{item.icon}</span>
           <span class="admin-nav-text">{item.label}</span>
@@ -43,7 +38,7 @@ const activeFor = (href: string) => href === '/admin'
   <div class="admin-nav-group">
     <div class="admin-nav-label">Platform</div>
     <nav class="admin-nav" aria-label="Platform navigation">
-      {items.slice(5).map(item => (
+      {platformItems.map(item => (
         <a class:list={['admin-nav-item', activeFor(item.href) && 'active']} href={item.href}>
           <span class="admin-nav-icon">{item.icon}</span>
           <span class="admin-nav-text">{item.label}</span>
