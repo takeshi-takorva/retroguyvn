@@ -21,12 +21,12 @@ test('publish time accepts an explicit ISO timestamp and falls back when empty',
   assert.throws(()=>normalizePublishTime('not-a-date',fallback),/publish date/i);
 });
 
-test('public News pagination is fixed to a maximum of 50 posts per page',()=>{
+test('legacy post pagination is fixed to a maximum of 50 posts per page',()=>{
   assert.deepEqual(normalizeNewsPagination({page:3,pageSize:50}),{page:3,pageSize:50,offset:100});
   assert.deepEqual(normalizeNewsPagination({page:-2,pageSize:999}),{page:1,pageSize:50,offset:0});
 });
 
-test('public News API returns pagination metadata and uses count plus offset',async()=>{
+test('legacy post API returns pagination metadata and uses count plus offset',async()=>{
   const http=await read('src/news/public-http.js');
   const listing=await read('src/news/public-list.js');
   assert.match(http,/pageSize/);
@@ -35,8 +35,8 @@ test('public News API returns pagination metadata and uses count plus offset',as
   assert.match(listing,/LIMIT \? OFFSET \?/i);
 });
 
-test('News manager exposes publish date time and 2000 word content guidance',async()=>{
-  const admin=await read('src/pages/admin/news.astro');
+test('Dev Log manager exposes publish date time and 2000 word content guidance',async()=>{
+  const admin=await read('src/pages/admin/devlog.astro');
   const blocks=await read('public/admin/news-blocks.js');
   const app=await read('public/admin/news.js');
   assert.match(admin,/publishAtInput/);
@@ -45,9 +45,9 @@ test('News manager exposes publish date time and 2000 word content guidance',asy
   assert.match(app,/publishedAt/);
 });
 
-test('public News page uses square cover rows and pagination controls',async()=>{
-  const page=await read('src/pages/news.astro');
-  assert.match(page,/news-list/);
+test('public Dev Log page uses square cover rows and pagination controls',async()=>{
+  const page=await read('src/pages/devlog.astro');
+  assert.match(page,/devlog-list/);
   assert.match(page,/aspect-ratio:\s*1\s*\/\s*1/);
   assert.match(page,/500px/);
   assert.match(page,/pageSize=50/);
