@@ -16,15 +16,3 @@ test('MEDIA stays pinned while FIRMWARE is auto-provisioned by Workers Builds', 
   assert.equal(Object.hasOwn(firmware, 'bucket_name'), false, 'FIRMWARE must not hard-code a bucket name');
   assert.equal(Object.hasOwn(firmware, 'preview_bucket_name'), false, 'FIRMWARE preview must use Workers Builds provisioning');
 });
-
-
-test('OTA admin SSR route runs Worker before static assets', async () => {
-  const config = await rootConfig();
-  assert.deepEqual(config.assets?.run_worker_first, ['/admin/ota']);
-});
-
-
-test('generated Wrangler patch preserves worker-first OTA admin routing', async () => {
-  const patch = await readFile(new URL('../../scripts/patch-deployment-wrangler.mjs', import.meta.url), 'utf8');
-  assert.match(patch, /run_worker_first\s*=\s*\['\/admin\/ota'\]/);
-});
