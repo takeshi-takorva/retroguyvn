@@ -34,6 +34,8 @@ jobs:
           const stamp = Date.now();
           const targets = [
             'https://retroguyvn.com/admin/ota',
+            'https://retroguyvn.com/admin/ota/',
+            'https://retroguyvn.com/admin/ota/index.html',
             `https://retroguyvn.com/admin/ota?__dr_probe=${stamp}`,
             'https://retroguyvn.com/admin',
             'https://retroguyvn.com/admin/pages/',
