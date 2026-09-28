@@ -195,6 +195,80 @@ export function createOtaRepository(env) {
       return null;
     },
 
+    async findNewestCompatibleReleaseV1({ channel, hardwareCode, currentReleaseSeq, currentSecureVersion }) {
+      await ready();
+      const result = await db.prepare(`
+        SELECT DISTINCT r.*
+        FROM ota_releases r
+        JOIN ota_release_targets t ON t.release_id = r.id
+        JOIN ota_hardware h ON h.id = t.hardware_id
+        WHERE r.product = 'DigitalRealm' AND r.channel = ? AND r.status = 'published'
+          AND h.code = ? AND r.release_seq IS NOT NULL AND r.release_seq > ?
+          AND r.secure_version >= ?
+          AND r.signature_alg = 'RSA-PSS-SHA256' AND r.signature IS NOT NULL
+        ORDER BY r.release_seq DESC, r.published_at DESC, r.created_at DESC
+      `).bind(channel, hardwareCode, currentReleaseSeq, currentSecureVersion).all();
+      const row = (result.results || [])[0];
+      return withTargets(db, row || null);
+    },
+
+    async upsertDeviceV1(snapshot) {
+      await ready();
+      const at = snapshot.lastSeenAt || nowIso();
+      await db.prepare(`
+        INSERT INTO ota_devices (
+          device_id, hardware_code, boot_version, game_version, channel, first_seen_at, last_seen_at,
+          last_check_at, last_ip, last_user_agent, serial, game_fix, build_id, release_seq,
+          service_version, secure_version, active_slot, asset_version, status, provision_state
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE',
+          CASE WHEN ? = 'UNPROVISIONED' THEN 'UNPROVISIONED' ELSE 'PROVISIONED' END)
+        ON CONFLICT(device_id) DO UPDATE SET
+          hardware_code = excluded.hardware_code,
+          boot_version = excluded.boot_version,
+          game_version = excluded.game_version,
+          channel = excluded.channel,
+          last_seen_at = excluded.last_seen_at,
+          last_check_at = excluded.last_check_at,
+          last_ip = excluded.last_ip,
+          last_user_agent = excluded.last_user_agent,
+          serial = excluded.serial,
+          game_fix = excluded.game_fix,
+          build_id = excluded.build_id,
+          release_seq = excluded.release_seq,
+          service_version = excluded.service_version,
+          secure_version = excluded.secure_version,
+          active_slot = excluded.active_slot,
+          asset_version = excluded.asset_version,
+          provision_state = excluded.provision_state
+      `).bind(
+        snapshot.deviceId, snapshot.hardwareCode, snapshot.bootVersion || null, snapshot.gameVersion || null,
+        snapshot.channel || 'stable', snapshot.firstSeenAt || at, at, snapshot.lastCheckAt || at,
+        snapshot.ip || null, snapshot.userAgent || null, snapshot.serial || null,
+        snapshot.gameFix || 0, snapshot.buildId || null, snapshot.releaseSeq || 0,
+        snapshot.serviceVersion || null, snapshot.secureVersion || 0, snapshot.activeSlot || null,
+        snapshot.assetVersion || null, snapshot.serial || 'UNPROVISIONED'
+      ).run();
+      return db.prepare('SELECT * FROM ota_devices WHERE device_id = ?').bind(snapshot.deviceId).first();
+    },
+
+    async appendEventV1(event) {
+      await ready();
+      const id = event.id || uid('ev1');
+      const receivedAt = event.receivedAt || nowIso();
+      await db.prepare(`
+        INSERT INTO ota_events_v1 (
+          id, device_id, serial, hardware_code, event_type, release_id, progress, result,
+          error_code, fw_before, fw_after, device_timestamp, ip, user_agent, received_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        id, event.deviceId, event.serial || null, event.hardwareCode || null, event.event,
+        event.releaseId || null, event.progress ?? null, event.result || null, event.errorCode || null,
+        event.fwBefore || null, event.fwAfter || null, event.deviceTimestamp || null,
+        event.ip || null, event.userAgent || null, receivedAt
+      ).run();
+      return id;
+    },
+
     async upsertDevice(snapshot) {
       await ready();
       const at = snapshot.lastSeenAt || nowIso();
