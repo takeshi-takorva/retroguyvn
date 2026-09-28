@@ -86,14 +86,17 @@ export function createOtaRepository(env) {
         INSERT INTO ota_releases (
           id, product, version, version_sort, build_id, channel, status, secure_version,
           min_boot_version, release_notes, r2_key, file_name, content_type, size_bytes,
-          sha256, esp_image_valid, download_count, created_by, created_at, updated_at, published_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          sha256, esp_image_valid, download_count, created_by, created_at, updated_at, published_at,
+          release_seq, game_fix, asset_version, signature_alg, signature, mandatory
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         release.id, release.product, release.version, release.version_sort, release.build_id,
         release.channel, release.status, release.secure_version, release.min_boot_version,
         release.release_notes, release.r2_key, release.file_name, release.content_type,
         release.size_bytes, release.sha256, release.esp_image_valid, release.download_count || 0,
-        release.created_by || null, release.created_at, release.updated_at, release.published_at || null
+        release.created_by || null, release.created_at, release.updated_at, release.published_at || null,
+        release.release_seq ?? null, release.game_fix || 0, release.asset_version || null,
+        release.signature_alg || null, release.signature || null, release.mandatory ? 1 : 0
       )];
       for (const hardwareId of hardwareIds) {
         statements.push(db.prepare('INSERT INTO ota_release_targets (release_id, hardware_id, created_at) VALUES (?, ?, ?)')
@@ -139,9 +142,12 @@ export function createOtaRepository(env) {
       const next = { ...current, ...patch, updated_at: patch.updated_at || nowIso() };
       const statements = [db.prepare(`
         UPDATE ota_releases SET version = ?, version_sort = ?, build_id = ?, channel = ?, secure_version = ?,
-          min_boot_version = ?, release_notes = ?, updated_at = ? WHERE id = ?
+          min_boot_version = ?, release_notes = ?, release_seq = ?, game_fix = ?, asset_version = ?,
+          signature_alg = ?, signature = ?, mandatory = ?, updated_at = ? WHERE id = ?
       `).bind(next.version, next.version_sort, next.build_id, next.channel, next.secure_version,
-        next.min_boot_version || null, next.release_notes || '', next.updated_at, id)];
+        next.min_boot_version || null, next.release_notes || '', next.release_seq ?? null,
+        next.game_fix || 0, next.asset_version || null, next.signature_alg || null,
+        next.signature || null, next.mandatory ? 1 : 0, next.updated_at, id)];
       if (Array.isArray(hardwareIds)) {
         statements.push(db.prepare('DELETE FROM ota_release_targets WHERE release_id = ?').bind(id));
         for (const hardwareId of hardwareIds) {
