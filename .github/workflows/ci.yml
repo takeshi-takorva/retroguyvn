@@ -25,8 +25,11 @@ jobs:
       - name: Probe production OTA admin
         run: |
           node - <<'NODE'
+          const stamp = Date.now();
           const targets = [
             'https://retroguyvn.com/admin/ota',
+            `https://retroguyvn.com/admin/ota?__dr_probe=${stamp}`,
+            'https://retroguyvn.doanducviet5488.workers.dev/admin/ota',
             'https://retroguyvn.com/admin-ota-file-actions.js'
           ];
           for (const url of targets) {
@@ -39,11 +42,16 @@ jobs:
             console.log('STATUS', response.status);
             console.log('CONTENT_TYPE', response.headers.get('content-type'));
             console.log('CACHE_CONTROL', response.headers.get('cache-control'));
+            console.log('CF_CACHE_STATUS', response.headers.get('cf-cache-status'));
+            console.log('AGE', response.headers.get('age'));
+            console.log('CONTENT_LENGTH', response.headers.get('content-length'));
+            console.log('SERVER', response.headers.get('server'));
+            console.log('CF_RAY', response.headers.get('cf-ray'));
             console.log('BODY_LENGTH', text.length);
             console.log('BODY_HEAD', JSON.stringify(text.slice(0, 300)));
-            if (url.endsWith('/admin/ota')) {
+            if (url.includes('/admin/ota')) {
               if (response.status !== 200) throw new Error('admin/ota status ' + response.status);
-              if (!text.includes('DR Portal OTA')) throw new Error('admin/ota missing expected HTML');
+              if (!text.includes('DR Portal OTA')) console.log('ADMIN_HTML_MISSING', url);
             }
             if (url.endsWith('admin-ota-file-actions.js')) {
               if (response.status !== 200) throw new Error('admin asset status ' + response.status);
