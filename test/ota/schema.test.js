@@ -10,6 +10,14 @@ test('device schema includes offer timestamp for fresh databases', () => {
   assert.match(deviceSchema, /last_release_offered_at\s+TEXT/);
 });
 
+
+test('release_seq indexes are deferred until runtime adds columns on existing D1 databases', () => {
+  const releaseSchema = OTA_SCHEMA_STATEMENTS.find(sql => sql.includes('CREATE TABLE IF NOT EXISTS ota_releases'));
+  assert.match(releaseSchema, /release_seq\s+INTEGER/);
+  assert.equal(OTA_SCHEMA_STATEMENTS.some(sql => sql.includes('idx_ota_release_seq_v1')), false);
+  assert.equal(OTA_SCHEMA_STATEMENTS.some(sql => sql.includes('idx_ota_release_seq_lookup_v1')), false);
+});
+
 test('runtime schema upgrade is single-flight for concurrent cold-start requests', async () => {
   const executed = [];
   const db = {
