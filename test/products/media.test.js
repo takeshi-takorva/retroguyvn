@@ -32,8 +32,8 @@ test('Product create and save validate media and index each immutable revision',
   }
 });
 
-test('shared media DELETE path checks both News and Product usage before falling through', async () => {
+test('shared media DELETE path checks both Content and Product usage before falling through', async () => {
   const worker = await read('src/news-worker-entry.js');
-  assert.match(worker, /assertNewsMediaNotInUse/);
+  assert.match(worker, /assertContentMediaNotInUse/);
   assert.match(worker, /assertProductMediaNotInUse/);
 });
