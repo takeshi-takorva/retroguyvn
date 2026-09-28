@@ -4,7 +4,8 @@
   const protectedFilePath = id => `/api/admin/ota/releases/${encodeURIComponent(id)}/file`;
   const absoluteUrl = path => new URL(path, window.location.origin).toString();
   const authHeaders = () => {
-    const token = sessionStorage.getItem('rg_admin_token') || '';
+    let token = '';
+    try { token = sessionStorage.getItem('rg_admin_token') || ''; } catch {}
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 

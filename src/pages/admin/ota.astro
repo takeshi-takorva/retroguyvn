@@ -10,7 +10,7 @@ import '../../styles/ota-admin.css';
     <div class="admin-section-actions"><button class="admin-button" id="refreshAll" type="button">Refresh</button></div>
   </section>
 
-  <section class="admin-login admin-hidden" id="loginPanel">
+  <section class="admin-login" id="loginPanel">
     <h3>Admin access required</h3>
     <p>Cloudflare Access is preferred. Enter the fallback Admin Token only when Access is not active.</p>
     <form class="admin-login-form" id="loginForm"><input class="admin-input" id="tokenInput" type="password" placeholder="Admin Token" autocomplete="current-password" required /><button class="admin-button primary">Connect</button></form>
@@ -79,7 +79,10 @@ import '../../styles/ota-admin.css';
 
   <script>
     const q = selector => document.querySelector(selector);
-    let token = sessionStorage.getItem('rg_admin_token') || '';
+    const safeSessionGet = key => { try { return sessionStorage.getItem(key) || ''; } catch { return ''; } };
+    const safeSessionSet = (key, value) => { try { sessionStorage.setItem(key, value); return true; } catch { return false; } };
+    const safeSessionRemove = key => { try { sessionStorage.removeItem(key); } catch {} };
+    let token = safeSessionGet('rg_admin_token');
     let hardware = [], releases = [], devices = [], events = [];
     const authHeaders = () => token ? { Authorization: `Bearer ${token}` } : {};
     const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]));
@@ -125,17 +128,23 @@ import '../../styles/ota-admin.css';
       q('#eventRows').innerHTML = visible.map(item=>`<tr><td>${fmtDate(item.created_at)}</td><td><code>${esc(item.device_id)}</code></td><td><span class="ota-status">${esc(item.event_type)}</span></td><td>${esc(item.hardware_code)}</td><td>${esc(item.current_fw||'—')} → ${esc(item.target_fw||'—')}</td><td>${fmtBytes(item.bytes_served)}</td></tr>`).join('') || '<tr><td colspan="6" class="ota-empty">No matching events.</td></tr>';
     }
 
-    async function loadAll() {
+    async function loadAll({ interactive = false } = {}) {
       message('');
       try {
         await api('/api/admin/session');
-        q('#loginPanel').classList.add('admin-hidden'); q('#workspace').classList.remove('admin-hidden');
+        q('#loginPanel').classList.add('admin-hidden');
+        q('#workspace').classList.remove('admin-hidden');
         const [h,r,d,e]=await Promise.all([api('/api/admin/ota/hardware'),api('/api/admin/ota/releases?limit=200'),api('/api/admin/ota/devices?limit=300'),api('/api/admin/ota/events?limit=500')]);
         hardware=h.items||[]; releases=r.items||[]; devices=d.items||[]; events=e.items||[];
         renderTargets(); renderReleases(); renderHardware(); renderDevices(); renderEvents(); renderSummary();
       } catch (error) {
-        if(error.status===401){q('#workspace').classList.add('admin-hidden');q('#loginPanel').classList.remove('admin-hidden');return;}
-        message(error.message,'error');
+        q('#workspace').classList.add('admin-hidden');
+        q('#loginPanel').classList.remove('admin-hidden');
+        if (error.status === 401) {
+          if (interactive || token) message('Admin token is invalid or expired. Re-enter the current Admin Token.', 'error');
+          return;
+        }
+        message(`Admin authentication failed: ${error.message || 'Unable to reach admin API'}`, 'error');
       }
     }
 
@@ -169,7 +178,16 @@ import '../../styles/ota-admin.css';
     q('#hardwareForm').addEventListener('submit',async event=>{event.preventDefault();try{await api('/api/admin/ota/hardware',{method:'POST',json:true,body:JSON.stringify({code:q('#hardwareCode').value,label:q('#hardwareLabel').value})});q('#hardwareForm').reset();message('Hardware revision added.','good');await loadAll();}catch(error){message(error.message,'error');}});
     q('#cancelEdit').addEventListener('click',resetReleaseForm); q('#refreshAll').addEventListener('click',loadAll); q('#releaseChannel').addEventListener('change',renderReleases); q('#eventType').addEventListener('change',renderEvents);
     document.querySelectorAll('.ota-tab').forEach(tab=>tab.addEventListener('click',()=>{document.querySelectorAll('.ota-tab').forEach(v=>v.classList.toggle('active',v===tab));document.querySelectorAll('[data-panel]').forEach(panel=>panel.classList.toggle('ota-hidden',panel.dataset.panel!==tab.dataset.view));}));
-    q('#loginForm').addEventListener('submit',async event=>{event.preventDefault();token=q('#tokenInput').value.trim();if(token)sessionStorage.setItem('rg_admin_token',token);await loadAll();});
+    q('#loginForm').addEventListener('submit',async event=>{
+      event.preventDefault();
+      token=q('#tokenInput').value.trim();
+      if(!token){message('Enter the Admin Token.','error');return;}
+      if(!safeSessionSet('rg_admin_token',token)){
+        message('Browser storage is unavailable; continuing with this token for the current page only.','');
+      }
+      await loadAll({ interactive:true });
+    });
+    window.addEventListener('pageshow',()=>{ if(!q('#workspace').classList.contains('admin-hidden')) return; token=safeSessionGet('rg_admin_token')||token; });
     loadAll();
   </script>
 </AdminShell>

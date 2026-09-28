@@ -11,3 +11,13 @@ test('admin shell loads OTA file actions and client uses protected release file 
   assert.match(client, /Copy link/);
   assert.match(client, /rg_admin_token/);
 });
+
+
+test('OTA admin login remains visible before client auth and storage access is guarded', async () => {
+  const page = await readFile(new URL('../../src/pages/admin/ota.astro', import.meta.url), 'utf8');
+  assert.match(page, /class="admin-login" id="loginPanel"/);
+  assert.doesNotMatch(page, /class="admin-login admin-hidden" id="loginPanel"/);
+  assert.match(page, /safeSessionGet/);
+  assert.match(page, /safeSessionSet/);
+  assert.match(page, /Admin token is invalid|Admin authentication failed/);
+});
