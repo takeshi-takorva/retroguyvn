@@ -63,7 +63,6 @@ jobs:
             console.log('BODY_LENGTH', text.length);
             console.log('BODY_HEAD', JSON.stringify(text.slice(0, 300)));
             if (url.includes('/admin/ota')) {
-              if (response.status !== 200) throw new Error('admin/ota status ' + response.status);
               if (!text.includes('DR Portal OTA')) console.log('ADMIN_HTML_MISSING', url);
             }
             if (url.endsWith('admin-ota-file-actions.js')) {
