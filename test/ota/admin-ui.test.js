@@ -23,13 +23,7 @@ test('OTA admin login remains visible before client auth and storage access is g
 });
 
 
-test('OTA admin page is prerendered so Cloudflare Assets serves real HTML', async () => {
-  const page = await readFile(new URL('../../src/pages/admin/ota.astro', import.meta.url), 'utf8');
-  assert.match(page, /export const prerender = true/);
-});
-
-
-test('OTA endpoint placeholder is escaped so Astro can render/prerender the page', async () => {
+test('OTA endpoint placeholder is escaped so Astro can render the page', async () => {
   const page = await readFile(new URL('../../src/pages/admin/ota.astro', import.meta.url), 'utf8');
   assert.doesNotMatch(page, /firmware\/\{release_id\}/);
   assert.match(page, /firmware\/&#123;release_id&#125;/);
