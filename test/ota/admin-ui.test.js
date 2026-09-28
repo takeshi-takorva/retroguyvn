@@ -21,3 +21,10 @@ test('OTA admin login remains visible before client auth and storage access is g
   assert.match(page, /safeSessionSet/);
   assert.match(page, /Admin token is invalid|Admin authentication failed/);
 });
+
+
+test('OTA endpoint placeholder is escaped so Astro can render the page', async () => {
+  const page = await readFile(new URL('../../src/pages/admin/ota.astro', import.meta.url), 'utf8');
+  assert.doesNotMatch(page, /firmware\/\{release_id\}/);
+  assert.match(page, /firmware\/&#123;release_id&#125;/);
+});

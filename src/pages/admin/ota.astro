@@ -58,7 +58,7 @@ import '../../styles/ota-admin.css';
           <div class="ota-actions"><button class="admin-button primary" id="saveRelease" type="submit">Upload & create draft</button><button class="admin-button ota-hidden" id="cancelEdit" type="button">Cancel edit</button></div>
         </form>
 
-        <div class="ota-card"><h3>Device endpoints · Protocol v1</h3><p>Boot FW uses these stable routes. The firmware binary URL is returned by the check response; no direct R2 URL is embedded in firmware.</p><div class="ota-message"><strong>Check</strong><br /><code class="ota-mono">POST /api/dr/ota/v1/check</code><br /><br /><strong>Firmware</strong><br /><code class="ota-mono">GET /api/dr/ota/v1/firmware/{release_id}</code><br /><br /><strong>Lifecycle events</strong><br /><code class="ota-mono">POST /api/dr/ota/v1/events</code></div><p style="margin-top:12px">Hardware compatibility is exact-match only. Admin download links remain protected and are not Boot FW endpoints.</p></div>
+        <div class="ota-card"><h3>Device endpoints · Protocol v1</h3><p>Boot FW uses these stable routes. The firmware binary URL is returned by the check response; no direct R2 URL is embedded in firmware.</p><div class="ota-message"><strong>Check</strong><br /><code class="ota-mono">POST /api/dr/ota/v1/check</code><br /><br /><strong>Firmware</strong><br /><code class="ota-mono">GET /api/dr/ota/v1/firmware/&#123;release_id&#125;</code><br /><br /><strong>Lifecycle events</strong><br /><code class="ota-mono">POST /api/dr/ota/v1/events</code></div><p style="margin-top:12px">Hardware compatibility is exact-match only. Admin download links remain protected and are not Boot FW endpoints.</p></div>
       </div>
 
       <div class="admin-panel">
