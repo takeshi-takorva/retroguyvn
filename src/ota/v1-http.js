@@ -85,6 +85,29 @@ function validateEvent(headers, body) {
   };
 }
 
+function releaseManifest(release, origin) {
+  return {
+    release_id: release.id,
+    release_seq: Number(release.release_seq),
+    product: 'DigitalRealm',
+    hardware: release.targets || [],
+    channel: release.channel,
+    version: release.version,
+    ...(Number.isSafeInteger(Number(release.game_fix)) ? { fix: Number(release.game_fix) } : {}),
+    build_id: release.build_id,
+    secure_version: Number(release.secure_version || 0),
+    min_boot_version: release.min_boot_version,
+    asset_version: release.asset_version || null,
+    size: Number(release.size_bytes),
+    sha256: release.sha256,
+    signature_alg: release.signature_alg,
+    signature: release.signature,
+    download_url: new URL('/api/dr/ota/v1/firmware/' + encodeURIComponent(release.id), origin).toString(),
+    mandatory: Boolean(Number(release.mandatory || 0)),
+    release_notes: String(release.release_notes || '').slice(0, 4096)
+  };
+}
+
 function firmwareHeaders(release, length) {
   const headers = new Headers({
     'content-type': 'application/octet-stream',
@@ -113,7 +136,7 @@ export function createOtaV1Http({ service, now = () => new Date() }) {
         const result = await service.checkForUpdateV1(input, requestClientMetadata(request));
         if (result.status === 'update_available') {
           return jsonResponse({ protocol: 1, status: 'update_available', server_time: now().toISOString(),
-            release: service.releaseManifest(result.release, request.url) });
+            release: releaseManifest(result.release, request.url) });
         }
         return jsonResponse({ protocol: 1, status: 'up_to_date', server_time: now().toISOString(),
           current_release_seq: Number(result.currentReleaseSeq || 0) });
