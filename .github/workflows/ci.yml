@@ -22,6 +22,12 @@ jobs:
         run: npm test
       - name: Build Astro site
         run: npm run build
+      - name: Inspect built admin assets
+        run: |
+          echo "=== dist/client admin paths ==="
+          find dist/client -maxdepth 5 -type f -printf '%p %s bytes\n' | sort | grep -E 'admin|ota' || true
+          echo "=== zero-byte files ==="
+          find dist/client -type f -size 0 -printf '%p\n' | sort || true
       - name: Probe production OTA admin
         run: |
           node - <<'NODE'
