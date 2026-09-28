@@ -121,6 +121,7 @@ export function createOtaV1Service({ repo, firmwareBucket, now = () => new Date(
   }
 
   async function recordLifecycleEventV1(event, meta = {}) {
+    const receivedAt = iso();
     await repo.appendEventV1({
       deviceId: event.deviceId,
       serial: event.serial,
@@ -135,8 +136,12 @@ export function createOtaV1Service({ repo, firmwareBucket, now = () => new Date(
       deviceTimestamp: event.timestamp,
       ip: meta.ip || null,
       userAgent: meta.userAgent || null,
-      receivedAt: iso()
+      receivedAt
     });
+    if (event.releaseId && event.event === 'DOWNLOAD_COMPLETE') {
+      await repo.markDeviceDownload(event.deviceId, event.releaseId, receivedAt);
+      await repo.incrementDownloadCount(event.releaseId);
+    }
   }
 
   return { checkForUpdateV1, authorizeDownloadV1, recordLifecycleEventV1, releaseManifest };
