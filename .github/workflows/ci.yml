@@ -22,3 +22,31 @@ jobs:
         run: npm test
       - name: Build Astro site
         run: npm run build
+      - name: Probe production OTA admin
+        run: |
+          node - <<'NODE'
+          const targets = [
+            'https://retroguyvn.com/admin/ota',
+            'https://retroguyvn.com/admin-ota-file-actions.js'
+          ];
+          for (const url of targets) {
+            const response = await fetch(url, {
+              redirect: 'manual',
+              headers: { 'user-agent': 'DR-OTA-PROD-PROBE/1.0', 'cache-control': 'no-cache' }
+            });
+            const text = await response.text();
+            console.log('URL', url);
+            console.log('STATUS', response.status);
+            console.log('CONTENT_TYPE', response.headers.get('content-type'));
+            console.log('CACHE_CONTROL', response.headers.get('cache-control'));
+            console.log('BODY_LENGTH', text.length);
+            console.log('BODY_HEAD', JSON.stringify(text.slice(0, 300)));
+            if (url.endsWith('/admin/ota')) {
+              if (response.status !== 200) throw new Error('admin/ota status ' + response.status);
+              if (!text.includes('DR Portal OTA')) throw new Error('admin/ota missing expected HTML');
+            }
+            if (url.endsWith('admin-ota-file-actions.js')) {
+              if (response.status !== 200) throw new Error('admin asset status ' + response.status);
+            }
+          }
+          NODE
