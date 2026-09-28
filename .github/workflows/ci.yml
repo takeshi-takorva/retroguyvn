@@ -35,6 +35,11 @@ jobs:
           const targets = [
             'https://retroguyvn.com/admin/ota',
             `https://retroguyvn.com/admin/ota?__dr_probe=${stamp}`,
+            'https://retroguyvn.com/admin',
+            'https://retroguyvn.com/admin/pages/',
+            'https://retroguyvn.com/admin/system',
+            'https://retroguyvn.com/admin/devlog',
+            'https://retroguyvn.com/admin/products',
             'https://retroguyvn.doanducviet5488.workers.dev/admin/ota',
             'https://retroguyvn.com/admin-ota-file-actions.js'
           ];
