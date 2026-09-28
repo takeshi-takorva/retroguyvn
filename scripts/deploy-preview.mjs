@@ -7,6 +7,8 @@ const configPath = resolve(CONFIG);
 const CANARY_BRANCHES = new Set(['feature/dr-ota-cloudflare', 'feature/dr-ota-v1-contract-sync', 'fix/admin-ota-production-route']);
 const WORKER_NAME = 'retroguyvn';
 const BASE_URL = 'https://retroguyvn.com';
+const REPAIR_BRANCH = 'diag/admin-ota-production-origin';
+const VERIFIED_PRODUCTION_VERSION = '5390e275-f7f1-48b0-b18f-3432a719c74c';
 const uploadOutputPath = resolve('.wrangler-preview-upload.ndjson');
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx';
@@ -320,6 +322,27 @@ async function main() {
     ], {
       env: { ...process.env, WRANGLER_OUTPUT_FILE_PATH: uploadOutputPath }
     });
+
+    if (process.env.WORKERS_CI === '1' && process.env.WORKERS_CI_BRANCH === REPAIR_BRANCH) {
+      console.log(`[cloudflare-preview] Repairing production deployment pointer to verified version ${VERIFIED_PRODUCTION_VERSION}@100%.`);
+      run(npxCommand, [
+        'wrangler', 'versions', 'deploy', `${VERIFIED_PRODUCTION_VERSION}@100%`, '-y',
+        '--message', 'Repair blank OTA admin production deployment',
+        '--config', CONFIG
+      ]);
+      await sleep(3000);
+      const response = await fetch(`${BASE_URL}/admin/ota`, {
+        headers: { 'User-Agent': 'DR-OTA-PROD-REPAIR/1.0', 'Cache-Control': 'no-cache' },
+        redirect: 'manual'
+      });
+      const body = await response.text();
+      console.log(`[cloudflare-preview] Production OTA admin after repair: status=${response.status}, bytes=${body.length}`);
+      if (response.status !== 200 || !body.includes('DR Portal OTA')) {
+        throw new Error(`Production OTA admin repair verification failed: status=${response.status}, bytes=${body.length}`);
+      }
+      console.log('[cloudflare-preview] Production OTA admin repair verified.');
+      return;
+    }
 
     if (!isOtaCanary) {
       console.log('[cloudflare-preview] Non-OTA preview branch: upload complete; active deployment unchanged.');
