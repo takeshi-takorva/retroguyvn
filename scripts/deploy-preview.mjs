@@ -4,7 +4,8 @@ import { resolve } from 'node:path';
 
 const CONFIG = 'dist/server/wrangler.production.json';
 const configPath = resolve(CONFIG);
-const CANARY_BRANCHES = new Set(['feature/dr-ota-cloudflare', 'feature/dr-ota-v1-contract-sync', 'fix/admin-ota-production-route']);
+const CANARY_BRANCHES = new Set(['feature/dr-ota-cloudflare', 'feature/dr-ota-v1-contract-sync', 'fix/admin-ota-production-route', 'fix/admin-ota-worker-first']);
+const PROMOTE_TEST_BRANCH = 'fix/admin-ota-worker-first';
 const WORKER_NAME = 'retroguyvn';
 const BASE_URL = 'https://retroguyvn.com';
 const uploadOutputPath = resolve('.wrangler-preview-upload.ndjson');
@@ -343,6 +344,29 @@ async function main() {
     verifyCanaryAllocation(productionVersionId, canaryVersionId);
     await sleep(3000);
     await smokeTest(canaryVersionId);
+
+    if (process.env.WORKERS_CI_BRANCH === PROMOTE_TEST_BRANCH) {
+      console.log(`[cloudflare-preview] Promoting worker-first OTA candidate ${canaryVersionId}@100% for external verification.`);
+      run(npxCommand, [
+        'wrangler', 'versions', 'deploy', `${canaryVersionId}@100%`, '-y',
+        '--message', `DR OTA worker-first verification ${commitSha}`,
+        '--config', CONFIG
+      ]);
+      await sleep(3000);
+      const live = await fetch(`${BASE_URL}/admin/ota`, {
+        headers: { 'User-Agent': 'DR-OTA-WORKER-FIRST-SMOKE/1.0', 'Cache-Control': 'no-cache' },
+        redirect: 'manual'
+      });
+      const liveText = await live.text();
+      console.log(`[cloudflare-preview] Live OTA admin after promote: status=${live.status}, bytes=${liveText.length}`);
+      if (live.status !== 200 || !liveText.includes('DR Portal OTA')) {
+        rollbackToProduction(productionVersionId);
+        canaryDeploymentAttempted = false;
+        throw new Error(`Worker-first OTA candidate live verification failed: status=${live.status}, bytes=${liveText.length}`);
+      }
+      canaryDeploymentAttempted = false;
+      console.log('[cloudflare-preview] Worker-first OTA candidate promoted and internally verified.');
+    }
   } catch (error) {
     console.error(`[cloudflare-preview] ${error.stack || error.message}`);
     if (isOtaCanary && canaryDeploymentAttempted && productionVersionId) {
