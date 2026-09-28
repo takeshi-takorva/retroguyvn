@@ -22,3 +22,9 @@ test('OTA admin SSR route runs Worker before static assets', async () => {
   const config = await rootConfig();
   assert.deepEqual(config.assets?.run_worker_first, ['/admin/ota']);
 });
+
+
+test('generated Wrangler patch preserves worker-first OTA admin routing', async () => {
+  const patch = await readFile(new URL('../../scripts/patch-deployment-wrangler.mjs', import.meta.url), 'utf8');
+  assert.match(patch, /run_worker_first\s*=\s*\['\/admin\/ota'\]/);
+});
