@@ -47,9 +47,6 @@ if (R2_DISABLED) {
   delete firmware.preview_bucket_name;
 }
 
-config.assets ??= {};
-config.assets.run_worker_first = ['/admin/ota'];
-
 config.vars ??= {};
 config.vars.CMS_ARCHITECTURE = R2_DISABLED ? 'm2-d1-legacy-media' : 'm2-explicit-resources';
 config.vars.CMS_R2_STATE = R2_DISABLED ? 'not-entitled' : 'ready';
@@ -81,11 +78,7 @@ if (PIN_ROOT) {
 
 const verified = JSON.parse(readFileSync(PRODUCTION, 'utf8'));
 const verifiedDb = verified.d1_databases?.find(x => x?.binding === 'DB');
-if (
-  verified.main !== generatedWorkerMain ||
-  verifiedDb?.database_id !== DB_ID ||
-  JSON.stringify(verified.assets?.run_worker_first) !== JSON.stringify(['/admin/ota'])
-) {
+if (verified.main !== generatedWorkerMain || verifiedDb?.database_id !== DB_ID) {
   throw new Error('Production Wrangler verification failed');
 }
 if (PIN_ROOT) {
