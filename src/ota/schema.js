@@ -6,8 +6,6 @@ const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS ota_events (id TEXT PRIMARY KEY, device_id TEXT NOT NULL, event_type TEXT NOT NULL CHECK(event_type IN ('CHECK','UPDATE_AVAILABLE','NO_UPDATE','DOWNLOAD_START','DOWNLOAD_RANGE','DOWNLOAD_COMPLETE','DOWNLOAD_FAIL')), hardware_code TEXT NOT NULL, current_fw TEXT, boot_version TEXT, channel TEXT, release_id TEXT, target_fw TEXT, http_status INTEGER, bytes_served INTEGER NOT NULL DEFAULT 0 CHECK(bytes_served >= 0), range_start INTEGER, range_end INTEGER, ip TEXT, user_agent TEXT, detail_json TEXT, created_at TEXT NOT NULL)`,
   `CREATE TABLE IF NOT EXISTS ota_events_v1 (id TEXT PRIMARY KEY, device_id TEXT NOT NULL, serial TEXT, hardware_code TEXT, event_type TEXT NOT NULL, release_id TEXT, progress INTEGER, result TEXT, error_code TEXT, fw_before TEXT, fw_after TEXT, device_timestamp TEXT, ip TEXT, user_agent TEXT, received_at TEXT NOT NULL)`,
   `CREATE INDEX IF NOT EXISTS idx_ota_release_lookup ON ota_releases(product, channel, status, version_sort DESC)`,
-  `CREATE UNIQUE INDEX IF NOT EXISTS idx_ota_release_seq_v1 ON ota_releases(product, release_seq) WHERE release_seq IS NOT NULL`,
-  `CREATE INDEX IF NOT EXISTS idx_ota_release_seq_lookup_v1 ON ota_releases(product, channel, status, release_seq DESC)`,
   `CREATE INDEX IF NOT EXISTS idx_ota_target_hardware ON ota_release_targets(hardware_id, release_id)`,
   `CREATE INDEX IF NOT EXISTS idx_ota_devices_last_seen ON ota_devices(last_seen_at DESC)`,
   `CREATE INDEX IF NOT EXISTS idx_ota_events_device_time ON ota_events(device_id, created_at DESC)`,
