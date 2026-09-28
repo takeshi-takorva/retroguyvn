@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 
 const CONFIG = 'dist/server/wrangler.production.json';
 const configPath = resolve(CONFIG);
-const CANARY_BRANCH = 'feature/dr-ota-cloudflare';
+const CANARY_BRANCHES = new Set(['feature/dr-ota-cloudflare', 'feature/dr-ota-v1-contract-sync']);
 const WORKER_NAME = 'retroguyvn';
 const BASE_URL = 'https://retroguyvn.com';
 const uploadOutputPath = resolve('.wrangler-preview-upload.ndjson');
@@ -164,7 +164,7 @@ function verifyCanaryAllocation(productionVersionId, canaryVersionId) {
 
 const sleep = (ms) => new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
 
-async function requestCanary(path, canaryVersionId, extraHeaders = {}) {
+async function requestCanary(path, canaryVersionId, extraHeaders = {}, options = {}) {
   const headers = {
     'Cloudflare-Workers-Version-Overrides': `${WORKER_NAME}="${canaryVersionId}"`,
     'User-Agent': 'DR-OTA-CI-SMOKE/1.0',
@@ -174,7 +174,7 @@ async function requestCanary(path, canaryVersionId, extraHeaders = {}) {
   let lastError;
   for (let attempt = 1; attempt <= 6; attempt += 1) {
     try {
-      const response = await fetch(`${BASE_URL}${path}`, { headers, redirect: 'manual' });
+      const response = await fetch(`${BASE_URL}${path}`, { ...options, headers, redirect: 'manual' });
       const text = await response.text();
       return { response, text };
     } catch (error) {
@@ -216,6 +216,44 @@ async function smokeTest(canaryVersionId) {
     throw new Error(`OTA valid-check smoke missing update_available boolean: ${valid.text}`);
   }
 
+  const v1Headers = {
+    'content-type': 'application/json',
+    'X-DR-Protocol': '1',
+    'X-DR-Device-ID': '0123456789ABCDEF0123456789ABCDEF',
+    'X-DR-Serial': 'UNPROVISIONED',
+    'X-DR-HW-Version': 'HW0.4',
+    'X-DR-Boot-Version': '0.1-fix023',
+    'X-DR-FW-Version': '0.4-fix059-save-buffer-linker-hotfix'
+  };
+  const v1Body = {
+    protocol: 1,
+    product: 'DigitalRealm',
+    channel: 'stable',
+    device_id: '0123456789ABCDEF0123456789ABCDEF',
+    serial: 'UNPROVISIONED',
+    hardware: 'HW0.4',
+    boot_version: '0.1-fix023',
+    game_version: '0.4-fix059-save-buffer-linker-hotfix',
+    game_fix: 59,
+    build_id: 'CI-DR-fix059',
+    release_seq: 0,
+    service_version: '0.0.0',
+    secure_version: 1,
+    active_slot: 'A',
+    asset_version: null
+  };
+  const v1 = await requestCanary('/api/dr/ota/v1/check', canaryVersionId, v1Headers, {
+    method: 'POST',
+    body: JSON.stringify(v1Body)
+  });
+  if (v1.response.status !== 200) {
+    throw new Error(`OTA v1 check smoke expected 200, got ${v1.response.status}: ${v1.text}`);
+  }
+  const v1Payload = JSON.parse(v1.text);
+  if (v1Payload.protocol !== 1 || !['up_to_date', 'update_available'].includes(v1Payload.status)) {
+    throw new Error(`OTA v1 check smoke returned invalid envelope: ${v1.text}`);
+  }
+
   const admin = await requestCanary('/api/admin/ota/releases', canaryVersionId);
   if (![401, 403].includes(admin.response.status)) {
     throw new Error(`OTA admin auth smoke expected 401/403, got ${admin.response.status}: ${admin.text}`);
@@ -244,7 +282,7 @@ async function main() {
   }
 
   const isOtaCanary = process.env.WORKERS_CI === '1'
-    && process.env.WORKERS_CI_BRANCH === CANARY_BRANCH;
+    && CANARY_BRANCHES.has(process.env.WORKERS_CI_BRANCH);
   const commitSha = process.env.WORKERS_CI_COMMIT_SHA || Date.now().toString(36);
   const tag = `dr-ota-${commitSha.slice(0, 12)}`;
   let productionVersionId = null;

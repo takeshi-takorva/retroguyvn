@@ -16,6 +16,7 @@ import {
 import { createOtaRepository } from './ota/repository.js';
 import { createOtaService } from './ota/service.js';
 import { createOtaHttp } from './ota/http.js';
+import { createOtaV1Http } from './ota/v1-http.js';
 
 let bootstrapPromise = null;
 
@@ -213,7 +214,7 @@ async function handleM21Admin(request, env, ctx, pathname) {
 function buildOtaHttp(env) {
   const repo = createOtaRepository(env);
   const service = createOtaService({ repo, firmwareBucket: env?.FIRMWARE });
-  return createOtaHttp({ service });
+  return { legacy: createOtaHttp({ service }), v1: createOtaV1Http({ service }) };
 }
 
 async function handleOtaRoute(request, env, ctx, pathname) {
@@ -221,10 +222,13 @@ async function handleOtaRoute(request, env, ctx, pathname) {
     if (pathname.startsWith('/api/admin/ota/')) {
       const session = await adminSession(request, env, ctx);
       if (!session) return json({ error: 'Unauthorized' }, { status: 401 });
-      return await buildOtaHttp(env).handleOtaAdmin(request, env, ctx, session);
+      return await buildOtaHttp(env).legacy.handleOtaAdmin(request, env, ctx, session);
     }
     if (pathname === '/api/dr/ota' || pathname === '/api/dr/ota/download') {
-      return await buildOtaHttp(env).handleOtaPublic(request, env, ctx);
+      return await buildOtaHttp(env).legacy.handleOtaPublic(request, env, ctx);
+    }
+    if (pathname.startsWith('/api/dr/ota/v1/')) {
+      return await buildOtaHttp(env).v1.handle(request, env, ctx);
     }
     return null;
   } catch (error) {
@@ -246,6 +250,7 @@ export default {
     if (
       url.pathname === '/api/dr/ota' ||
       url.pathname === '/api/dr/ota/download' ||
+      url.pathname.startsWith('/api/dr/ota/v1/') ||
       url.pathname.startsWith('/api/admin/ota/')
     ) {
       return handleOtaRoute(request, runtimeEnv, ctx, url.pathname);
