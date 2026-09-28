@@ -373,8 +373,7 @@ export function createOtaRepository(env) {
       ).bind(...bindings).all();
       const modern = await db.prepare(
         `SELECT id, device_id, event_type, hardware_code, fw_before AS current_fw, fw_after AS target_fw,
-          release_id, 0 AS bytes_served, NULL AS http_status,
-          json_object('result', result, 'progress', progress, 'error_code', error_code, 'device_timestamp', device_timestamp) AS detail_json,
+          release_id, 0 AS bytes_served, NULL AS http_status, NULL AS detail_json,
           received_at AS created_at, 'v1' AS protocol_source
          FROM ota_events_v1 ${clause} ORDER BY received_at DESC LIMIT ${limit}`
       ).bind(...bindings).all();
