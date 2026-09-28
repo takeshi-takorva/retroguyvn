@@ -365,9 +365,22 @@ export function createOtaRepository(env) {
       if (filters.eventType) { where.push('event_type = ?'); bindings.push(filters.eventType); }
       if (filters.releaseId) { where.push('release_id = ?'); bindings.push(filters.releaseId); }
       const limit = Math.max(1, Math.min(Number(filters.limit || 200), 1000));
-      const sql = `SELECT * FROM ota_events ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY created_at DESC LIMIT ${limit}`;
-      const result = await db.prepare(sql).bind(...bindings).all();
-      return result.results || [];
+      const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+      const legacy = await db.prepare(
+        `SELECT id, device_id, event_type, hardware_code, current_fw, target_fw, release_id,
+          bytes_served, http_status, detail_json, created_at, 'legacy' AS protocol_source
+         FROM ota_events ${clause} ORDER BY created_at DESC LIMIT ${limit}`
+      ).bind(...bindings).all();
+      const modern = await db.prepare(
+        `SELECT id, device_id, event_type, hardware_code, fw_before AS current_fw, fw_after AS target_fw,
+          release_id, 0 AS bytes_served, NULL AS http_status,
+          json_object('result', result, 'progress', progress, 'error_code', error_code, 'device_timestamp', device_timestamp) AS detail_json,
+          received_at AS created_at, 'v1' AS protocol_source
+         FROM ota_events_v1 ${clause} ORDER BY received_at DESC LIMIT ${limit}`
+      ).bind(...bindings).all();
+      return [...(legacy.results || []), ...(modern.results || [])]
+        .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
+        .slice(0, limit);
     }
   };
 }
