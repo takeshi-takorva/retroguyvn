@@ -80,9 +80,13 @@
     if (!confirm(`Replace firmware for ${id} with ${file.name}?`)) return false;
     const form = new FormData();
     form.set('file', file);
-    await uploadFormData(protectedFilePath(id), form, 'PUT');
-    notify(`Firmware file updated for ${id}.`, 'good');
+    const updated = await uploadFormData(protectedFilePath(id), form, 'PUT');
     document.querySelector('#refreshAll')?.click();
+    if (updated?.product === 'DigitalRealm' && !updated?.signature) {
+      notify(`Firmware file updated for ${id}. The old signature was cleared; open Edit and paste a new DR Device Studio signature before Publish.`, 'good');
+    } else {
+      notify(`Firmware file updated for ${id}.`, 'good');
+    }
     return true;
   }
 
