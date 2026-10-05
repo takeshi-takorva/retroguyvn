@@ -42,4 +42,5 @@ test('OTA admin upload UI exposes replace-file action with progress and timeout'
   assert.match(fileActions, /uploadFormData\(protectedFilePath\(id\), form, 'PUT'\)/);
   assert.match(fileActions, /xhr\.upload\.onprogress/);
   assert.match(fileActions, /xhr\.timeout\s*=\s*180000/);
+  assert.match(fileActions, /old signature was cleared/);
 });
