@@ -182,7 +182,8 @@ test('draft firmware file replacement updates D1 then removes the old R2 object'
   const oldKey = 'ota/dr-game/rel-1/old.bin';
   const release = {
     id: 'rel-1', product: 'DigitalRealm', status: 'draft', version: '0.4.0',
-    build_id: 'build-60', release_seq: 60, r2_key: oldKey
+    build_id: 'build-60', release_seq: 60, r2_key: oldKey,
+    signature_alg: 'RSA-PSS-SHA256', signature: 'A'.repeat(128)
   };
   let uploaded = null;
   const deleted = [];
@@ -200,6 +201,7 @@ test('draft firmware file replacement updates D1 then removes the old R2 object'
 
   assert.equal(result.file_name, 'replacement.bin');
   assert.equal(result.size_bytes, 5);
+  assert.equal(result.signature, null);
   assert.match(result.sha256, /^[0-9a-f]{64}$/);
   assert.equal(uploaded.key, result.r2_key);
   assert.ok(uploaded.body instanceof ArrayBuffer);
