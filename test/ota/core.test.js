@@ -41,6 +41,7 @@ test('firmware validation requires .bin and ESP magic', async () => {
   const meta = await validateFirmwareFile(good);
   assert.equal(meta.size, 4);
   assert.match(meta.sha256, /^[0-9a-f]{64}$/);
+  assert.deepEqual([...new Uint8Array(meta.bytes)], [0xE9, 1, 2, 3]);
 
   const badMagic = new File([Uint8Array.from([0x00, 1, 2, 3])], 'bad.bin', { type: 'application/octet-stream' });
   await assert.rejects(
