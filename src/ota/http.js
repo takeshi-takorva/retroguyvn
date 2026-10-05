@@ -127,9 +127,13 @@ export function createOtaHttp({ service }) {
     }
   }
 
-  async function handleAdminFile(request, releaseId) {
+  async function handleAdminFile(request, releaseId, actor) {
+    if (request.method === 'PUT') {
+      const formData = await readFormData(request);
+      return jsonResponse(await service.replaceReleaseFile(releaseId, formData.get('file'), actor));
+    }
     if (request.method !== 'GET') {
-      return jsonResponse({ error: 'method_not_allowed' }, { status: 405, headers: { allow: 'GET' } });
+      return jsonResponse({ error: 'method_not_allowed' }, { status: 405, headers: { allow: 'GET, PUT' } });
     }
     const release = await service.getRelease(releaseId);
     if (!release) return jsonResponse({ error: 'release_not_found' }, { status: 404 });
@@ -188,7 +192,7 @@ export function createOtaHttp({ service }) {
       }
       const fileMatch = url.pathname.match(/^\/api\/admin\/ota\/releases\/([^/]+)\/file$/);
       if (fileMatch) {
-        return handleAdminFile(request, decodeURIComponent(fileMatch[1]));
+        return handleAdminFile(request, decodeURIComponent(fileMatch[1]), actor);
       }
       const actionMatch = url.pathname.match(/^\/api\/admin\/ota\/releases\/([^/]+)\/(publish|disable)$/);
       if (actionMatch && request.method === 'POST') {

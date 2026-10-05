@@ -139,3 +139,35 @@ test('admin invalid JSON returns 400 and missing release returns 404', async () 
   const missing = new Request('https://retroguyvn.com/api/admin/ota/releases/nope');
   assert.equal((await http.handleOtaAdmin(missing, {}, ctx(), { mode: 'token' })).status, 404);
 });
+
+
+test('admin PUT release file replaces firmware through protected endpoint', async () => {
+  let replaced = null;
+  const service = {
+    async replaceReleaseFile(id, file, actor) {
+      replaced = { id, name: file?.name, actor };
+      return { id, file_name: file.name, size_bytes: file.size, sha256: 'd'.repeat(64) };
+    }
+  };
+  const http = createOtaHttp({ service });
+  const form = new FormData();
+  form.set('file', new File([Uint8Array.from([0xE9, 1, 2])], 'replacement.bin', { type: 'application/octet-stream' }));
+  const request = new Request('https://retroguyvn.com/api/admin/ota/releases/rel-1/file', {
+    method: 'PUT',
+    body: form
+  });
+  const response = await http.handleOtaAdmin(request, {}, ctx(), { email: 'admin@example.com' });
+  const data = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(replaced, { id: 'rel-1', name: 'replacement.bin', actor: 'admin@example.com' });
+  assert.equal(data.file_name, 'replacement.bin');
+});
+
+test('admin release file endpoint advertises GET and PUT only', async () => {
+  const http = createOtaHttp({ service: {} });
+  const request = new Request('https://retroguyvn.com/api/admin/ota/releases/rel-1/file', { method: 'POST' });
+  const response = await http.handleOtaAdmin(request, {}, ctx(), { mode: 'token' });
+  assert.equal(response.status, 405);
+  assert.equal(response.headers.get('allow'), 'GET, PUT');
+});

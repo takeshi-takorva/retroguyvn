@@ -21,6 +21,7 @@ function fakeRepo(overrides = {}) {
     async getRelease() { return null; },
     async createRelease(release, hardwareIds) { return { ...release, target_ids: hardwareIds }; },
     async updateRelease(id, patch, hardwareIds) { return { id, ...patch, target_ids: hardwareIds || [] }; },
+    async updateReleaseFile(id, patch) { return { id, ...patch }; },
     async setReleaseStatus(id, status) { return { id, status }; },
     async deleteRelease() { return true; },
     async createHardware(value) { return { id: 'hw-new', enabled: 1, ...value }; },
@@ -139,6 +140,8 @@ test('new firmware is stored in R2 and persisted as draft with explicit target',
   assert.deepEqual(release.target_ids, ['hw051']);
   assert.match(stored.key, /^ota\/dr-game\/dr-game-1\.10\.0-/);
   assert.equal(stored.options.customMetadata.product, 'DR_GAME');
+  assert.ok(stored.body instanceof ArrayBuffer);
+  assert.deepEqual([...new Uint8Array(stored.body)], [0xE9, 1, 2, 3]);
 });
 
 test('failed D1 release insert compensates by deleting the uploaded R2 object', async () => {
@@ -172,4 +175,76 @@ test('published release metadata is immutable until disabled', async () => {
   const repo = fakeRepo({ async getRelease() { return release; } });
   const service = createOtaService({ repo, firmwareBucket: {} });
   await assert.rejects(() => service.updateRelease('rel-1', { version: '1.2.1' }), error => error.code === 'published_release_is_immutable');
+});
+
+
+test('draft firmware file replacement updates D1 then removes the old R2 object', async () => {
+  const oldKey = 'ota/dr-game/rel-1/old.bin';
+  const release = {
+    id: 'rel-1', product: 'DigitalRealm', status: 'draft', version: '0.4.0',
+    build_id: 'build-60', release_seq: 60, r2_key: oldKey,
+    signature_alg: 'RSA-PSS-SHA256', signature: 'A'.repeat(128)
+  };
+  let uploaded = null;
+  const deleted = [];
+  const repo = fakeRepo({
+    async getRelease() { return release; },
+    async updateReleaseFile(id, patch) { return { ...release, id, ...patch }; }
+  });
+  const bucket = {
+    async put(key, body, options) { uploaded = { key, body, options }; },
+    async delete(key) { deleted.push(key); }
+  };
+  const service = createOtaService({ repo, firmwareBucket: bucket, now: () => new Date('2026-10-05T02:00:00Z') });
+  const file = new File([Uint8Array.from([0xE9, 9, 8, 7, 6])], 'replacement.bin', { type: 'application/octet-stream' });
+  const result = await service.replaceReleaseFile('rel-1', file, 'tester');
+
+  assert.equal(result.file_name, 'replacement.bin');
+  assert.equal(result.size_bytes, 5);
+  assert.equal(result.signature, null);
+  assert.match(result.sha256, /^[0-9a-f]{64}$/);
+  assert.equal(uploaded.key, result.r2_key);
+  assert.ok(uploaded.body instanceof ArrayBuffer);
+  assert.equal(uploaded.options.customMetadata['release-id'], 'rel-1');
+  assert.deepEqual(deleted, [oldKey]);
+});
+
+test('firmware replacement compensates new R2 object when D1 update fails and preserves old object', async () => {
+  const oldKey = 'ota/dr-game/rel-1/old.bin';
+  const release = {
+    id: 'rel-1', product: 'DigitalRealm', status: 'draft', version: '0.4.0',
+    build_id: 'build-60', release_seq: 60, r2_key: oldKey
+  };
+  let newKey = null;
+  const deleted = [];
+  const repo = fakeRepo({
+    async getRelease() { return release; },
+    async updateReleaseFile() { throw new Error('D1 update failed'); }
+  });
+  const bucket = {
+    async put(key) { newKey = key; },
+    async delete(key) { deleted.push(key); }
+  };
+  const service = createOtaService({ repo, firmwareBucket: bucket });
+  const file = new File([Uint8Array.from([0xE9, 4, 5, 6])], 'replacement.bin', { type: 'application/octet-stream' });
+
+  await assert.rejects(() => service.replaceReleaseFile('rel-1', file, 'tester'), /D1 update failed/);
+  assert.ok(newKey);
+  assert.deepEqual(deleted, [newKey]);
+  assert.notEqual(newKey, oldKey);
+});
+
+test('published firmware file cannot be replaced until the release is disabled', async () => {
+  const release = { id: 'rel-1', product: 'DigitalRealm', status: 'published', r2_key: 'ota/old.bin' };
+  let putCalled = false;
+  const repo = fakeRepo({ async getRelease() { return release; } });
+  const bucket = { async put() { putCalled = true; }, async delete() {} };
+  const service = createOtaService({ repo, firmwareBucket: bucket });
+  const file = new File([Uint8Array.from([0xE9, 1])], 'replacement.bin', { type: 'application/octet-stream' });
+
+  await assert.rejects(
+    () => service.replaceReleaseFile('rel-1', file, 'tester'),
+    error => error.status === 409 && error.code === 'published_release_is_immutable'
+  );
+  assert.equal(putCalled, false);
 });

@@ -129,7 +129,7 @@ export function createReleaseOtaService({ repo, firmwareBucket, now = () => new 
     const r2Key = `ota/dr-game/${id}/${fileMeta.sha256}.bin`;
     const at = timestamp();
 
-    await firmwareBucket.put(r2Key, file.stream(), {
+    await firmwareBucket.put(r2Key, fileMeta.bytes, {
       httpMetadata: { contentType: 'application/octet-stream' },
       customMetadata: {
         'release-id': id,
@@ -214,6 +214,58 @@ export function createReleaseOtaService({ repo, firmwareBucket, now = () => new 
     }, targets ? targets.map(item => item.id) : undefined);
   }
 
+  async function replaceReleaseFile(id, file, actor = 'admin') {
+    if (!firmwareBucket?.put || !firmwareBucket?.delete) throw httpError(503, 'firmware_storage_unavailable');
+    const current = await repo.getRelease(id);
+    if (!current) throw httpError(404, 'release_not_found');
+    if (!EDITABLE.has(current.status)) throw httpError(409, 'published_release_is_immutable');
+
+    const fileMeta = await validateFirmwareFile(file);
+    const product = normalizeProduct(current.product);
+    if (product === V1_PRODUCT && fileMeta.size > GAME_SLOT_BYTES) throw httpError(413, 'firmware_exceeds_game_slot');
+
+    const r2Key = `ota/dr-game/${id}/${fileMeta.sha256}.bin`;
+    const at = timestamp();
+    await firmwareBucket.put(r2Key, fileMeta.bytes, {
+      httpMetadata: { contentType: 'application/octet-stream' },
+      customMetadata: {
+        'release-id': id,
+        product,
+        version: String(current.version || ''),
+        'build-id': String(current.build_id || ''),
+        sha256: fileMeta.sha256,
+        ...(current.release_seq != null ? { 'release-seq': String(current.release_seq) } : {})
+      }
+    });
+
+    let updated;
+    try {
+      updated = await repo.updateReleaseFile(id, {
+        r2_key: r2Key,
+        file_name: fileMeta.fileName,
+        content_type: fileMeta.contentType,
+        size_bytes: fileMeta.size,
+        sha256: fileMeta.sha256,
+        esp_image_valid: 1,
+        signature: product === V1_PRODUCT ? null : (current.signature ?? null),
+        updated_at: at,
+        updated_by: actor
+      });
+    } catch (error) {
+      if (r2Key !== current.r2_key) {
+        try { await firmwareBucket.delete(r2Key); } catch {}
+      }
+      throw error;
+    }
+
+    if (current.r2_key && current.r2_key !== r2Key) {
+      try { await firmwareBucket.delete(current.r2_key); } catch (error) {
+        console.warn('[DR OTA] old firmware cleanup failed', { releaseId: id, key: current.r2_key, error: error?.message || String(error) });
+      }
+    }
+    return updated;
+  }
+
   async function publishRelease(id, actor = 'admin') {
     if (!firmwareBucket?.head) throw httpError(503, 'firmware_storage_unavailable');
     const release = await repo.getRelease(id);
@@ -261,6 +313,7 @@ export function createReleaseOtaService({ repo, firmwareBucket, now = () => new 
   return {
     createRelease,
     updateRelease,
+    replaceReleaseFile,
     publishRelease,
     disableRelease,
     deleteRelease,

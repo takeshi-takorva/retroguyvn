@@ -114,7 +114,19 @@ server-calculated SHA-256
 server-calculated byte size
 ```
 
-Publishing rechecks that the R2 object exists and that its byte size matches D1 metadata. Published releases are metadata-immutable. Disable a release before editing metadata or deleting it. The binary for a release ID is immutable; upload a new release for a new binary.
+Publishing rechecks that the R2 object exists and that its byte size matches D1 metadata. Published releases are metadata-immutable. Disable a release before editing metadata, replacing its firmware binary, or deleting it.
+
+Admin firmware replacement uses:
+
+```text
+PUT /api/admin/ota/releases/:release_id/file
+Content-Type: multipart/form-data
+file=<replacement .bin>
+```
+
+Replacement is allowed only while the release is `draft` or `disabled`. The Worker validates the replacement, calculates SHA-256 and size, stores the new object in R2, commits the new R2 key/hash/size to D1, and only then removes the old R2 object. If the D1 update fails, the newly uploaded object is removed and the old object remains authoritative.
+
+For signed `DigitalRealm` v1 releases, replacing the binary clears the existing signature because `size` and `sha256` changed. The operator must open Edit and paste a newly generated DR Device Studio RSA-PSS-SHA256 signature before Publish; the publish guard rejects releases without a current signature.
 
 Deletion order is R2 object first, then D1 release metadata. Historical `ota_events` rows are retained and may reference a deleted release ID as historical text.
 

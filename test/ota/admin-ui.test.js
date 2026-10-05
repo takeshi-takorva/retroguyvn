@@ -28,3 +28,19 @@ test('OTA endpoint placeholder is escaped so Astro can render the page', async (
   assert.doesNotMatch(page, /firmware\/\{release_id\}/);
   assert.match(page, /firmware\/&#123;release_id&#125;/);
 });
+
+
+test('OTA admin upload UI exposes replace-file action with progress and timeout', async () => {
+  const page = await readFile(new URL('../../src/pages/admin/ota.astro', import.meta.url), 'utf8');
+  const fileActions = await readFile(new URL('../../public/admin-ota-file-actions.js', import.meta.url), 'utf8');
+
+  assert.match(page, /XMLHttpRequest/);
+  assert.match(page, /xhr\.upload\.onprogress/);
+  assert.match(page, /xhr\.timeout\s*=\s*timeout/);
+  assert.match(page, /Uploading firmware/);
+  assert.match(fileActions, /Update file/);
+  assert.match(fileActions, /uploadFormData\(protectedFilePath\(id\), form, 'PUT'\)/);
+  assert.match(fileActions, /xhr\.upload\.onprogress/);
+  assert.match(fileActions, /xhr\.timeout\s*=\s*180000/);
+  assert.match(fileActions, /old signature was cleared/);
+});

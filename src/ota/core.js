@@ -107,7 +107,8 @@ export async function validateFirmwareFile(file) {
     size,
     sha256: toHex(digest),
     fileName,
-    contentType: 'application/octet-stream'
+    contentType: 'application/octet-stream',
+    bytes
   };
 }
 
