@@ -247,6 +247,7 @@ export function createReleaseOtaService({ repo, firmwareBucket, now = () => new 
         size_bytes: fileMeta.size,
         sha256: fileMeta.sha256,
         esp_image_valid: 1,
+        signature: product === V1_PRODUCT ? null : (current.signature ?? null),
         updated_at: at,
         updated_by: actor
       });
