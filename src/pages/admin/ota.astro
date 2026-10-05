@@ -97,6 +97,42 @@ import '../../styles/ota-admin.css';
       return data;
     }
 
+    function setUploadProgress(percent, visible=true) {
+      const wrap=q('#uploadProgress'), bar=wrap?.querySelector('span');
+      if(!wrap||!bar)return;
+      wrap.classList.toggle('ota-hidden',!visible);
+      bar.style.width=`${Math.max(0,Math.min(100,Number(percent)||0))}%`;
+    }
+
+    function uploadFormData(path, formData, {method='POST', timeout=180000}={}) {
+      return new Promise((resolve,reject)=>{
+        const xhr=new XMLHttpRequest();
+        xhr.open(method,path,true);
+        xhr.timeout=timeout;
+        Object.entries(authHeaders()).forEach(([name,value])=>xhr.setRequestHeader(name,value));
+        xhr.upload.onprogress=event=>{
+          if(!event.lengthComputable||!event.total)return;
+          const percent=Math.max(2,Math.min(90,Math.round((event.loaded/event.total)*90)));
+          setUploadProgress(percent);
+          message(`Uploading firmware… ${percent}%`);
+        };
+        xhr.upload.onload=()=>{
+          setUploadProgress(92);
+          message('Upload complete. Validating SHA-256 and saving firmware to R2…');
+        };
+        xhr.onload=()=>{
+          const data=(()=>{try{return JSON.parse(xhr.responseText||'{}');}catch{return {};}})();
+          if(xhr.status>=200&&xhr.status<300){setUploadProgress(100);resolve(data);return;}
+          reject(Object.assign(new Error(data.message||data.error||`HTTP ${xhr.status}`),{status:xhr.status,data}));
+        };
+        xhr.onerror=()=>reject(new Error('Firmware upload failed because the network connection was interrupted.'));
+        xhr.ontimeout=()=>reject(new Error('Firmware upload timed out after 3 minutes. Retry the upload; no release metadata was changed.'));
+        xhr.onabort=()=>reject(new Error('Firmware upload was cancelled.'));
+        setUploadProgress(1);
+        xhr.send(formData);
+      });
+    }
+
     function renderTargets(selected=[]) {
       q('#hardwareTargets').innerHTML = hardware.filter(item => Number(item.enabled)).map(item => `<label class="ota-target"><input type="checkbox" name="hardwareTarget" value="${esc(item.code)}" ${selected.includes(item.code)?'checked':''}/> ${esc(item.code)}</label>`).join('') || '<span class="ota-muted">No enabled hardware revisions.</span>';
     }
@@ -158,19 +194,61 @@ import '../../styles/ota-admin.css';
     }
 
     q('#releaseForm').addEventListener('submit', async event => {
-      event.preventDefault(); message(''); const id=q('#releaseId').value; const targets=[...document.querySelectorAll('[name="hardwareTarget"]:checked')].map(el=>el.value);
+      event.preventDefault();
+      message('');
+      const id=q('#releaseId').value;
+      const targets=[...document.querySelectorAll('[name="hardwareTarget"]:checked')].map(el=>el.value);
       if(!targets.length){message('Select at least one hardware target.','error');return;}
+
+      const saveButton=q('#saveRelease');
+      const cancelButton=q('#cancelEdit');
+      saveButton.disabled=true;
+      cancelButton.disabled=true;
       try {
+        let successText='';
         if(id){
+          saveButton.textContent='Saving…';
           await api(`/api/admin/ota/releases/${encodeURIComponent(id)}`,{method:'PUT',json:true,body:JSON.stringify({release_seq:Number(q('#releaseSeq').value),version:q('#version').value,fix:Number(q('#gameFix').value||0),build_id:q('#buildId').value,channel:q('#channel').value,secure_version:Number(q('#secureVersion').value||0),min_boot_version:q('#minBootVersion').value,asset_version:q('#assetVersion').value,mandatory:q('#mandatory').value==='1',signature_alg:'RSA-PSS-SHA256',signature:q('#releaseSignature').value.trim(),release_notes:q('#releaseNotes').value,hardware:targets})});
+          successText='Release metadata saved.';
         } else {
-          const file=q('#firmwareFile').files?.[0]; if(!file){message('Choose a Game FW .bin file.','error');return;}
-          const form=new FormData(); form.set('file',file); form.set('product','DigitalRealm'); form.set('release_id',q('#canonicalReleaseId').value.trim()); form.set('release_seq',q('#releaseSeq').value); form.set('version',q('#version').value); form.set('fix',q('#gameFix').value||'0'); form.set('build_id',q('#buildId').value); form.set('channel',q('#channel').value); form.set('secure_version',q('#secureVersion').value||'1'); form.set('min_boot_version',q('#minBootVersion').value); form.set('asset_version',q('#assetVersion').value); form.set('mandatory',q('#mandatory').value); form.set('signature_alg','RSA-PSS-SHA256'); form.set('signature',q('#releaseSignature').value.trim()); form.set('release_notes',q('#releaseNotes').value); targets.forEach(value=>form.append('hardware',value));
-          q('#uploadProgress').classList.remove('ota-hidden'); q('#uploadProgress span').style.width='35%';
-          await api('/api/admin/ota/releases',{method:'POST',body:form}); q('#uploadProgress span').style.width='100%';
+          const file=q('#firmwareFile').files?.[0];
+          if(!file){message('Choose a Game FW .bin file.','error');return;}
+          saveButton.textContent='Uploading…';
+          const form=new FormData();
+          form.set('file',file);
+          form.set('product','DigitalRealm');
+          form.set('release_id',q('#canonicalReleaseId').value.trim());
+          form.set('release_seq',q('#releaseSeq').value);
+          form.set('version',q('#version').value);
+          form.set('fix',q('#gameFix').value||'0');
+          form.set('build_id',q('#buildId').value);
+          form.set('channel',q('#channel').value);
+          form.set('secure_version',q('#secureVersion').value||'1');
+          form.set('min_boot_version',q('#minBootVersion').value);
+          form.set('asset_version',q('#assetVersion').value);
+          form.set('mandatory',q('#mandatory').value);
+          form.set('signature_alg','RSA-PSS-SHA256');
+          form.set('signature',q('#releaseSignature').value.trim());
+          form.set('release_notes',q('#releaseNotes').value);
+          targets.forEach(value=>form.append('hardware',value));
+          await uploadFormData('/api/admin/ota/releases',form);
+          successText='Firmware uploaded as draft.';
         }
-        message(id?'Release metadata saved.':'Firmware uploaded as draft.','good'); resetReleaseForm(); await loadAll();
-      } catch(error){message(error.message,'error');} finally {setTimeout(()=>q('#uploadProgress').classList.add('ota-hidden'),500);}
+        resetReleaseForm();
+        await loadAll();
+        message(successText,'good');
+      } catch(error) {
+        message(error.message||'Firmware upload failed.','error');
+      } finally {
+        saveButton.disabled=false;
+        cancelButton.disabled=false;
+        if(q('#releaseId').value){
+          saveButton.textContent='Save signed metadata';
+        } else {
+          saveButton.textContent='Upload & create draft';
+        }
+        setTimeout(()=>setUploadProgress(0,false),800);
+      }
     });
 
     q('#releaseRows').addEventListener('click',async event=>{const button=event.target.closest('button[data-action]');if(!button)return;const {action,id}=button.dataset;if(action==='edit'){editRelease(id);return;}if(!confirm(`${action} release ${id}?`))return;try{if(action==='delete')await api(`/api/admin/ota/releases/${encodeURIComponent(id)}`,{method:'DELETE'});else await api(`/api/admin/ota/releases/${encodeURIComponent(id)}/${action}`,{method:'POST'});message(`Release ${action} completed.`,'good');await loadAll();}catch(error){message(error.message,'error');}});
