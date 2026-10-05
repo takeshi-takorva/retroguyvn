@@ -22,3 +22,48 @@ jobs:
         run: npm test
       - name: Build Astro site
         run: npm run build
+      - name: Probe production OTA upload routes
+        run: |
+          node - <<'NODE'
+          const admin = await fetch('https://retroguyvn.com/admin/ota', {
+            headers: { 'cache-control': 'no-cache', 'user-agent': 'DR-OTA-UPLOAD-PROBE/1.0' }
+          });
+          const adminHtml = await admin.text();
+          console.log('ADMIN_STATUS', admin.status);
+          console.log('ADMIN_BYTES', adminHtml.length);
+          console.log('ADMIN_MARKER', adminHtml.includes('DR Portal OTA'));
+          if (admin.status !== 200 || !adminHtml.includes('DR Portal OTA')) {
+            throw new Error('production OTA admin page is not healthy');
+          }
+
+          const asset = await fetch('https://retroguyvn.com/admin-ota-file-actions.js', {
+            headers: { 'cache-control': 'no-cache', 'user-agent': 'DR-OTA-UPLOAD-PROBE/1.0' }
+          });
+          const js = await asset.text();
+          console.log('ASSET_STATUS', asset.status);
+          console.log('ASSET_BYTES', js.length);
+          const markers = {
+            updateFile: js.includes('Update file'),
+            xhr: js.includes('XMLHttpRequest'),
+            timeout: js.includes('180000'),
+            putUpload: js.includes("uploadFormData(protectedFilePath(id), form, 'PUT')")
+          };
+          console.log('ASSET_MARKERS', JSON.stringify(markers));
+          if (asset.status !== 200 || Object.values(markers).some(value => !value)) {
+            throw new Error('production OTA upload client asset is stale or incomplete');
+          }
+
+          const form = new FormData();
+          form.set('file', new File([Uint8Array.from([0xE9,1,2,3])], 'probe.bin', {type:'application/octet-stream'}));
+          const unauthorized = await fetch('https://retroguyvn.com/api/admin/ota/releases/probe-release/file', {
+            method: 'PUT',
+            body: form,
+            headers: { 'user-agent': 'DR-OTA-UPLOAD-PROBE/1.0' }
+          });
+          const unauthorizedText = await unauthorized.text();
+          console.log('PUT_NO_AUTH_STATUS', unauthorized.status);
+          console.log('PUT_NO_AUTH_BODY', unauthorizedText.slice(0,300));
+          if (unauthorized.status !== 401) {
+            throw new Error('protected OTA replace-file route did not reject unauthenticated PUT with 401');
+          }
+          NODE
