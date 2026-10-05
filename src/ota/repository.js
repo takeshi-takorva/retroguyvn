@@ -164,12 +164,12 @@ export function createOtaRepository(env) {
       const result = await db.prepare(`
         UPDATE ota_releases SET
           r2_key = ?, file_name = ?, content_type = ?, size_bytes = ?, sha256 = ?,
-          esp_image_valid = ?, updated_at = ?
+          esp_image_valid = ?, signature = ?, updated_at = ?
         WHERE id = ?
       `).bind(
         patch.r2_key, patch.file_name, patch.content_type || 'application/octet-stream',
         patch.size_bytes, patch.sha256, patch.esp_image_valid ? 1 : 0,
-        patch.updated_at || nowIso(), id
+        patch.signature ?? null, patch.updated_at || nowIso(), id
       ).run();
       if (!result.meta?.changes) throw httpError(404, 'release_not_found');
       return withTargets(db, await db.prepare('SELECT * FROM ota_releases WHERE id = ?').bind(id).first());
