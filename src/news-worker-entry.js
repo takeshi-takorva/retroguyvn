@@ -1,6 +1,6 @@
 import worker, { CMSStore } from './worker-entry.js';
 import { dispatchNewsPublic, dispatchNewsAdmin } from './news/dispatch.js';
-import { assertNewsMediaNotInUse } from './news/delete.js';
+import { assertContentMediaNotInUse } from './content/media.js';
 import { dispatchProductPublic, dispatchProductAdmin } from './products/dispatch.js';
 import { assertProductMediaNotInUse } from './products/media.js';
 import { ensureProductSchema } from './products/schema.js';
@@ -60,7 +60,7 @@ export default {
       if (!session) return json({ error: 'Unauthorized' }, 401);
       const mediaId = decodeURIComponent(url.pathname.slice('/api/admin/media/'.length));
       try {
-        await assertNewsMediaNotInUse(env, mediaId);
+        await assertContentMediaNotInUse(env, mediaId);
         await ensureProductSchema(env);
         await assertProductMediaNotInUse(env, mediaId);
       } catch (error) {
