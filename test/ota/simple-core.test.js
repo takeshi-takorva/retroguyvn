@@ -29,6 +29,18 @@ test('parseSimpleVersion rejects legacy and malformed versions', () => {
   }
 });
 
+test('parseSimpleVersion matches Boot OS uint16/uint32 numeric limits', () => {
+  assert.deepEqual(parseSimpleVersion('v65535.65535.4294967295'), {
+    version: 'v65535.65535.4294967295',
+    hwMajor: 65535,
+    hwMinor: 65535,
+    revision: 4294967295
+  });
+  for (const value of ['v65536.1.1', 'v1.65536.1', 'v1.1.4294967296']) {
+    assert.throws(() => parseSimpleVersion(value), /invalid_simple_version/);
+  }
+});
+
 test('compareSimpleVersion only offers newer revision on exact hardware line', () => {
   assert.equal(compareSimpleVersion('v1.1.129', 'v1.1.130'), 1);
   assert.equal(compareSimpleVersion('v1.1.130', 'v1.1.130'), 0);
