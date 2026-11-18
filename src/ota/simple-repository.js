@@ -43,7 +43,12 @@ export function createSimpleOtaRepository(env) {
       return db.prepare('SELECT * FROM ota_simple_releases WHERE version = ?').bind(version).first();
     },
 
-    async updateSimpleRelease(version, patch, { expectedStatus = null, expectedUpdatedAt = null } = {}) {
+    async updateSimpleRelease(version, patch, {
+      expectedStatus = null,
+      expectedUpdatedAt = null,
+      expectedGameR2Key = undefined,
+      expectedAssetsR2Key = undefined
+    } = {}) {
       await ready();
       const current = await this.getSimpleRelease(version);
       if (!current) throw httpError(404, 'simple_release_not_found');
@@ -57,6 +62,18 @@ export function createSimpleOtaRepository(env) {
       if (expectedUpdatedAt != null) {
         where.push('updated_at=?');
         guards.push(expectedUpdatedAt);
+      }
+      if (expectedGameR2Key !== undefined) {
+        where.push('game_r2_key=?');
+        guards.push(expectedGameR2Key);
+      }
+      if (expectedAssetsR2Key !== undefined) {
+        if (expectedAssetsR2Key === null) {
+          where.push('assets_r2_key IS NULL');
+        } else {
+          where.push('assets_r2_key=?');
+          guards.push(expectedAssetsR2Key);
+        }
       }
       const result = await db.prepare(`
         UPDATE ota_simple_releases SET
@@ -78,7 +95,12 @@ export function createSimpleOtaRepository(env) {
       return this.getSimpleRelease(version);
     },
 
-    async deleteSimpleRelease(version, { expectedStatus = null, expectedUpdatedAt = null } = {}) {
+    async deleteSimpleRelease(version, {
+      expectedStatus = null,
+      expectedUpdatedAt = null,
+      expectedGameR2Key = undefined,
+      expectedAssetsR2Key = undefined
+    } = {}) {
       await ready();
       const where = ['version=?'];
       const guards = [version];
@@ -89,6 +111,18 @@ export function createSimpleOtaRepository(env) {
       if (expectedUpdatedAt != null) {
         where.push('updated_at=?');
         guards.push(expectedUpdatedAt);
+      }
+      if (expectedGameR2Key !== undefined) {
+        where.push('game_r2_key=?');
+        guards.push(expectedGameR2Key);
+      }
+      if (expectedAssetsR2Key !== undefined) {
+        if (expectedAssetsR2Key === null) {
+          where.push('assets_r2_key IS NULL');
+        } else {
+          where.push('assets_r2_key=?');
+          guards.push(expectedAssetsR2Key);
+        }
       }
       const result = await db.prepare(`DELETE FROM ota_simple_releases WHERE ${where.join(' AND ')}`).bind(...guards).run();
       if (!result.meta?.changes) {
