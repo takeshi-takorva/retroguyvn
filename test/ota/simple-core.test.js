@@ -145,6 +145,16 @@ test('validateAssetsPack rejects entries not referenced by install.md', async ()
   await assert.rejects(() => validateAssetsPack(pack), /vgi_unreferenced_entry/);
 });
 
+test('validateAssetsPack rejects duplicate COPY source commands', async () => {
+  const pack = await makePack(
+    'DR_ASSET_PACK_V1\nVERSION=v1.1.130\n' +
+    'COPY payload/foo.vgi /data/assets/foo.vgi\n' +
+    'COPY payload/foo.vgi /data/assets/foo-copy.vgi\n',
+    [['payload/foo.vgi', Uint8Array.from([1,2,3])]]
+  );
+  await assert.rejects(() => validateAssetsPack(pack), /duplicate_vgi_copy_source/);
+});
+
 
 test('validateAssetsPack requires DR_ASSET_PACK_V1 as the first physical install.md line', async () => {
   const pack = await makePack(
