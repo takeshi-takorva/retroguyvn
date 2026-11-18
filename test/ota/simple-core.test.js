@@ -137,6 +137,14 @@ test('validateAssetsPack rejects traversal and missing COPY source', async () =>
   await assert.rejects(() => validateAssetsPack(missing), /vgi_copy_source_missing/);
 });
 
+test('validateAssetsPack rejects entries not referenced by install.md', async () => {
+  const pack = await makePack(
+    'DR_ASSET_PACK_V1\nVERSION=v1.1.130\n',
+    [['payload/data/assets/hidden.vgi', Uint8Array.from([9,8,7])]]
+  );
+  await assert.rejects(() => validateAssetsPack(pack), /vgi_unreferenced_entry/);
+});
+
 
 test('validateAssetsPack requires DR_ASSET_PACK_V1 as the first physical install.md line', async () => {
   const pack = await makePack(
