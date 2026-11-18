@@ -102,6 +102,7 @@ function parseInstallManifest(text, entryNames) {
   const rawLines = String(text || '').split(/\r?\n/);
   if (!rawLines.length || rawLines[0].trim() !== 'DR_ASSET_PACK_V1') fail('invalid_vgi_install_manifest');
   let version = null;
+  const referencedSources = new Set();
   for (const raw of rawLines.slice(1)) {
     const line = raw.trim();
     if (!line || line.startsWith('#')) continue;
@@ -115,6 +116,8 @@ function parseInstallManifest(text, entryNames) {
       const source = safePackSource(parts[1]);
       safePackDestination(parts[2]);
       if (!entryNames.has(source)) fail('vgi_copy_source_missing');
+      if (referencedSources.has(source)) fail('duplicate_vgi_copy_source');
+      referencedSources.add(source);
       continue;
     }
     if (line.startsWith('DELETE ')) {
@@ -124,7 +127,7 @@ function parseInstallManifest(text, entryNames) {
     fail('invalid_vgi_install_manifest');
   }
   if (!version) fail('invalid_vgi_install_manifest');
-  return version;
+  return { version, referencedSources };
 }
 
 export async function validateAssetsPack(input) {
@@ -156,6 +159,9 @@ export async function validateAssetsPack(input) {
   if (first !== 'install.md') fail('invalid_vgi_install_manifest');
   const manifestBytes = entries.get('install.md');
   if (!manifestBytes || manifestBytes.byteLength > 16 * 1024) fail('invalid_vgi_install_manifest');
-  const version = parseInstallManifest(decoder.decode(manifestBytes), new Set(entries.keys()));
-  return { version, entryCount: header.entryCount };
+  const manifest = parseInstallManifest(decoder.decode(manifestBytes), new Set(entries.keys()));
+  for (const path of entries.keys()) {
+    if (path !== 'install.md' && !manifest.referencedSources.has(path)) fail('vgi_unreferenced_entry');
+  }
+  return { version: manifest.version, entryCount: header.entryCount };
 }
