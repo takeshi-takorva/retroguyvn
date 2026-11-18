@@ -94,10 +94,12 @@ function safePackDestination(path) {
 }
 
 function parseInstallManifest(text, entryNames) {
-  const lines = String(text || '').split(/\r?\n/).map(line => line.trim()).filter(line => line && !line.startsWith('#'));
-  if (!lines.length || lines[0] !== 'DR_ASSET_PACK_V1') fail('invalid_vgi_install_manifest');
+  const rawLines = String(text || '').split(/\r?\n/);
+  if (!rawLines.length || rawLines[0].trim() !== 'DR_ASSET_PACK_V1') fail('invalid_vgi_install_manifest');
   let version = null;
-  for (const line of lines.slice(1)) {
+  for (const raw of rawLines.slice(1)) {
+    const line = raw.trim();
+    if (!line || line.startsWith('#')) continue;
     if (line.startsWith('VERSION=')) {
       version = parseSimpleVersion(line.slice(8)).version;
       continue;
@@ -135,11 +137,11 @@ export async function validateAssetsPack(input) {
     if (offset + 38 > bytes.length) fail('invalid_vgi_pack');
     const pathLength = view.getUint16(offset, true); offset += 2;
     const dataLength = view.getUint32(offset, true); offset += 4;
-    const expected = bytes.slice(offset, offset + 32); offset += 32;
+    const expected = bytes.subarray(offset, offset + 32); offset += 32;
     if (!pathLength || pathLength > 192 || offset + pathLength + dataLength > bytes.length) fail('invalid_vgi_pack');
-    const path = safePackSource(decoder.decode(bytes.slice(offset, offset + pathLength))); offset += pathLength;
+    const path = safePackSource(decoder.decode(bytes.subarray(offset, offset + pathLength))); offset += pathLength;
     if (entries.has(path)) fail('duplicate_vgi_entry');
-    const data = bytes.slice(offset, offset + dataLength); offset += dataLength;
+    const data = bytes.subarray(offset, offset + dataLength); offset += dataLength;
     const actual = new Uint8Array(await crypto.subtle.digest('SHA-256', data));
     if (actual.length !== expected.length || actual.some((value, i) => value !== expected[i])) fail('vgi_entry_sha_mismatch');
     entries.set(path, data);
