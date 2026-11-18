@@ -53,3 +53,10 @@ test('optional assets upload failure keeps the created Game draft recoverable', 
   assert.match(page, /Add Assets/);
   assert.match(page, /createdRelease/);
 });
+
+
+test('browser Game version detector skips decoy app descriptor magic', async () => {
+  const page = await readFile(new URL('../../src/pages/admin/ota.astro', import.meta.url), 'utf8');
+  assert.match(page, /sawDescriptorMagic/);
+  assert.match(page, /if\(project!==['"]DR_Game_FW['"]\)continue/);
+});
