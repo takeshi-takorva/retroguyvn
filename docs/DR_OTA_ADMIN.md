@@ -1,4 +1,4 @@
-# Digital Realm OTA Admin
+# Digital Realm OTA Admin v2
 
 Production workspace:
 
@@ -8,36 +8,63 @@ https://retroguyvn.com/admin/ota
 
 The workspace reuses the existing RetroGuy admin authentication (Cloudflare Access first, fallback Admin Token when configured).
 
-## Firmware file management
+## Simplified release model
 
-Each release row exposes these file actions:
+One OTA release contains:
 
-- **Download** streams the immutable `.bin` object from the private `FIRMWARE` R2 binding through the authenticated Worker route.
-- **Copy link** copies the absolute protected file URL for that release.
+- one required `DR_Game_FW` ESP-IDF `.bin`;
+- one optional `.vgi.pack` SD asset bundle;
+- optional release notes.
 
-Protected admin file URL format:
+The server reads the Game FW version directly from the ESP-IDF app descriptor. Operators do not enter version, hardware, build ID, release sequence, channel, boot minimum, security epoch or signatures.
+
+Version format:
 
 ```text
-https://retroguyvn.com/api/admin/ota/releases/<release-id>/file
+v<HW_MAJOR>.<HW_MINOR>.<REVISION>
 ```
 
-The URL requires an authenticated admin session. It is intentionally not a raw/public R2 object URL. This keeps firmware storage private while still giving operators a stable direct link for management and download.
+Examples:
 
-The file response supports a single HTTP byte range and returns `Content-Disposition`, exact `Content-Length`, `Accept-Ranges`, and a strong SHA-256 `ETag`.
+- HW1.1 fix129 -> `v1.1.129`
+- HW1.1 fix130 -> `v1.1.130`
 
-## Release operations
+The first two numbers are the hardware line. Boot OS only accepts a higher revision from the same hardware line.
 
-The Firmware Releases tab supports upload, metadata/target edit, publish, disable, download, copy-link, and delete for non-published releases. Published release metadata is immutable; disable it before editing or deleting it.
+## Admin workflow
 
-Firmware upload validation includes `.bin` extension, non-empty content, maximum 16 MiB, ESP image magic byte `0xE9`, server SHA-256, strict semantic version, channel validation, and explicit enabled hardware targets.
+1. Choose Game FW `.bin`.
+2. The page detects and displays the embedded version. The binary must identify itself as `DR_Game_FW`.
+3. Optionally choose an Assets `.vgi.pack`.
+4. Enter release notes if desired.
+5. Upload. The release is created as Draft.
+6. Review Game/Assets SHA-256 and sizes.
+7. Publish.
+
+Published v2 releases are immutable. Create a newer revision for a new production binary.
 
 ## Device endpoints
 
-These remain fixed and are separate from the protected admin file link:
-
 ```text
-GET https://retroguyvn.com/api/dr/ota
-GET https://retroguyvn.com/api/dr/ota/download
+POST /api/dr/ota/v2/check
+GET  /api/dr/ota/v2/game/{version}
+GET  /api/dr/ota/v2/assets/{version}
 ```
 
-Devices must perform the update check first. The device download endpoint enforces the offered release ID, exact hardware target, published status and ranged-download contract.
+Check request:
+
+```json
+{"version":"v1.1.129"}
+```
+
+The response either returns `update:false` or a newer same-hardware Game FW offer with optional Assets metadata.
+
+## Storage and safety
+
+- Game and Assets files are stored in the private `FIRMWARE` R2 binding.
+- D1 stores only version, object keys, sizes, SHA-256, notes and Draft/Published state.
+- Game FW upload is rejected unless the ESP app descriptor project name is exactly `DR_Game_FW`.
+- Game FW is limited to the 0x480000 Game A/B slot size.
+- Assets packs are fully parsed on upload: header, every entry SHA-256, `install.md`, allowed paths and pack version are validated.
+- Assets pack `VERSION` must equal the Game FW release version.
+- Boot FW and Service OS are not OTA targets.
