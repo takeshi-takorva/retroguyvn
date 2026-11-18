@@ -45,3 +45,11 @@ test('simplified OTA admin upload flow sends game first, optional assets second'
   assert.match(page, /\/assets/);
   assert.match(page, /Publish/);
 });
+
+
+test('optional assets upload failure keeps the created Game draft recoverable', async () => {
+  const page = await readFile(new URL('../../src/pages/admin/ota.astro', import.meta.url), 'utf8');
+  assert.match(page, /Game FW was uploaded as Draft/);
+  assert.match(page, /Add Assets/);
+  assert.match(page, /createdRelease/);
+});
