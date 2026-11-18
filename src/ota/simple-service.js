@@ -52,12 +52,16 @@ async function readAssetsFile(file) {
   };
 }
 
+function uploadToken() {
+  return crypto.randomUUID().replaceAll('-', '');
+}
+
 function gameKey(version, sha256) {
-  return `ota/simple/${version}/game-${sha256}.bin`;
+  return `ota/simple/${version}/game-${sha256}-${uploadToken()}.bin`;
 }
 
 function assetsKey(version, sha256) {
-  return `ota/simple/${version}/assets-${sha256}.vgi.pack`;
+  return `ota/simple/${version}/assets-${sha256}-${uploadToken()}.vgi.pack`;
 }
 
 function assertDraft(release) {
@@ -133,7 +137,9 @@ export function createSimpleOtaService({ repo, firmwareBucket, now = () => new D
         updated_at: iso()
       }, {
         expectedStatus: 'draft',
-        expectedUpdatedAt: current.updated_at
+        expectedUpdatedAt: current.updated_at,
+        expectedGameR2Key: current.game_r2_key,
+        expectedAssetsR2Key: current.assets_r2_key ?? null
       });
     } catch (error) {
       if (key !== current.game_r2_key) {
@@ -169,7 +175,9 @@ export function createSimpleOtaService({ repo, firmwareBucket, now = () => new D
         updated_at: iso()
       }, {
         expectedStatus: 'draft',
-        expectedUpdatedAt: current.updated_at
+        expectedUpdatedAt: current.updated_at,
+        expectedGameR2Key: current.game_r2_key,
+        expectedAssetsR2Key: current.assets_r2_key ?? null
       });
     } catch (error) {
       if (key !== current.assets_r2_key) {
@@ -224,7 +232,9 @@ export function createSimpleOtaService({ repo, firmwareBucket, now = () => new D
       updated_at: iso()
     }, {
       expectedStatus: 'draft',
-      expectedUpdatedAt: release.updated_at
+      expectedUpdatedAt: release.updated_at,
+      expectedGameR2Key: release.game_r2_key,
+      expectedAssetsR2Key: release.assets_r2_key ?? null
     });
   }
 
@@ -235,7 +245,9 @@ export function createSimpleOtaService({ repo, firmwareBucket, now = () => new D
     if (release.status === 'published') throw httpError(409, 'simple_release_published');
     await repo.deleteSimpleRelease(version, {
       expectedStatus: 'draft',
-      expectedUpdatedAt: release.updated_at
+      expectedUpdatedAt: release.updated_at,
+      expectedGameR2Key: release.game_r2_key,
+      expectedAssetsR2Key: release.assets_r2_key ?? null
     });
     if (release.game_r2_key) {
       try { await firmwareBucket.delete(release.game_r2_key); } catch {}
