@@ -179,8 +179,7 @@ export function createSimpleOtaService({ repo, firmwareBucket, now = () => new D
     requireBucket(firmwareBucket);
     const current = await repo.getSimpleRelease(version);
     assertDraft(current);
-    if (current.assets_r2_key) await firmwareBucket.delete(current.assets_r2_key);
-    return repo.updateSimpleRelease(version, {
+    const updated = await repo.updateSimpleRelease(version, {
       assets_r2_key: null,
       assets_file_name: null,
       assets_size: null,
@@ -188,6 +187,10 @@ export function createSimpleOtaService({ repo, firmwareBucket, now = () => new D
       updated_by: actor,
       updated_at: iso()
     });
+    if (current.assets_r2_key) {
+      try { await firmwareBucket.delete(current.assets_r2_key); } catch {}
+    }
+    return updated;
   }
 
   async function publishRelease(version) {
@@ -216,9 +219,13 @@ export function createSimpleOtaService({ repo, firmwareBucket, now = () => new D
     const release = await repo.getSimpleRelease(version);
     if (!release) throw httpError(404, 'simple_release_not_found');
     if (release.status === 'published') throw httpError(409, 'simple_release_published');
-    if (release.game_r2_key) await firmwareBucket.delete(release.game_r2_key);
-    if (release.assets_r2_key) await firmwareBucket.delete(release.assets_r2_key);
     await repo.deleteSimpleRelease(version);
+    if (release.game_r2_key) {
+      try { await firmwareBucket.delete(release.game_r2_key); } catch {}
+    }
+    if (release.assets_r2_key) {
+      try { await firmwareBucket.delete(release.assets_r2_key); } catch {}
+    }
     return { ok: true, version };
   }
 
