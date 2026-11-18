@@ -43,8 +43,25 @@ function fakeRepo(overrides = {}) {
     async getSimpleRelease(version) {
       return releases.get(version) || null;
     },
-    async updateSimpleRelease(version, patch) {
+    async updateSimpleRelease(version, patch, expected = {}) {
       const current = releases.get(version);
+      if (!current) {
+        const error = new Error('simple_release_not_found');
+        error.status = 404;
+        error.code = 'simple_release_not_found';
+        throw error;
+      }
+      const conflict =
+        (expected.expectedStatus != null && current.status !== expected.expectedStatus) ||
+        (expected.expectedUpdatedAt != null && current.updated_at !== expected.expectedUpdatedAt) ||
+        (expected.expectedGameR2Key !== undefined && current.game_r2_key !== expected.expectedGameR2Key) ||
+        (expected.expectedAssetsR2Key !== undefined && (current.assets_r2_key ?? null) !== expected.expectedAssetsR2Key);
+      if (conflict) {
+        const error = new Error('simple_release_conflict');
+        error.status = 409;
+        error.code = 'simple_release_conflict';
+        throw error;
+      }
       const next = { ...current, ...patch };
       releases.set(version, next);
       return next;
@@ -252,7 +269,9 @@ test('replaceGame rejects a concurrent publish and removes only the newly upload
   repo.updateSimpleRelease = async (_version, _patch, expected) => {
     assert.deepEqual(expected, {
       expectedStatus:'draft',
-      expectedUpdatedAt:'2026-11-18T06:00:00.000Z'
+      expectedUpdatedAt:'2026-11-18T06:00:00.000Z',
+      expectedGameR2Key:'ota/simple/v1.1.130/original.bin',
+      expectedAssetsR2Key:null
     });
     const error = new Error('simple_release_conflict');
     error.status = 409;
@@ -279,39 +298,49 @@ test('replaceGame rejects a concurrent publish and removes only the newly upload
   assert.notEqual(puts[0], 'ota/simple/v1.1.130/original.bin');
 });
 
-test('replaceAssets does not delete the current object when the same pack key update fails', async () => {
-  const pack = await assetsPack('v1.1.130');
-  const bytes = await pack.arrayBuffer();
-  const digest = await crypto.subtle.digest('SHA-256', bytes);
-  const sha256 = [...new Uint8Array(digest)].map(value => value.toString(16).padStart(2, '0')).join('');
-  const key = `ota/simple/v1.1.130/assets-${sha256}.vgi.pack`;
-
+test('concurrent identical assets replacements keep the winner object intact', async () => {
   const repo = fakeRepo();
   repo.releases.set('v1.1.130', {
     version:'v1.1.130', hw_major:1, hw_minor:1, revision:130, status:'draft',
     game_r2_key:'ota/simple/v1.1.130/game.bin', game_size:1024, game_sha256:'a'.repeat(64),
-    assets_r2_key:key, assets_file_name:'assets.vgi.pack', assets_size:bytes.byteLength, assets_sha256:sha256,
+    assets_r2_key:'ota/simple/v1.1.130/old-assets.vgi.pack',
+    assets_file_name:'old-assets.vgi.pack', assets_size:64, assets_sha256:'b'.repeat(64),
     updated_at:'2026-11-18T06:00:00.000Z'
   });
-  repo.updateSimpleRelease = async (_version, _patch, expected) => {
-    assert.deepEqual(expected, {
-      expectedStatus:'draft',
-      expectedUpdatedAt:'2026-11-18T06:00:00.000Z'
-    });
-    throw new Error('D1 update failed');
-  };
 
-  const deleted = [];
+  const puts = [];
+  const stored = new Set();
+  let releaseUploads;
+  const bothUploaded = new Promise(resolve => { releaseUploads = resolve; });
+  const bucket = {
+    async put(key) {
+      puts.push(key);
+      stored.add(key);
+      if (puts.length === 2) releaseUploads();
+      await bothUploaded;
+    },
+    async delete(key) {
+      stored.delete(key);
+    }
+  };
   const service = createSimpleOtaService({
     repo,
-    firmwareBucket:{
-      async put(uploadedKey) { assert.equal(uploadedKey, key); },
-      async delete(deletedKey) { deleted.push(deletedKey); }
-    }
+    firmwareBucket: bucket,
+    now: () => new Date('2026-11-18T06:01:00.000Z')
   });
 
-  await assert.rejects(() => service.replaceAssets('v1.1.130', pack), /D1 update failed/);
-  assert.deepEqual(deleted, []);
+  const results = await Promise.allSettled([
+    service.replaceAssets('v1.1.130', await assetsPack('v1.1.130')),
+    service.replaceAssets('v1.1.130', await assetsPack('v1.1.130'))
+  ]);
+
+  assert.equal(puts.length, 2);
+  assert.notEqual(puts[0], puts[1]);
+  assert.equal(results.filter(result => result.status === 'fulfilled').length, 1);
+  assert.equal(results.filter(result => result.status === 'rejected').length, 1);
+  const winner = results.find(result => result.status === 'fulfilled').value;
+  assert.equal(stored.has(winner.assets_r2_key), true);
+  assert.deepEqual([...stored], [winner.assets_r2_key]);
 });
 
 test('publishRelease commits only if the validated draft metadata is unchanged', async () => {
@@ -325,7 +354,9 @@ test('publishRelease commits only if the validated draft metadata is unchanged',
     assert.equal(patch.status, 'published');
     assert.deepEqual(expected, {
       expectedStatus:'draft',
-      expectedUpdatedAt:'2026-11-18T06:00:00.000Z'
+      expectedUpdatedAt:'2026-11-18T06:00:00.000Z',
+      expectedGameR2Key:'ota/simple/v1.1.130/game.bin',
+      expectedAssetsR2Key:null
     });
     return { ...repo.releases.get('v1.1.130'), ...patch };
   };
@@ -338,4 +369,49 @@ test('publishRelease commits only if the validated draft metadata is unchanged',
 
   const result = await service.publishRelease('v1.1.130');
   assert.equal(result.status, 'published');
+});
+
+
+test('concurrent identical game replacements keep the winner object intact', async () => {
+  const repo = fakeRepo();
+  repo.releases.set('v1.1.130', {
+    version:'v1.1.130', hw_major:1, hw_minor:1, revision:130, status:'draft',
+    game_r2_key:'ota/simple/v1.1.130/old-game.bin', game_size:1024, game_sha256:'a'.repeat(64),
+    assets_r2_key:null,
+    updated_at:'2026-11-18T06:00:00.000Z'
+  });
+
+  const puts = [];
+  const stored = new Set();
+  let releaseUploads;
+  const bothUploaded = new Promise(resolve => { releaseUploads = resolve; });
+  const bucket = {
+    async put(key) {
+      puts.push(key);
+      stored.add(key);
+      if (puts.length === 2) releaseUploads();
+      await bothUploaded;
+    },
+    async delete(key) {
+      stored.delete(key);
+    }
+  };
+  const service = createSimpleOtaService({
+    repo,
+    firmwareBucket: bucket,
+    now: () => new Date('2026-11-18T06:01:00.000Z')
+  });
+
+  const results = await Promise.allSettled([
+    service.replaceGame('v1.1.130', gameBin('v1.1.130')),
+    service.replaceGame('v1.1.130', gameBin('v1.1.130'))
+  ]);
+
+  assert.equal(puts.length, 2);
+  assert.notEqual(puts[0], puts[1]);
+  assert.equal(results.filter(result => result.status === 'fulfilled').length, 1);
+  assert.equal(results.filter(result => result.status === 'rejected').length, 1);
+  const winner = results.find(result => result.status === 'fulfilled').value;
+  assert.equal(stored.has(winner.game_r2_key), true);
+  assert.deepEqual([...stored], [winner.game_r2_key]);
 });
