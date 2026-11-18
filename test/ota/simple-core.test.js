@@ -124,3 +124,11 @@ test('validateAssetsPack rejects traversal and missing COPY source', async () =>
   const missing = await makePack('DR_ASSET_PACK_V1\nVERSION=v1.1.130\nCOPY payload/missing.vgi /data/assets/missing.vgi\n');
   await assert.rejects(() => validateAssetsPack(missing), /vgi_copy_source_missing/);
 });
+
+
+test('validateAssetsPack requires DR_ASSET_PACK_V1 as the first physical install.md line', async () => {
+  const pack = await makePack(
+    '# comment before magic is not allowed\nDR_ASSET_PACK_V1\nVERSION=v1.1.130\n'
+  );
+  await assert.rejects(() => validateAssetsPack(pack), /invalid_vgi_install_manifest/);
+});
