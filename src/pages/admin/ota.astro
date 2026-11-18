@@ -281,17 +281,26 @@ import '../../styles/ota-admin.css';
       const saveButton=q('#saveRelease');
       if(!gameFile){message('Choose a Game FW .bin file.','error');return;}
       saveButton.disabled=true;
+      let createdRelease=null;
       try{
         const version=await detectGameVersion(gameFile);
         q('#detectedVersion').value=version;
         const form=new FormData();
         form.set('file', gameFile);
         form.set('notes', q('#releaseNotes').value);
-        const release=await uploadFormData('/api/admin/ota/simple/releases',form,{label:'Uploading Game FW'});
+        createdRelease=await uploadFormData('/api/admin/ota/simple/releases',form,{label:'Uploading Game FW'});
         if(assetsFile){
           const assetsForm=new FormData();
           assetsForm.set('file',assetsFile);
-          await uploadFormData(`/api/admin/ota/simple/releases/${encodeURIComponent(release.version)}/assets`,assetsForm,{method:'PUT',label:'Uploading Assets'});
+          try{
+            await uploadFormData(`/api/admin/ota/simple/releases/${encodeURIComponent(createdRelease.version)}/assets`,assetsForm,{method:'PUT',label:'Uploading Assets'});
+          }catch(error){
+            q('#releaseForm').reset();
+            q('#detectedVersion').value='';
+            await loadAll();
+            message(`Game FW was uploaded as Draft (${createdRelease.version}), but Assets upload failed: ${error.message||'Unknown error'}. Use Add Assets on that draft instead of uploading the Game FW again.`,'error');
+            return;
+          }
         }
         q('#releaseForm').reset();
         q('#detectedVersion').value='';
