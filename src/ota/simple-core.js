@@ -75,3 +75,80 @@ export function validateAssetsPackHeader(input) {
   if (formatVersion !== 1 || entryCount < 1) fail('invalid_vgi_pack');
   return { formatVersion, entryCount };
 }
+
+
+function safePackSource(path) {
+  const text = String(path || '');
+  if (!text || text.startsWith('/') || text.includes('\\') || text.includes('//')) fail('invalid_vgi_install_path');
+  const parts = text.split('/');
+  if (parts.some(part => !part || part === '.' || part === '..')) fail('invalid_vgi_install_path');
+  return text;
+}
+
+function safePackDestination(path) {
+  const text = String(path || '');
+  if (!text.startsWith('/data/') || text.includes('\\') || text.includes('//')) fail('invalid_vgi_install_path');
+  const parts = text.slice(1).split('/');
+  if (parts.some(part => !part || part === '.' || part === '..')) fail('invalid_vgi_install_path');
+  return text;
+}
+
+function parseInstallManifest(text, entryNames) {
+  const lines = String(text || '').split(/\r?\n/).map(line => line.trim()).filter(line => line && !line.startsWith('#'));
+  if (!lines.length || lines[0] !== 'DR_ASSET_PACK_V1') fail('invalid_vgi_install_manifest');
+  let version = null;
+  for (const line of lines.slice(1)) {
+    if (line.startsWith('VERSION=')) {
+      version = parseSimpleVersion(line.slice(8)).version;
+      continue;
+    }
+    if (line.startsWith('COPY ')) {
+      const parts = line.split(' ');
+      if (parts.length !== 3) fail('invalid_vgi_install_manifest');
+      const source = safePackSource(parts[1]);
+      safePackDestination(parts[2]);
+      if (!entryNames.has(source)) fail('vgi_copy_source_missing');
+      continue;
+    }
+    if (line.startsWith('DELETE ')) {
+      safePackDestination(line.slice(7));
+      continue;
+    }
+    fail('invalid_vgi_install_manifest');
+  }
+  if (!version) fail('invalid_vgi_install_manifest');
+  return version;
+}
+
+export async function validateAssetsPack(input) {
+  const bytes = input instanceof Uint8Array
+    ? input
+    : input instanceof ArrayBuffer
+      ? new Uint8Array(input)
+      : new Uint8Array(input?.buffer || []);
+  const header = validateAssetsPackHeader(bytes);
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const decoder = new TextDecoder();
+  const entries = new Map();
+  let offset = 12;
+  for (let index = 0; index < header.entryCount; index += 1) {
+    if (offset + 38 > bytes.length) fail('invalid_vgi_pack');
+    const pathLength = view.getUint16(offset, true); offset += 2;
+    const dataLength = view.getUint32(offset, true); offset += 4;
+    const expected = bytes.slice(offset, offset + 32); offset += 32;
+    if (!pathLength || pathLength > 192 || offset + pathLength + dataLength > bytes.length) fail('invalid_vgi_pack');
+    const path = safePackSource(decoder.decode(bytes.slice(offset, offset + pathLength))); offset += pathLength;
+    if (entries.has(path)) fail('duplicate_vgi_entry');
+    const data = bytes.slice(offset, offset + dataLength); offset += dataLength;
+    const actual = new Uint8Array(await crypto.subtle.digest('SHA-256', data));
+    if (actual.length !== expected.length || actual.some((value, i) => value !== expected[i])) fail('vgi_entry_sha_mismatch');
+    entries.set(path, data);
+  }
+  if (offset !== bytes.length) fail('invalid_vgi_pack');
+  const first = entries.keys().next().value;
+  if (first !== 'install.md') fail('invalid_vgi_install_manifest');
+  const manifestBytes = entries.get('install.md');
+  if (!manifestBytes || manifestBytes.byteLength > 16 * 1024) fail('invalid_vgi_install_manifest');
+  const version = parseInstallManifest(decoder.decode(manifestBytes), new Set(entries.keys()));
+  return { version, entryCount: header.entryCount };
+}
