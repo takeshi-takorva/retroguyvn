@@ -50,11 +50,11 @@ export function createSimpleOtaRepository(env) {
       const next = { ...current, ...patch };
       const where = ['version=?'];
       const guards = [version];
-      if (expectedStatus !== null) {
+      if (expectedStatus != null) {
         where.push('status=?');
         guards.push(expectedStatus);
       }
-      if (expectedUpdatedAt !== null) {
+      if (expectedUpdatedAt != null) {
         where.push('updated_at=?');
         guards.push(expectedUpdatedAt);
       }
@@ -82,11 +82,11 @@ export function createSimpleOtaRepository(env) {
       await ready();
       const where = ['version=?'];
       const guards = [version];
-      if (expectedStatus !== null) {
+      if (expectedStatus != null) {
         where.push('status=?');
         guards.push(expectedStatus);
       }
-      if (expectedUpdatedAt !== null) {
+      if (expectedUpdatedAt != null) {
         where.push('updated_at=?');
         guards.push(expectedUpdatedAt);
       }
