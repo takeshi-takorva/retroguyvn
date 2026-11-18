@@ -122,12 +122,12 @@ export function createSimpleOtaHttp({ service }) {
       const gameMatch = url.pathname.match(/^\/api\/dr\/ota\/v2\/game\/([^/]+)$/);
       if (gameMatch) {
         if (request.method !== 'GET') return jsonResponse({ error:'method_not_allowed' }, { status:405, headers:{ allow:'GET' } });
-        return streamRelease(request, decodeURIComponent(gameMatch[1]), 'game');
+        return await streamRelease(request, decodeURIComponent(gameMatch[1]), 'game');
       }
       const assetsMatch = url.pathname.match(/^\/api\/dr\/ota\/v2\/assets\/([^/]+)$/);
       if (assetsMatch) {
         if (request.method !== 'GET') return jsonResponse({ error:'method_not_allowed' }, { status:405, headers:{ allow:'GET' } });
-        return streamRelease(request, decodeURIComponent(assetsMatch[1]), 'assets');
+        return await streamRelease(request, decodeURIComponent(assetsMatch[1]), 'assets');
       }
       return jsonResponse({ error:'not_found' }, { status:404 });
     } catch (error) {
