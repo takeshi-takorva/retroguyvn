@@ -204,7 +204,9 @@ export function createSimpleOtaService({ repo, firmwareBucket, now = () => new D
       updated_at: iso()
     }, {
       expectedStatus: 'draft',
-      expectedUpdatedAt: current.updated_at
+      expectedUpdatedAt: current.updated_at,
+      expectedGameR2Key: current.game_r2_key,
+      expectedAssetsR2Key: current.assets_r2_key ?? null
     });
     if (current.assets_r2_key) {
       try { await firmwareBucket.delete(current.assets_r2_key); } catch {}
