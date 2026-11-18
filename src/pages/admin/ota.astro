@@ -165,17 +165,19 @@ import '../../styles/ota-admin.css';
       const probe=new Uint8Array(await file.slice(0,Math.min(file.size,131072)).arrayBuffer());
       if(probe.length<80 || probe[0]!==0xE9) throw new Error('Invalid ESP32 Game FW image.');
       const view=new DataView(probe.buffer,probe.byteOffset,probe.byteLength);
+      let sawDescriptorMagic=false;
       for(let offset=0;offset<=probe.length-80;offset+=4){
         if(view.getUint32(offset,true)!==0xABCD5432) continue;
+        sawDescriptorMagic=true;
         const version=readAscii(probe,offset+16,32);
         const project=readAscii(probe,offset+48,32);
-        if(project!=='DR_Game_FW') throw new Error('The selected BIN is not DR_Game_FW.');
+        if(project!=='DR_Game_FW')continue;
         if(!/^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(version)) {
           throw new Error('Game FW version must use vHW_MAJOR.HW_MINOR.REVISION.');
         }
         return version;
       }
-      throw new Error('DR_Game_FW app descriptor was not found in the BIN.');
+      throw new Error(sawDescriptorMagic ? 'The selected BIN is not DR_Game_FW.' : 'DR_Game_FW app descriptor was not found in the BIN.');
     }
 
     function gameUrl(version) { return `${location.origin}/api/dr/ota/v2/game/${encodeURIComponent(version)}`; }
