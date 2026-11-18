@@ -22,3 +22,36 @@ jobs:
         run: npm test
       - name: Build Astro site
         run: npm run build
+      - name: Probe production OTA v2
+        run: |
+          node - <<'NODE'
+          const admin = await fetch('https://retroguyvn.com/admin/ota', {
+            headers: { 'cache-control':'no-cache', 'user-agent':'DR-OTA-V2-PROBE/1.0' }
+          });
+          const html = await admin.text();
+          console.log('ADMIN_STATUS', admin.status);
+          console.log('ADMIN_BYTES', html.length);
+          console.log('ADMIN_SIMPLE_UI', html.includes('Create Game OTA release') && html.includes('Assets .vgi.pack'));
+          if (admin.status !== 200 || !html.includes('Create Game OTA release') || !html.includes('Assets .vgi.pack')) {
+            throw new Error('simplified OTA v2 admin UI is not live');
+          }
+
+          const check = await fetch('https://retroguyvn.com/api/dr/ota/v2/check', {
+            method:'POST',
+            headers:{ 'content-type':'application/json', 'user-agent':'DR-OTA-V2-PROBE/1.0' },
+            body:JSON.stringify({ version:'v1.1.129' })
+          });
+          const checkText = await check.text();
+          console.log('CHECK_STATUS', check.status);
+          console.log('CHECK_BODY', checkText.slice(0,500));
+          const payload = JSON.parse(checkText);
+          if (check.status !== 200 || typeof payload.update !== 'boolean' || typeof payload.version !== 'string') {
+            throw new Error('OTA v2 check endpoint is not healthy');
+          }
+
+          const adminApi = await fetch('https://retroguyvn.com/api/admin/ota/simple/releases', {
+            headers:{ 'user-agent':'DR-OTA-V2-PROBE/1.0' }
+          });
+          console.log('ADMIN_API_NO_AUTH', adminApi.status);
+          if (![401,403].includes(adminApi.status)) throw new Error('OTA v2 admin API auth boundary failed');
+          NODE
