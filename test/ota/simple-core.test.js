@@ -132,3 +132,22 @@ test('validateAssetsPack requires DR_ASSET_PACK_V1 as the first physical install
   );
   await assert.rejects(() => validateAssetsPack(pack), /invalid_vgi_install_manifest/);
 });
+
+
+test('parseEspGameImage skips decoy app-desc magic before the real DR_Game_FW descriptor', () => {
+  const bytes = new Uint8Array(1024);
+  bytes[0] = 0xE9;
+  const view = new DataView(bytes.buffer);
+  const encoder = new TextEncoder();
+
+  view.setUint32(32, 0xABCD5432, true);
+  bytes.set(encoder.encode('junk-version\0'), 48);
+  bytes.set(encoder.encode('junk-project\0'), 80);
+
+  const offset = 128;
+  view.setUint32(offset, 0xABCD5432, true);
+  bytes.set(encoder.encode('v1.1.129\0'), offset + 16);
+  bytes.set(encoder.encode('DR_Game_FW\0'), offset + 48);
+
+  assert.equal(parseEspGameImage(bytes).version, 'v1.1.129');
+});
