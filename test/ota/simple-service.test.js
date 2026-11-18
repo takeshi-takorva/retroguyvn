@@ -13,11 +13,22 @@ function gameBin(version = 'v1.1.130', project = 'DR_Game_FW') {
   return new File([bytes], 'DR_Game_FW.bin', { type: 'application/octet-stream' });
 }
 
-function assetsPack() {
-  const bytes = new Uint8Array(32);
-  bytes.set(new TextEncoder().encode('DRVGP001'), 0);
-  new DataView(bytes.buffer).setUint16(8, 1, true);
-  new DataView(bytes.buffer).setUint16(10, 1, true);
+async function assetsPack(version = 'v1.1.130') {
+  const encoder = new TextEncoder();
+  const manifest = encoder.encode(`DR_ASSET_PACK_V1\nVERSION=${version}\n`);
+  const sha = new Uint8Array(await crypto.subtle.digest('SHA-256', manifest));
+  const path = encoder.encode('install.md');
+  const bytes = new Uint8Array(12 + 2 + 4 + 32 + path.length + manifest.length);
+  bytes.set(encoder.encode('DRVGP001'), 0);
+  const view = new DataView(bytes.buffer);
+  view.setUint16(8, 1, true);
+  view.setUint16(10, 1, true);
+  let offset = 12;
+  view.setUint16(offset, path.length, true); offset += 2;
+  view.setUint32(offset, manifest.length, true); offset += 4;
+  bytes.set(sha, offset); offset += 32;
+  bytes.set(path, offset); offset += path.length;
+  bytes.set(manifest, offset);
   return new File([bytes], 'assets.vgi.pack', { type: 'application/octet-stream' });
 }
 
@@ -118,10 +129,10 @@ test('replaceAssets validates vgi pack and keeps it optional', async () => {
   });
   const bucket = { async put() {}, async delete() {} };
   const service = createSimpleOtaService({ repo, firmwareBucket: bucket });
-  const result = await service.replaceAssets('v1.1.130', assetsPack(), 'tester');
+  const result = await service.replaceAssets('v1.1.130', await assetsPack(), 'tester');
 
   assert.equal(result.assets_file_name, 'assets.vgi.pack');
-  assert.equal(result.assets_size, 32);
+  assert.ok(result.assets_size > 32);
   assert.match(result.assets_sha256, /^[0-9a-f]{64}$/);
 });
 
@@ -140,7 +151,7 @@ test('published simple release is immutable and publish requires the game object
   assert.equal(published.status, 'published');
 
   await assert.rejects(() => service.replaceGame('v1.1.130', gameBin('v1.1.130')), error => error.status === 409 && error.code === 'simple_release_published');
-  await assert.rejects(() => service.replaceAssets('v1.1.130', assetsPack()), error => error.status === 409 && error.code === 'simple_release_published');
+  await assert.rejects(() => service.replaceAssets('v1.1.130', await assetsPack()), error => error.status === 409 && error.code === 'simple_release_published');
 });
 
 test('checkForUpdate offers only a newer revision on the same hardware line', async () => {
@@ -164,4 +175,19 @@ test('checkForUpdate offers only a newer revision on the same hardware line', as
   assert.equal(offer.assets.url, 'https://retroguyvn.com/api/dr/ota/v2/assets/v1.1.130');
 
   assert.deepEqual(await service.checkForUpdate('v1.1.130', 'https://retroguyvn.com'), { update:false, version:'v1.1.130' });
+});
+
+
+test('replaceAssets rejects a pack whose VERSION does not match the release', async () => {
+  const repo = fakeRepo();
+  repo.releases.set('v1.1.130', {
+    version:'v1.1.130', hw_major:1, hw_minor:1, revision:130, status:'draft',
+    game_r2_key:'ota/simple/v1.1.130/game.bin', game_size:1024, game_sha256:'a'.repeat(64)
+  });
+  const bucket = { async put() { throw new Error('must not upload'); }, async delete() {} };
+  const service = createSimpleOtaService({ repo, firmwareBucket: bucket });
+  await assert.rejects(
+    () => service.replaceAssets('v1.1.130', await assetsPack('v1.1.131'), 'tester'),
+    error => error.status === 409 && error.code === 'assets_version_mismatch'
+  );
 });
