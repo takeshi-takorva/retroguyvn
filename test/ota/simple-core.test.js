@@ -4,7 +4,8 @@ import {
   compareSimpleVersion,
   parseEspGameImage,
   parseSimpleVersion,
-  validateAssetsPackHeader
+  validateAssetsPackHeader,
+  validateAssetsPack
 } from '../../src/ota/simple-core.js';
 
 test('parseSimpleVersion parses vHW_MAJOR.HW_MINOR.REVISION', () => {
@@ -74,4 +75,52 @@ test('validateAssetsPackHeader accepts only DRVGP001 format version 1', () => {
   const bad = good.slice();
   bad[0] = 0;
   assert.throws(() => validateAssetsPackHeader(bad), /invalid_vgi_pack/);
+});
+
+
+async function makePack(manifest, extraEntries = []) {
+  const encoder = new TextEncoder();
+  const entries = [['install.md', encoder.encode(manifest)], ...extraEntries.map(([name,data]) => [name, data instanceof Uint8Array ? data : encoder.encode(data)])];
+  let total = 12;
+  const encoded = [];
+  for (const [name,data] of entries) {
+    const path = encoder.encode(name);
+    const sha = new Uint8Array(await crypto.subtle.digest('SHA-256', data));
+    encoded.push({path,data,sha});
+    total += 2 + 4 + 32 + path.length + data.length;
+  }
+  const out = new Uint8Array(total);
+  out.set(encoder.encode('DRVGP001'),0);
+  const view = new DataView(out.buffer);
+  view.setUint16(8,1,true);
+  view.setUint16(10,entries.length,true);
+  let offset=12;
+  for (const e of encoded) {
+    view.setUint16(offset,e.path.length,true); offset+=2;
+    view.setUint32(offset,e.data.length,true); offset+=4;
+    out.set(e.sha,offset); offset+=32;
+    out.set(e.path,offset); offset+=e.path.length;
+    out.set(e.data,offset); offset+=e.data.length;
+  }
+  return out;
+}
+
+test('validateAssetsPack verifies install.md, entry hashes and version', async () => {
+  const pack = await makePack(
+    'DR_ASSET_PACK_V1\nVERSION=v1.1.130\nCOPY payload/data/assets/ui/foo.vgi /data/assets/ui/foo.vgi\n',
+    [['payload/data/assets/ui/foo.vgi', Uint8Array.from([1,2,3])]]
+  );
+  assert.deepEqual(await validateAssetsPack(pack), { version:'v1.1.130', entryCount:2 });
+
+  const corrupt = pack.slice();
+  corrupt[corrupt.length - 1] ^= 0xff;
+  await assert.rejects(() => validateAssetsPack(corrupt), /vgi_entry_sha_mismatch/);
+});
+
+test('validateAssetsPack rejects traversal and missing COPY source', async () => {
+  const badDest = await makePack('DR_ASSET_PACK_V1\nVERSION=v1.1.130\nCOPY payload/foo.vgi /data/../secret.vgi\n', [['payload/foo.vgi','x']]);
+  await assert.rejects(() => validateAssetsPack(badDest), /invalid_vgi_install_path/);
+
+  const missing = await makePack('DR_ASSET_PACK_V1\nVERSION=v1.1.130\nCOPY payload/missing.vgi /data/assets/missing.vgi\n');
+  await assert.rejects(() => validateAssetsPack(missing), /vgi_copy_source_missing/);
 });
