@@ -193,3 +193,50 @@ test('replaceAssets rejects a pack whose VERSION does not match the release', as
     error => error.status === 409 && error.code === 'assets_version_mismatch'
   );
 });
+
+
+test('removeAssets preserves the current R2 object when D1 update fails', async () => {
+  const repo = fakeRepo({
+    async getSimpleRelease() {
+      return {
+        version:'v1.1.130', status:'draft',
+        game_r2_key:'ota/simple/v1.1.130/game.bin',
+        assets_r2_key:'ota/simple/v1.1.130/assets.vgi.pack'
+      };
+    },
+    async updateSimpleRelease() { throw new Error('D1 update failed'); }
+  });
+  const deleted = [];
+  const service = createSimpleOtaService({
+    repo,
+    firmwareBucket:{ async put(){}, async delete(key){ deleted.push(key); } }
+  });
+
+  await assert.rejects(() => service.removeAssets('v1.1.130'), /D1 update failed/);
+  assert.deepEqual(deleted, []);
+});
+
+test('deleteRelease removes D1 metadata before best-effort R2 cleanup', async () => {
+  const calls = [];
+  const repo = fakeRepo({
+    async getSimpleRelease() {
+      return {
+        version:'v1.1.130', status:'draft',
+        game_r2_key:'ota/simple/v1.1.130/game.bin',
+        assets_r2_key:'ota/simple/v1.1.130/assets.vgi.pack'
+      };
+    },
+    async deleteSimpleRelease() { calls.push('d1'); }
+  });
+  const service = createSimpleOtaService({
+    repo,
+    firmwareBucket:{ async put(){}, async delete(key){ calls.push(key); } }
+  });
+
+  await service.deleteRelease('v1.1.130');
+  assert.deepEqual(calls, [
+    'd1',
+    'ota/simple/v1.1.130/game.bin',
+    'ota/simple/v1.1.130/assets.vgi.pack'
+  ]);
+});
