@@ -1,4 +1,4 @@
-import { parseEspGameImage, parseSimpleVersion, validateAssetsPackHeader } from './simple-core.js';
+import { parseEspGameImage, parseSimpleVersion, validateAssetsPack } from './simple-core.js';
 
 const GAME_MAX_BYTES = 0x480000;
 const ASSETS_MAX_BYTES = 64 * 1024 * 1024;
@@ -42,12 +42,13 @@ async function readAssetsFile(file) {
   if (!name.toLowerCase().endsWith('.vgi.pack')) throw httpError(422, 'assets_file_must_be_vgi_pack');
   const bytes = await file.arrayBuffer();
   if (!bytes.byteLength || bytes.byteLength > ASSETS_MAX_BYTES) throw httpError(413, 'assets_pack_too_large');
-  validateAssetsPackHeader(bytes.slice(0, Math.min(bytes.byteLength, 64)));
+  const pack = await validateAssetsPack(bytes);
   return {
     bytes,
     fileName: name,
     size: bytes.byteLength,
-    sha256: await sha256Hex(bytes)
+    sha256: await sha256Hex(bytes),
+    version: pack.version
   };
 }
 
@@ -148,6 +149,7 @@ export function createSimpleOtaService({ repo, firmwareBucket, now = () => new D
     const current = await repo.getSimpleRelease(version);
     assertDraft(current);
     const assets = await readAssetsFile(file);
+    if (assets.version !== version) throw httpError(409, 'assets_version_mismatch');
     const key = assetsKey(version, assets.sha256);
     await firmwareBucket.put(key, assets.bytes, {
       httpMetadata: { contentType: 'application/octet-stream' },
