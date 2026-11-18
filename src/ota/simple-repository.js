@@ -43,30 +43,93 @@ export function createSimpleOtaRepository(env) {
       return db.prepare('SELECT * FROM ota_simple_releases WHERE version = ?').bind(version).first();
     },
 
-    async updateSimpleRelease(version, patch) {
+    async updateSimpleRelease(version, patch, {
+      expectedStatus = null,
+      expectedUpdatedAt = null,
+      expectedGameR2Key = undefined,
+      expectedAssetsR2Key = undefined
+    } = {}) {
       await ready();
       const current = await this.getSimpleRelease(version);
       if (!current) throw httpError(404, 'simple_release_not_found');
       const next = { ...current, ...patch };
+      const where = ['version=?'];
+      const guards = [version];
+      if (expectedStatus != null) {
+        where.push('status=?');
+        guards.push(expectedStatus);
+      }
+      if (expectedUpdatedAt != null) {
+        where.push('updated_at=?');
+        guards.push(expectedUpdatedAt);
+      }
+      if (expectedGameR2Key !== undefined) {
+        where.push('game_r2_key=?');
+        guards.push(expectedGameR2Key);
+      }
+      if (expectedAssetsR2Key !== undefined) {
+        if (expectedAssetsR2Key === null) {
+          where.push('assets_r2_key IS NULL');
+        } else {
+          where.push('assets_r2_key=?');
+          guards.push(expectedAssetsR2Key);
+        }
+      }
       const result = await db.prepare(`
         UPDATE ota_simple_releases SET
           game_r2_key=?, game_file_name=?, game_size=?, game_sha256=?,
           assets_r2_key=?, assets_file_name=?, assets_size=?, assets_sha256=?,
           notes=?, status=?, updated_at=?, published_at=?
-        WHERE version=?
+        WHERE ${where.join(' AND ')}
       `).bind(
         next.game_r2_key, next.game_file_name, next.game_size, next.game_sha256,
         next.assets_r2_key || null, next.assets_file_name || null, next.assets_size ?? null, next.assets_sha256 || null,
-        next.notes || '', next.status, next.updated_at, next.published_at || null, version
+        next.notes || '', next.status, next.updated_at, next.published_at || null,
+        ...guards
       ).run();
-      if (!result.meta?.changes) throw httpError(404, 'simple_release_not_found');
+      if (!result.meta?.changes) {
+        const latest = await this.getSimpleRelease(version);
+        if (!latest) throw httpError(404, 'simple_release_not_found');
+        throw httpError(409, 'simple_release_conflict');
+      }
       return this.getSimpleRelease(version);
     },
 
-    async deleteSimpleRelease(version) {
+    async deleteSimpleRelease(version, {
+      expectedStatus = null,
+      expectedUpdatedAt = null,
+      expectedGameR2Key = undefined,
+      expectedAssetsR2Key = undefined
+    } = {}) {
       await ready();
-      const result = await db.prepare('DELETE FROM ota_simple_releases WHERE version = ?').bind(version).run();
-      if (!result.meta?.changes) throw httpError(404, 'simple_release_not_found');
+      const where = ['version=?'];
+      const guards = [version];
+      if (expectedStatus != null) {
+        where.push('status=?');
+        guards.push(expectedStatus);
+      }
+      if (expectedUpdatedAt != null) {
+        where.push('updated_at=?');
+        guards.push(expectedUpdatedAt);
+      }
+      if (expectedGameR2Key !== undefined) {
+        where.push('game_r2_key=?');
+        guards.push(expectedGameR2Key);
+      }
+      if (expectedAssetsR2Key !== undefined) {
+        if (expectedAssetsR2Key === null) {
+          where.push('assets_r2_key IS NULL');
+        } else {
+          where.push('assets_r2_key=?');
+          guards.push(expectedAssetsR2Key);
+        }
+      }
+      const result = await db.prepare(`DELETE FROM ota_simple_releases WHERE ${where.join(' AND ')}`).bind(...guards).run();
+      if (!result.meta?.changes) {
+        const latest = await this.getSimpleRelease(version);
+        if (!latest) throw httpError(404, 'simple_release_not_found');
+        throw httpError(409, 'simple_release_conflict');
+      }
       return true;
     },
 

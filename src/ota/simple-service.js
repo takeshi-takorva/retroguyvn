@@ -52,12 +52,16 @@ async function readAssetsFile(file) {
   };
 }
 
+function uploadToken() {
+  return crypto.randomUUID().replaceAll('-', '');
+}
+
 function gameKey(version, sha256) {
-  return `ota/simple/${version}/game-${sha256}.bin`;
+  return `ota/simple/${version}/game-${sha256}-${uploadToken()}.bin`;
 }
 
 function assetsKey(version, sha256) {
-  return `ota/simple/${version}/assets-${sha256}.vgi.pack`;
+  return `ota/simple/${version}/assets-${sha256}-${uploadToken()}.vgi.pack`;
 }
 
 function assertDraft(release) {
@@ -131,6 +135,11 @@ export function createSimpleOtaService({ repo, firmwareBucket, now = () => new D
         game_sha256: game.sha256,
         updated_by: actor,
         updated_at: iso()
+      }, {
+        expectedStatus: 'draft',
+        expectedUpdatedAt: current.updated_at,
+        expectedGameR2Key: current.game_r2_key,
+        expectedAssetsR2Key: current.assets_r2_key ?? null
       });
     } catch (error) {
       if (key !== current.game_r2_key) {
@@ -164,9 +173,16 @@ export function createSimpleOtaService({ repo, firmwareBucket, now = () => new D
         assets_sha256: assets.sha256,
         updated_by: actor,
         updated_at: iso()
+      }, {
+        expectedStatus: 'draft',
+        expectedUpdatedAt: current.updated_at,
+        expectedGameR2Key: current.game_r2_key,
+        expectedAssetsR2Key: current.assets_r2_key ?? null
       });
     } catch (error) {
-      try { await firmwareBucket.delete(key); } catch {}
+      if (key !== current.assets_r2_key) {
+        try { await firmwareBucket.delete(key); } catch {}
+      }
       throw error;
     }
     if (current.assets_r2_key && current.assets_r2_key !== key) {
@@ -186,6 +202,11 @@ export function createSimpleOtaService({ repo, firmwareBucket, now = () => new D
       assets_sha256: null,
       updated_by: actor,
       updated_at: iso()
+    }, {
+      expectedStatus: 'draft',
+      expectedUpdatedAt: current.updated_at,
+      expectedGameR2Key: current.game_r2_key,
+      expectedAssetsR2Key: current.assets_r2_key ?? null
     });
     if (current.assets_r2_key) {
       try { await firmwareBucket.delete(current.assets_r2_key); } catch {}
@@ -211,6 +232,11 @@ export function createSimpleOtaService({ repo, firmwareBucket, now = () => new D
       status: 'published',
       published_at: iso(),
       updated_at: iso()
+    }, {
+      expectedStatus: 'draft',
+      expectedUpdatedAt: release.updated_at,
+      expectedGameR2Key: release.game_r2_key,
+      expectedAssetsR2Key: release.assets_r2_key ?? null
     });
   }
 
@@ -219,7 +245,12 @@ export function createSimpleOtaService({ repo, firmwareBucket, now = () => new D
     const release = await repo.getSimpleRelease(version);
     if (!release) throw httpError(404, 'simple_release_not_found');
     if (release.status === 'published') throw httpError(409, 'simple_release_published');
-    await repo.deleteSimpleRelease(version);
+    await repo.deleteSimpleRelease(version, {
+      expectedStatus: 'draft',
+      expectedUpdatedAt: release.updated_at,
+      expectedGameR2Key: release.game_r2_key,
+      expectedAssetsR2Key: release.assets_r2_key ?? null
+    });
     if (release.game_r2_key) {
       try { await firmwareBucket.delete(release.game_r2_key); } catch {}
     }
