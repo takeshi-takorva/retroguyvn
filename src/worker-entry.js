@@ -17,6 +17,9 @@ import { createOtaRepository } from './ota/repository.js';
 import { createOtaService } from './ota/service.js';
 import { createOtaHttp } from './ota/http.js';
 import { createOtaV1Http } from './ota/v1-http.js';
+import { createSimpleOtaRepository } from './ota/simple-repository.js';
+import { createSimpleOtaService } from './ota/simple-service.js';
+import { createSimpleOtaHttp } from './ota/simple-http.js';
 
 let bootstrapPromise = null;
 
@@ -214,7 +217,13 @@ async function handleM21Admin(request, env, ctx, pathname) {
 function buildOtaHttp(env) {
   const repo = createOtaRepository(env);
   const service = createOtaService({ repo, firmwareBucket: env?.FIRMWARE });
-  return { legacy: createOtaHttp({ service }), v1: createOtaV1Http({ service }) };
+  const simpleRepo = createSimpleOtaRepository(env);
+  const simpleService = createSimpleOtaService({ repo: simpleRepo, firmwareBucket: env?.FIRMWARE });
+  return {
+    legacy: createOtaHttp({ service }),
+    v1: createOtaV1Http({ service }),
+    v2: createSimpleOtaHttp({ service: simpleService })
+  };
 }
 
 async function handleOtaRoute(request, env, ctx, pathname) {
@@ -222,6 +231,9 @@ async function handleOtaRoute(request, env, ctx, pathname) {
     if (pathname.startsWith('/api/admin/ota/')) {
       const session = await adminSession(request, env, ctx);
       if (!session) return json({ error: 'Unauthorized' }, { status: 401 });
+      if (pathname.startsWith('/api/admin/ota/simple/')) {
+        return await buildOtaHttp(env).v2.handleAdmin(request, env, ctx, session);
+      }
       return await buildOtaHttp(env).legacy.handleOtaAdmin(request, env, ctx, session);
     }
     if (pathname === '/api/dr/ota' || pathname === '/api/dr/ota/download') {
@@ -229,6 +241,9 @@ async function handleOtaRoute(request, env, ctx, pathname) {
     }
     if (pathname.startsWith('/api/dr/ota/v1/')) {
       return await buildOtaHttp(env).v1.handle(request, env, ctx);
+    }
+    if (pathname.startsWith('/api/dr/ota/v2/')) {
+      return await buildOtaHttp(env).v2.handlePublic(request, env, ctx);
     }
     return null;
   } catch (error) {
@@ -251,6 +266,7 @@ export default {
       url.pathname === '/api/dr/ota' ||
       url.pathname === '/api/dr/ota/download' ||
       url.pathname.startsWith('/api/dr/ota/v1/') ||
+      url.pathname.startsWith('/api/dr/ota/v2/') ||
       url.pathname.startsWith('/api/admin/ota/')
     ) {
       return handleOtaRoute(request, runtimeEnv, ctx, url.pathname);
