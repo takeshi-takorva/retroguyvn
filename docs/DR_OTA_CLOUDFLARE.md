@@ -241,3 +241,22 @@ The first backend milestone accepts an ESP application `.bin` and validates stru
 `X-DR-Device-ID` is an identifier, not a secret credential. Offer pinning protects release selection consistency, but a future device-authentication milestone should add a device credential/HMAC or equivalent cryptographic request proof without changing the current D1/R2 release model.
 
 When Secure Boot v2 and anti-rollback are enabled on production devices, `secure_version` and device-side signature validation remain additional defenses; backend hardware targeting is not a replacement for device-side cryptographic verification.
+
+
+## Simplified OTA v2
+
+The active operator workflow is OTA v2. Legacy/v1 tables and endpoints remain available during migration but are not shown in `/admin/ota`.
+
+Device contract:
+
+```text
+POST /api/dr/ota/v2/check
+GET  /api/dr/ota/v2/game/{version}
+GET  /api/dr/ota/v2/assets/{version}
+```
+
+OTA v2 uses the isolated D1 table `ota_simple_releases`. Version is extracted from the uploaded `DR_Game_FW` binary and must use `v<HW_MAJOR>.<HW_MINOR>.<REVISION>`.
+
+The optional Assets payload is a `.vgi.pack` whose first entry is `install.md`. The Worker verifies the complete pack, all entry SHA-256 values, install paths and VERSION before accepting it.
+
+Cloudflare zero-traffic preview smoke tests exercise `/api/dr/ota/v2/check`, the simplified admin HTML and authenticated admin boundary before production integration.

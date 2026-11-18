@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 
 const CONFIG = 'dist/server/wrangler.production.json';
 const configPath = resolve(CONFIG);
-const CANARY_BRANCHES = new Set(['feature/dr-ota-cloudflare', 'feature/dr-ota-v1-contract-sync', 'fix/admin-ota-production-route']);
+const CANARY_BRANCHES = new Set(['feature/dr-ota-cloudflare', 'feature/dr-ota-v1-contract-sync', 'feature/ota-simple-v2']);
 const WORKER_NAME = 'retroguyvn';
 const BASE_URL = 'https://retroguyvn.com';
 const uploadOutputPath = resolve('.wrangler-preview-upload.ndjson');
@@ -254,20 +254,32 @@ async function smokeTest(canaryVersionId) {
     throw new Error(`OTA v1 check smoke returned invalid envelope: ${v1.text}`);
   }
 
+  const v2 = await requestCanary('/api/dr/ota/v2/check', canaryVersionId, {
+    'content-type': 'application/json'
+  }, {
+    method: 'POST',
+    body: JSON.stringify({ version: 'v1.1.129' })
+  });
+  if (v2.response.status !== 200) {
+    throw new Error(`OTA v2 check smoke expected 200, got ${v2.response.status}: ${v2.text}`);
+  }
+  const v2Payload = JSON.parse(v2.text);
+  if (typeof v2Payload.update !== 'boolean' || typeof v2Payload.version !== 'string') {
+    throw new Error(`OTA v2 check smoke returned invalid envelope: ${v2.text}`);
+  }
+
   const adminPage = await requestCanary('/admin/ota', canaryVersionId);
   if (adminPage.response.status !== 200) {
     throw new Error(`OTA admin page smoke expected 200, got ${adminPage.response.status}: ${adminPage.text.slice(0, 500)}`);
   }
-  if (!adminPage.text.includes('DR Portal OTA') || !adminPage.text.includes('Create signed OTA v1 release')) {
+  if (!adminPage.text.includes('DR Portal OTA') || !adminPage.text.includes('Create Game OTA release') ||
+      !adminPage.text.includes('Assets .vgi.pack')) {
     throw new Error(`OTA admin page smoke returned unexpected HTML: ${adminPage.text.slice(0, 500)}`);
   }
 
-  const adminClient = await requestCanary('/admin-ota-file-actions.js', canaryVersionId);
-  if (adminClient.response.status !== 200) {
-    throw new Error(`OTA admin client asset smoke expected 200, got ${adminClient.response.status}: ${adminClient.text.slice(0, 500)}`);
-  }
-  if (!adminClient.text.includes('data-ota-file-action')) {
-    throw new Error('OTA admin client asset is missing file-action runtime.');
+  const simpleAdmin = await requestCanary('/api/admin/ota/simple/releases', canaryVersionId);
+  if (![401, 403].includes(simpleAdmin.response.status)) {
+    throw new Error(`OTA v2 admin auth smoke expected 401/403, got ${simpleAdmin.response.status}: ${simpleAdmin.text}`);
   }
 
   const admin = await requestCanary('/api/admin/ota/releases', canaryVersionId);
