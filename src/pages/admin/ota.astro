@@ -2,88 +2,107 @@
 import AdminShell from '../../components/admin/AdminShell.astro';
 import '../../styles/ota-admin.css';
 ---
-<AdminShell title="OTA Firmware" subtitle="Digital Realm release management, hardware targeting and device history." currentPath="/admin/ota">
+<AdminShell title="OTA Firmware" subtitle="Digital Realm Game FW + optional SD assets." currentPath="/admin/ota">
   <a slot="topbar-actions" class="admin-button subtle" href="/admin/system">System</a>
 
   <section class="admin-section-head">
-    <div><h2>DR Portal OTA</h2><p>Manage Game Firmware releases without exposing R2 objects. Devices always resolve updates through the fixed Worker API.</p></div>
+    <div>
+      <h2>DR Portal OTA</h2>
+      <p>One release = one Game FW version plus an optional VGI assets pack. Boot FW and Service OS are never OTA targets.</p>
+    </div>
     <div class="admin-section-actions"><button class="admin-button" id="refreshAll" type="button">Refresh</button></div>
   </section>
 
   <section class="admin-login" id="loginPanel">
     <h3>Admin access required</h3>
     <p>Cloudflare Access is preferred. Enter the fallback Admin Token only when Access is not active.</p>
-    <form class="admin-login-form" id="loginForm"><input class="admin-input" id="tokenInput" type="password" placeholder="Admin Token" autocomplete="current-password" required /><button class="admin-button primary">Connect</button></form>
+    <form class="admin-login-form" id="loginForm">
+      <input class="admin-input" id="tokenInput" type="password" placeholder="Admin Token" autocomplete="current-password" required />
+      <button class="admin-button primary">Connect</button>
+    </form>
   </section>
 
   <div id="workspace" class="admin-hidden">
     <div class="ota-summary">
       <div class="ota-metric"><span>Published</span><strong id="metricPublished">0</strong></div>
-      <div class="ota-metric"><span>Hardware</span><strong id="metricHardware">0</strong></div>
-      <div class="ota-metric"><span>Devices</span><strong id="metricDevices">0</strong></div>
-      <div class="ota-metric"><span>Downloads</span><strong id="metricDownloads">0</strong></div>
+      <div class="ota-metric"><span>Draft</span><strong id="metricDraft">0</strong></div>
+      <div class="ota-metric"><span>Latest</span><strong id="metricLatest">—</strong></div>
+      <div class="ota-metric"><span>Assets packs</span><strong id="metricAssets">0</strong></div>
     </div>
-
-    <nav class="ota-tabs" aria-label="OTA sections">
-      <button class="admin-button ota-tab active" data-view="releases" type="button">Firmware Releases</button>
-      <button class="admin-button ota-tab" data-view="hardware" type="button">Hardware</button>
-      <button class="admin-button ota-tab" data-view="devices" type="button">Devices</button>
-      <button class="admin-button ota-tab" data-view="events" type="button">Event History</button>
-    </nav>
 
     <div id="message" class="ota-message ota-hidden" aria-live="polite"></div>
 
-    <section class="ota-view" data-panel="releases">
-      <div class="ota-grid">
-        <form class="ota-card" id="releaseForm">
-          <h3 id="releaseFormTitle">Create signed OTA v1 release</h3><p>Upload a signed DigitalRealm release. The server stores the public manifest/signature and binary; the private signing key remains offline in DR Device Studio.</p>
-          <input id="releaseId" type="hidden" />
-          <div class="ota-form">
-            <div class="ota-field"><label>Release ID</label><input class="ota-input" id="canonicalReleaseId" required placeholder="dr-game-r60" pattern="[A-Za-z0-9._-]{3,96}" /></div>
-            <div class="ota-field"><label>Release sequence</label><input class="ota-input" id="releaseSeq" type="number" min="1" required placeholder="60" /></div>
-            <div class="ota-field"><label>Version</label><input class="ota-input" id="version" required maxlength="32" placeholder="0.4.0" /></div>
-            <div class="ota-field"><label>Fix</label><input class="ota-input" id="gameFix" type="number" min="0" value="0" /></div>
-            <div class="ota-field"><label>Build ID</label><input class="ota-input" id="buildId" required maxlength="128" placeholder="260928_DR_v0.4.0_fix060" /></div>
-            <div class="ota-field"><label>Channel</label><select class="ota-input" id="channel"><option value="stable">Stable</option><option value="beta">Beta</option><option value="dev">Dev</option></select></div>
-            <div class="ota-field"><label>Secure version</label><input class="ota-input" id="secureVersion" type="number" min="0" value="1" /></div>
-            <div class="ota-field"><label>Minimum Boot FW</label><input class="ota-input" id="minBootVersion" required maxlength="32" placeholder="0.1-fix023" /></div>
-            <div class="ota-field"><label>Asset version</label><input class="ota-input" id="assetVersion" maxlength="64" placeholder="DR_ASSET_12 (optional)" /></div>
-            <div class="ota-field"><label>Mandatory</label><select class="ota-input" id="mandatory"><option value="0">No</option><option value="1">Yes</option></select></div>
-            <div class="ota-field" id="fileField"><label>Game FW .bin</label><input class="ota-input" id="firmwareFile" type="file" accept=".bin,application/octet-stream" /></div>
-            <div class="ota-field wide"><label>Hardware targets</label><div class="ota-targets" id="hardwareTargets"></div></div>
-            <div class="ota-field wide"><label>RSA-PSS-SHA256 signature</label><textarea id="releaseSignature" required placeholder="Paste the Base64 signature generated by DR Device Studio. Private signing key stays offline."></textarea></div>
-            <div class="ota-field wide"><label>Release notes</label><textarea id="releaseNotes" placeholder="Changes in this release"></textarea></div>
+    <div class="ota-grid">
+      <form class="ota-card" id="releaseForm">
+        <h3>Create Game OTA release</h3>
+        <p>Version is read automatically from the ESP-IDF <code>DR_Game_FW</code> app descriptor.</p>
+
+        <div class="ota-form">
+          <div class="ota-field wide">
+            <label>Version</label>
+            <input class="ota-input" id="detectedVersion" readonly placeholder="Choose Game FW .bin" />
+            <span class="ota-muted">Auto-detected from DR_Game_FW · format vHW_MAJOR.HW_MINOR.REVISION</span>
           </div>
-          <div class="ota-progress ota-hidden" id="uploadProgress"><span></span></div>
-          <div class="ota-actions"><button class="admin-button primary" id="saveRelease" type="submit">Upload & create draft</button><button class="admin-button ota-hidden" id="cancelEdit" type="button">Cancel edit</button></div>
-        </form>
 
-        <div class="ota-card"><h3>Device endpoints · Protocol v1</h3><p>Boot FW uses these stable routes. The firmware binary URL is returned by the check response; no direct R2 URL is embedded in firmware.</p><div class="ota-message"><strong>Check</strong><br /><code class="ota-mono">POST /api/dr/ota/v1/check</code><br /><br /><strong>Firmware</strong><br /><code class="ota-mono">GET /api/dr/ota/v1/firmware/&#123;release_id&#125;</code><br /><br /><strong>Lifecycle events</strong><br /><code class="ota-mono">POST /api/dr/ota/v1/events</code></div><p style="margin-top:12px">Hardware compatibility is exact-match only. Admin download links remain protected and are not Boot FW endpoints.</p></div>
+          <div class="ota-field">
+            <label>Game FW .bin</label>
+            <input class="ota-input" id="firmwareFile" type="file" accept=".bin,application/octet-stream" required />
+          </div>
+
+          <div class="ota-field">
+            <label>Assets .vgi.pack <span class="ota-muted">(optional)</span></label>
+            <input class="ota-input" id="assetsFile" type="file" accept=".vgi.pack,application/octet-stream" />
+          </div>
+
+          <div class="ota-field wide">
+            <label>Release notes</label>
+            <textarea id="releaseNotes" placeholder="Changes in this release"></textarea>
+          </div>
+        </div>
+
+        <div class="ota-progress ota-hidden" id="uploadProgress"><span></span></div>
+        <div class="ota-actions">
+          <button class="admin-button primary" id="saveRelease" type="submit">Upload & create draft</button>
+        </div>
+      </form>
+
+      <div class="ota-card">
+        <h3>Device API · OTA v2</h3>
+        <p>Boot OS sends only the installed Game FW version. The first two version numbers define the hardware line.</p>
+        <div class="ota-message">
+          <strong>Check</strong><br />
+          <code class="ota-mono">POST /api/dr/ota/v2/check</code><br /><br />
+          <strong>Game FW</strong><br />
+          <code class="ota-mono">GET /api/dr/ota/v2/game/v1.1.130</code><br /><br />
+          <strong>Assets</strong><br />
+          <code class="ota-mono">GET /api/dr/ota/v2/assets/v1.1.130</code>
+        </div>
+        <p style="margin-top:12px">Only <code>DR_Game_FW</code> binaries are accepted. Assets are optional and are installed by Boot OS before flashing the new Game FW.</p>
       </div>
+    </div>
 
-      <div class="admin-panel">
-        <div class="ota-toolbar"><strong>Release catalog</strong><div class="ota-toolbar-group"><select class="admin-select" id="releaseChannel"><option value="">All channels</option><option>stable</option><option>beta</option><option>dev</option></select></div></div>
-        <div class="ota-table-wrap"><table class="ota-table"><thead><tr><th>Version / build</th><th>Targets</th><th>Status</th><th>Size</th><th>Downloads</th><th>Actions</th></tr></thead><tbody id="releaseRows"></tbody></table></div>
+    <div class="admin-panel">
+      <div class="ota-toolbar">
+        <strong>Game OTA releases</strong>
+        <span class="ota-muted">Published releases are immutable; create a newer revision for a new binary.</span>
       </div>
-    </section>
-
-    <section class="ota-view ota-hidden" data-panel="hardware">
-      <div class="ota-grid"><form class="ota-card" id="hardwareForm"><h3>Add hardware revision</h3><p>Compatibility never falls back by prefix or revision number.</p><div class="ota-form"><div class="ota-field"><label>Code</label><input class="ota-input" id="hardwareCode" placeholder="HW0.6" required /></div><div class="ota-field"><label>Label</label><input class="ota-input" id="hardwareLabel" placeholder="Hardware 0.6" required /></div></div><div class="ota-actions"><button class="admin-button primary">Add revision</button></div></form><div class="ota-card"><h3>Compatibility policy</h3><p>Disabled revisions remain in historical records but are unavailable as new release targets.</p><div class="ota-message">HW0.5 does not imply HW0.5.1 compatibility. Every release records explicit targets.</div></div></div>
-      <div class="admin-panel"><div class="ota-table-wrap"><table class="ota-table"><thead><tr><th>Code</th><th>Label</th><th>State</th><th>Action</th></tr></thead><tbody id="hardwareRows"></tbody></table></div></div>
-    </section>
-
-    <section class="ota-view ota-hidden" data-panel="devices"><div class="admin-panel"><div class="ota-toolbar"><strong>Known devices</strong><span class="ota-muted">Latest state per Device-ID</span></div><div class="ota-table-wrap"><table class="ota-table"><thead><tr><th>Device ID</th><th>Hardware</th><th>Game FW</th><th>Boot FW</th><th>Channel</th><th>Last seen</th></tr></thead><tbody id="deviceRows"></tbody></table></div></div></section>
-
-    <section class="ota-view ota-hidden" data-panel="events"><div class="admin-panel"><div class="ota-toolbar"><strong>Immutable OTA history</strong><div class="ota-toolbar-group"><select class="admin-select" id="eventType"><option value="">All events</option><option>CHECK</option><option>UPDATE_AVAILABLE</option><option>NO_UPDATE</option><option>DOWNLOAD_START</option><option>DOWNLOAD_RANGE</option><option>DOWNLOAD_COMPLETE</option><option>DOWNLOAD_FAIL</option></select></div></div><div class="ota-table-wrap"><table class="ota-table"><thead><tr><th>Time</th><th>Device</th><th>Event</th><th>HW</th><th>Current → target</th><th>Bytes</th></tr></thead><tbody id="eventRows"></tbody></table></div></div></section>
+      <div class="ota-table-wrap">
+        <table class="ota-table">
+          <thead>
+            <tr><th>Version</th><th>Game FW</th><th>Assets</th><th>Status</th><th>Notes</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="releaseRows"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <script>
     const q = selector => document.querySelector(selector);
     const safeSessionGet = key => { try { return sessionStorage.getItem(key) || ''; } catch { return ''; } };
     const safeSessionSet = (key, value) => { try { sessionStorage.setItem(key, value); return true; } catch { return false; } };
-    const safeSessionRemove = key => { try { sessionStorage.removeItem(key); } catch {} };
     let token = safeSessionGet('rg_admin_token');
-    let hardware = [], releases = [], devices = [], events = [];
+    let releases = [];
     const authHeaders = () => token ? { Authorization: `Bearer ${token}` } : {};
     const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]));
     const fmtBytes = n => Number(n||0) < 1024 ? `${Number(n||0)} B` : Number(n||0) < 1048576 ? `${(Number(n)/1024).toFixed(1)} KB` : `${(Number(n)/1048576).toFixed(2)} MB`;
@@ -91,7 +110,10 @@ import '../../styles/ota-admin.css';
     const message = (text, tone='') => { const el=q('#message'); el.textContent=text; el.className=`ota-message ${tone}`; el.classList.toggle('ota-hidden', !text); };
 
     async function api(path, options={}) {
-      const response = await fetch(path, { ...options, headers: { ...authHeaders(), ...(options.json ? {'content-type':'application/json'} : {}), ...(options.headers||{}) } });
+      const response = await fetch(path, {
+        ...options,
+        headers: { ...authHeaders(), ...(options.json ? {'content-type':'application/json'} : {}), ...(options.headers||{}) }
+      });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw Object.assign(new Error(data.message || data.error || `HTTP ${response.status}`), { status: response.status, data });
       return data;
@@ -104,7 +126,7 @@ import '../../styles/ota-admin.css';
       bar.style.width=`${Math.max(0,Math.min(100,Number(percent)||0))}%`;
     }
 
-    function uploadFormData(path, formData, {method='POST', timeout=180000}={}) {
+    function uploadFormData(path, formData, {method='POST', label='Uploading', timeout=180000}={}) {
       return new Promise((resolve,reject)=>{
         const xhr=new XMLHttpRequest();
         xhr.open(method,path,true);
@@ -114,158 +136,213 @@ import '../../styles/ota-admin.css';
           if(!event.lengthComputable||!event.total)return;
           const percent=Math.max(2,Math.min(90,Math.round((event.loaded/event.total)*90)));
           setUploadProgress(percent);
-          message(`Uploading firmware… ${percent}%`);
+          message(`${label}… ${percent}%`);
         };
-        xhr.upload.onload=()=>{
-          setUploadProgress(92);
-          message('Upload complete. Validating SHA-256 and saving firmware to R2…');
-        };
+        xhr.upload.onload=()=>{setUploadProgress(94);message(`${label} complete. Validating and saving to R2…`);};
         xhr.onload=()=>{
           const data=(()=>{try{return JSON.parse(xhr.responseText||'{}');}catch{return {};}})();
           if(xhr.status>=200&&xhr.status<300){setUploadProgress(100);resolve(data);return;}
           reject(Object.assign(new Error(data.message||data.error||`HTTP ${xhr.status}`),{status:xhr.status,data}));
         };
-        xhr.onerror=()=>reject(new Error('Firmware upload failed because the network connection was interrupted.'));
-        xhr.ontimeout=()=>reject(new Error('Firmware upload timed out after 3 minutes. Retry the upload; no release metadata was changed.'));
-        xhr.onabort=()=>reject(new Error('Firmware upload was cancelled.'));
+        xhr.onerror=()=>reject(new Error('Upload failed because the network connection was interrupted.'));
+        xhr.ontimeout=()=>reject(new Error('Upload timed out after 3 minutes.'));
+        xhr.onabort=()=>reject(new Error('Upload was cancelled.'));
         setUploadProgress(1);
         xhr.send(formData);
       });
     }
 
-    function renderTargets(selected=[]) {
-      q('#hardwareTargets').innerHTML = hardware.filter(item => Number(item.enabled)).map(item => `<label class="ota-target"><input type="checkbox" name="hardwareTarget" value="${esc(item.code)}" ${selected.includes(item.code)?'checked':''}/> ${esc(item.code)}</label>`).join('') || '<span class="ota-muted">No enabled hardware revisions.</span>';
+    function readAscii(bytes, offset, length) {
+      if (offset + length > bytes.length) return '';
+      let end=offset;
+      while(end<offset+length && bytes[end]!==0) end++;
+      return new TextDecoder().decode(bytes.subarray(offset,end)).trim();
     }
 
+    async function detectGameVersion(file) {
+      if(!file) throw new Error('Choose a Game FW .bin file.');
+      if(!file.name.toLowerCase().endsWith('.bin')) throw new Error('Game FW must be a .bin file.');
+      const probe=new Uint8Array(await file.slice(0,Math.min(file.size,131072)).arrayBuffer());
+      if(probe.length<80 || probe[0]!==0xE9) throw new Error('Invalid ESP32 Game FW image.');
+      const view=new DataView(probe.buffer,probe.byteOffset,probe.byteLength);
+      for(let offset=0;offset<=probe.length-80;offset+=4){
+        if(view.getUint32(offset,true)!==0xABCD5432) continue;
+        const version=readAscii(probe,offset+16,32);
+        const project=readAscii(probe,offset+48,32);
+        if(project!=='DR_Game_FW') throw new Error('The selected BIN is not DR_Game_FW.');
+        if(!/^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(version)) {
+          throw new Error('Game FW version must use vHW_MAJOR.HW_MINOR.REVISION.');
+        }
+        return version;
+      }
+      throw new Error('DR_Game_FW app descriptor was not found in the BIN.');
+    }
+
+    function gameUrl(version) { return `${location.origin}/api/dr/ota/v2/game/${encodeURIComponent(version)}`; }
+    function assetsUrl(version) { return `${location.origin}/api/dr/ota/v2/assets/${encodeURIComponent(version)}`; }
+
     function renderSummary() {
-      q('#metricPublished').textContent = releases.filter(item=>item.status==='published').length;
-      q('#metricHardware').textContent = hardware.filter(item=>Number(item.enabled)).length;
-      q('#metricDevices').textContent = devices.length;
-      q('#metricDownloads').textContent = releases.reduce((sum,item)=>sum+Number(item.download_count||0),0);
+      q('#metricPublished').textContent=releases.filter(row=>row.status==='published').length;
+      q('#metricDraft').textContent=releases.filter(row=>row.status==='draft').length;
+      q('#metricLatest').textContent=releases[0]?.version || '—';
+      q('#metricAssets').textContent=releases.filter(row=>row.assets_r2_key).length;
     }
 
     function renderReleases() {
-      const filter=q('#releaseChannel').value;
-      const visible=releases.filter(item=>!filter||item.channel===filter);
-      q('#releaseRows').innerHTML = visible.map(item => `<tr><td><strong>${esc(item.version)}</strong><br/><code>${esc(item.build_id)}</code><br/><span class="ota-muted">${esc(item.channel)}</span></td><td>${(item.targets||[]).map(v=>`<span class="ota-status">${esc(v)}</span>`).join(' ')||'—'}</td><td><span class="ota-status ${esc(item.status)}">${esc(item.status)}</span></td><td>${fmtBytes(item.size_bytes)}<br/><code>${esc(String(item.sha256||'').slice(0,12))}…</code></td><td>${Number(item.download_count||0)}</td><td><div class="ota-table-actions"><button class="admin-button ota-mini" data-action="edit" data-id="${esc(item.id)}">Edit</button>${item.status!=='published'?`<button class="admin-button ota-mini" data-action="publish" data-id="${esc(item.id)}">Publish</button>`:`<button class="admin-button ota-mini" data-action="disable" data-id="${esc(item.id)}">Disable</button>`}${item.status!=='published'?`<button class="admin-button ota-mini ota-button-danger" data-action="delete" data-id="${esc(item.id)}">Delete</button>`:''}</div></td></tr>`).join('') || '<tr><td colspan="6" class="ota-empty">No releases.</td></tr>';
+      q('#releaseRows').innerHTML=releases.map(item=>{
+        const published=item.status==='published';
+        const gameActions=published
+          ? `<button class="admin-button ota-mini" data-action="copy-game" data-version="${esc(item.version)}">Copy Game link</button><a class="admin-button ota-mini" href="/api/dr/ota/v2/game/${encodeURIComponent(item.version)}" target="_blank">Download Game</a>`
+          : `<button class="admin-button ota-mini" data-action="replace-game" data-version="${esc(item.version)}">Update Game</button>`;
+        const assetsActions=item.assets_r2_key
+          ? (published
+            ? `<button class="admin-button ota-mini" data-action="copy-assets" data-version="${esc(item.version)}">Copy Assets link</button><a class="admin-button ota-mini" href="/api/dr/ota/v2/assets/${encodeURIComponent(item.version)}" target="_blank">Download Assets</a>`
+            : `<button class="admin-button ota-mini" data-action="replace-assets" data-version="${esc(item.version)}">Update Assets</button><button class="admin-button ota-mini" data-action="remove-assets" data-version="${esc(item.version)}">Remove Assets</button>`)
+          : (!published ? `<button class="admin-button ota-mini" data-action="replace-assets" data-version="${esc(item.version)}">Add Assets</button>` : '<span class="ota-muted">—</span>');
+        const releaseActions=published
+          ? ''
+          : `<button class="admin-button ota-mini primary" data-action="publish" data-version="${esc(item.version)}">Publish</button><button class="admin-button ota-mini ota-button-danger" data-action="delete" data-version="${esc(item.version)}">Delete</button>`;
+        return `<tr>
+          <td><strong>${esc(item.version)}</strong><br/><span class="ota-muted">HW${item.hw_major}.${item.hw_minor} · rev ${item.revision}</span><br/><span class="ota-muted">${fmtDate(item.created_at)}</span></td>
+          <td>${fmtBytes(item.game_size)}<br/><code>${esc(String(item.game_sha256||'').slice(0,12))}…</code><div class="ota-table-actions">${gameActions}</div></td>
+          <td>${item.assets_r2_key ? `${fmtBytes(item.assets_size)}<br/><code>${esc(String(item.assets_sha256||'').slice(0,12))}…</code>` : '<span class="ota-muted">No pack</span>'}<div class="ota-table-actions">${assetsActions}</div></td>
+          <td><span class="ota-status ${esc(item.status)}">${esc(item.status)}</span></td>
+          <td>${esc(item.notes||'—')}</td>
+          <td><div class="ota-table-actions">${releaseActions}</div></td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="6" class="ota-empty">No OTA v2 releases.</td></tr>';
     }
 
-    function renderHardware() {
-      q('#hardwareRows').innerHTML = hardware.map(item=>`<tr><td><code>${esc(item.code)}</code></td><td>${esc(item.label)}</td><td><span class="ota-status ${Number(item.enabled)?'published':'disabled'}">${Number(item.enabled)?'enabled':'disabled'}</span></td><td><button class="admin-button ota-mini" data-hardware="${esc(item.id)}" data-enabled="${Number(item.enabled)?'0':'1'}">${Number(item.enabled)?'Disable':'Enable'}</button></td></tr>`).join('') || '<tr><td colspan="4" class="ota-empty">No hardware revisions.</td></tr>';
-    }
-
-    function renderDevices() {
-      q('#deviceRows').innerHTML = devices.map(item=>`<tr><td><code>${esc(item.device_id)}</code></td><td>${esc(item.hardware_code)}</td><td>${esc(item.game_version||'—')}</td><td>${esc(item.boot_version||'—')}</td><td>${esc(item.channel)}</td><td>${fmtDate(item.last_seen_at)}</td></tr>`).join('') || '<tr><td colspan="6" class="ota-empty">No device has checked for updates yet.</td></tr>';
-    }
-
-    function renderEvents() {
-      const type=q('#eventType').value;
-      const visible=events.filter(item=>!type||item.event_type===type);
-      q('#eventRows').innerHTML = visible.map(item=>`<tr><td>${fmtDate(item.created_at)}</td><td><code>${esc(item.device_id)}</code></td><td><span class="ota-status">${esc(item.event_type)}</span></td><td>${esc(item.hardware_code)}</td><td>${esc(item.current_fw||'—')} → ${esc(item.target_fw||'—')}</td><td>${fmtBytes(item.bytes_served)}</td></tr>`).join('') || '<tr><td colspan="6" class="ota-empty">No matching events.</td></tr>';
-    }
-
-    async function loadAll({ interactive = false } = {}) {
+    async function loadAll({interactive=false}={}) {
       message('');
       try {
         await api('/api/admin/session');
         q('#loginPanel').classList.add('admin-hidden');
         q('#workspace').classList.remove('admin-hidden');
-        const [h,r,d,e]=await Promise.all([api('/api/admin/ota/hardware'),api('/api/admin/ota/releases?limit=200'),api('/api/admin/ota/devices?limit=300'),api('/api/admin/ota/events?limit=500')]);
-        hardware=h.items||[]; releases=r.items||[]; devices=d.items||[]; events=e.items||[];
-        renderTargets(); renderReleases(); renderHardware(); renderDevices(); renderEvents(); renderSummary();
-      } catch (error) {
+        const data=await api('/api/admin/ota/simple/releases');
+        releases=data.items||[];
+        renderReleases();
+        renderSummary();
+      } catch(error) {
         q('#workspace').classList.add('admin-hidden');
         q('#loginPanel').classList.remove('admin-hidden');
-        if (error.status === 401) {
-          if (interactive || token) message('Admin token is invalid or expired. Re-enter the current Admin Token.', 'error');
+        if(error.status===401){
+          if(interactive||token) message('Admin token is invalid or expired. Re-enter the current Admin Token.','error');
           return;
         }
-        message(`Admin authentication failed: ${error.message || 'Unable to reach admin API'}`, 'error');
+        message(`Admin authentication failed: ${error.message||'Unable to reach admin API'}`,'error');
       }
     }
 
-    function resetReleaseForm() {
-      q('#releaseForm').reset(); q('#releaseId').value=''; q('#canonicalReleaseId').disabled=false; q('#secureVersion').value='1'; q('#gameFix').value='0'; q('#mandatory').value='0'; q('#releaseFormTitle').textContent='Create signed OTA v1 release'; q('#saveRelease').textContent='Upload & create draft'; q('#cancelEdit').classList.add('ota-hidden'); q('#fileField').classList.remove('ota-hidden'); renderTargets();
+    async function chooseFile(accept) {
+      return new Promise(resolve=>{
+        const input=document.createElement('input');
+        input.type='file'; input.accept=accept; input.style.position='fixed'; input.style.left='-9999px';
+        document.body.appendChild(input);
+        let settled=false;
+        const finish=file=>{if(settled)return;settled=true;input.remove();resolve(file||null);};
+        input.addEventListener('change',()=>finish(input.files?.[0]),{once:true});
+        window.addEventListener('focus',()=>setTimeout(()=>{if(!input.files?.length)finish(null);},300),{once:true});
+        input.click();
+      });
     }
 
-    function editRelease(id) {
-      const item=releases.find(row=>row.id===id); if(!item)return;
-      q('#releaseId').value=item.id; q('#canonicalReleaseId').value=item.id; q('#canonicalReleaseId').disabled=true; q('#releaseSeq').value=String(item.release_seq||''); q('#version').value=item.version||''; q('#gameFix').value=String(item.game_fix||0); q('#buildId').value=item.build_id||''; q('#channel').value=item.channel||'stable'; q('#secureVersion').value=String(item.secure_version||0); q('#minBootVersion').value=item.min_boot_version||''; q('#assetVersion').value=item.asset_version||''; q('#mandatory').value=Number(item.mandatory)?'1':'0'; q('#releaseSignature').value=item.signature||''; q('#releaseNotes').value=item.release_notes||''; renderTargets(item.targets||[]); q('#releaseFormTitle').textContent=`Edit ${item.version} · seq ${item.release_seq||'—'}`; q('#saveRelease').textContent='Save signed metadata'; q('#cancelEdit').classList.remove('ota-hidden'); q('#fileField').classList.add('ota-hidden'); window.scrollTo({top:0,behavior:'smooth'});
+    async function replaceFile(version, kind) {
+      const file=await chooseFile(kind==='game'?'.bin,application/octet-stream':'.vgi.pack,application/octet-stream');
+      if(!file)return;
+      if(kind==='game'){
+        const detected=await detectGameVersion(file);
+        if(detected!==version) throw new Error(`Replacement BIN is ${detected}; expected ${version}.`);
+      }
+      if(!confirm(`Replace ${kind} file for ${version}?`))return;
+      const form=new FormData(); form.set('file',file);
+      await uploadFormData(`/api/admin/ota/simple/releases/${encodeURIComponent(version)}/${kind}`,form,{method:'PUT',label:kind==='game'?'Uploading Game FW':'Uploading Assets'});
+      await loadAll();
+      message(`${kind==='game'?'Game FW':'Assets pack'} updated for ${version}.`,'good');
     }
 
-    q('#releaseForm').addEventListener('submit', async event => {
+    q('#firmwareFile').addEventListener('change',async()=>{
+      const file=q('#firmwareFile').files?.[0];
+      q('#detectedVersion').value='';
+      if(!file)return;
+      try{
+        q('#detectedVersion').value=await detectGameVersion(file);
+        message('');
+      }catch(error){
+        message(error.message,'error');
+        q('#firmwareFile').value='';
+      }
+    });
+
+    q('#releaseForm').addEventListener('submit',async event=>{
       event.preventDefault();
-      message('');
-      const id=q('#releaseId').value;
-      const targets=[...document.querySelectorAll('[name="hardwareTarget"]:checked')].map(el=>el.value);
-      if(!targets.length){message('Select at least one hardware target.','error');return;}
-
+      const gameFile=q('#firmwareFile').files?.[0];
+      const assetsFile=q('#assetsFile').files?.[0]||null;
       const saveButton=q('#saveRelease');
-      const cancelButton=q('#cancelEdit');
+      if(!gameFile){message('Choose a Game FW .bin file.','error');return;}
       saveButton.disabled=true;
-      cancelButton.disabled=true;
-      try {
-        let successText='';
-        if(id){
-          saveButton.textContent='Saving…';
-          await api(`/api/admin/ota/releases/${encodeURIComponent(id)}`,{method:'PUT',json:true,body:JSON.stringify({release_seq:Number(q('#releaseSeq').value),version:q('#version').value,fix:Number(q('#gameFix').value||0),build_id:q('#buildId').value,channel:q('#channel').value,secure_version:Number(q('#secureVersion').value||0),min_boot_version:q('#minBootVersion').value,asset_version:q('#assetVersion').value,mandatory:q('#mandatory').value==='1',signature_alg:'RSA-PSS-SHA256',signature:q('#releaseSignature').value.trim(),release_notes:q('#releaseNotes').value,hardware:targets})});
-          successText='Release metadata saved.';
-        } else {
-          const file=q('#firmwareFile').files?.[0];
-          if(!file){message('Choose a Game FW .bin file.','error');return;}
-          saveButton.textContent='Uploading…';
-          const form=new FormData();
-          form.set('file',file);
-          form.set('product','DigitalRealm');
-          form.set('release_id',q('#canonicalReleaseId').value.trim());
-          form.set('release_seq',q('#releaseSeq').value);
-          form.set('version',q('#version').value);
-          form.set('fix',q('#gameFix').value||'0');
-          form.set('build_id',q('#buildId').value);
-          form.set('channel',q('#channel').value);
-          form.set('secure_version',q('#secureVersion').value||'1');
-          form.set('min_boot_version',q('#minBootVersion').value);
-          form.set('asset_version',q('#assetVersion').value);
-          form.set('mandatory',q('#mandatory').value);
-          form.set('signature_alg','RSA-PSS-SHA256');
-          form.set('signature',q('#releaseSignature').value.trim());
-          form.set('release_notes',q('#releaseNotes').value);
-          targets.forEach(value=>form.append('hardware',value));
-          await uploadFormData('/api/admin/ota/releases',form);
-          successText='Firmware uploaded as draft.';
+      try{
+        const version=await detectGameVersion(gameFile);
+        q('#detectedVersion').value=version;
+        const form=new FormData();
+        form.set('file', gameFile);
+        form.set('notes', q('#releaseNotes').value);
+        const release=await uploadFormData('/api/admin/ota/simple/releases',form,{label:'Uploading Game FW'});
+        if(assetsFile){
+          const assetsForm=new FormData();
+          assetsForm.set('file',assetsFile);
+          await uploadFormData(`/api/admin/ota/simple/releases/${encodeURIComponent(release.version)}/assets`,assetsForm,{method:'PUT',label:'Uploading Assets'});
         }
-        resetReleaseForm();
+        q('#releaseForm').reset();
+        q('#detectedVersion').value='';
         await loadAll();
-        message(successText,'good');
-      } catch(error) {
-        message(error.message||'Firmware upload failed.','error');
-      } finally {
+        message(`${version} uploaded as Draft. Review files, then Publish.`,'good');
+      }catch(error){
+        message(error.message||'Upload failed.','error');
+      }finally{
         saveButton.disabled=false;
-        cancelButton.disabled=false;
-        if(q('#releaseId').value){
-          saveButton.textContent='Save signed metadata';
-        } else {
-          saveButton.textContent='Upload & create draft';
-        }
         setTimeout(()=>setUploadProgress(0,false),800);
       }
     });
 
-    q('#releaseRows').addEventListener('click',async event=>{const button=event.target.closest('button[data-action]');if(!button)return;const {action,id}=button.dataset;if(action==='edit'){editRelease(id);return;}if(!confirm(`${action} release ${id}?`))return;try{if(action==='delete')await api(`/api/admin/ota/releases/${encodeURIComponent(id)}`,{method:'DELETE'});else await api(`/api/admin/ota/releases/${encodeURIComponent(id)}/${action}`,{method:'POST'});message(`Release ${action} completed.`,'good');await loadAll();}catch(error){message(error.message,'error');}});
-    q('#hardwareRows').addEventListener('click',async event=>{const button=event.target.closest('button[data-hardware]');if(!button)return;try{await api(`/api/admin/ota/hardware/${encodeURIComponent(button.dataset.hardware)}`,{method:'PATCH',json:true,body:JSON.stringify({enabled:button.dataset.enabled==='1'})});await loadAll();}catch(error){message(error.message,'error');}});
-    q('#hardwareForm').addEventListener('submit',async event=>{event.preventDefault();try{await api('/api/admin/ota/hardware',{method:'POST',json:true,body:JSON.stringify({code:q('#hardwareCode').value,label:q('#hardwareLabel').value})});q('#hardwareForm').reset();message('Hardware revision added.','good');await loadAll();}catch(error){message(error.message,'error');}});
-    q('#cancelEdit').addEventListener('click',resetReleaseForm); q('#refreshAll').addEventListener('click',loadAll); q('#releaseChannel').addEventListener('change',renderReleases); q('#eventType').addEventListener('change',renderEvents);
-    document.querySelectorAll('.ota-tab').forEach(tab=>tab.addEventListener('click',()=>{document.querySelectorAll('.ota-tab').forEach(v=>v.classList.toggle('active',v===tab));document.querySelectorAll('[data-panel]').forEach(panel=>panel.classList.toggle('ota-hidden',panel.dataset.panel!==tab.dataset.view));}));
+    q('#releaseRows').addEventListener('click',async event=>{
+      const button=event.target.closest('button[data-action]');
+      if(!button)return;
+      const {action,version}=button.dataset;
+      try{
+        if(action==='copy-game'){
+          await navigator.clipboard.writeText(gameUrl(version));
+          message('Game FW link copied.','good'); return;
+        }
+        if(action==='copy-assets'){
+          await navigator.clipboard.writeText(assetsUrl(version));
+          message('Assets link copied.','good'); return;
+        }
+        if(action==='replace-game'){await replaceFile(version,'game');return;}
+        if(action==='replace-assets'){await replaceFile(version,'assets');return;}
+        if(action==='remove-assets'){
+          if(!confirm(`Remove assets pack from ${version}?`))return;
+          await api(`/api/admin/ota/simple/releases/${encodeURIComponent(version)}/assets`,{method:'DELETE'});
+        } else if(action==='publish'){
+          if(!confirm(`Publish ${version}? Published releases are immutable.`))return;
+          await api(`/api/admin/ota/simple/releases/${encodeURIComponent(version)}/publish`,{method:'POST'});
+        } else if(action==='delete'){
+          if(!confirm(`Delete draft ${version}?`))return;
+          await api(`/api/admin/ota/simple/releases/${encodeURIComponent(version)}`,{method:'DELETE'});
+        }
+        await loadAll();
+        message(`${version}: ${action} completed.`,'good');
+      }catch(error){message(error.message||'Action failed.','error');}
+    });
+
+    q('#refreshAll').addEventListener('click',()=>loadAll());
     q('#loginForm').addEventListener('submit',async event=>{
       event.preventDefault();
       token=q('#tokenInput').value.trim();
       if(!token){message('Enter the Admin Token.','error');return;}
-      if(!safeSessionSet('rg_admin_token',token)){
-        message('Browser storage is unavailable; continuing with this token for the current page only.','');
-      }
-      await loadAll({ interactive:true });
+      if(!safeSessionSet('rg_admin_token',token)) message('Browser storage is unavailable; token will be used for this page only.');
+      await loadAll({interactive:true});
     });
-    window.addEventListener('pageshow',()=>{ if(!q('#workspace').classList.contains('admin-hidden')) return; token=safeSessionGet('rg_admin_token')||token; });
     loadAll();
   </script>
 </AdminShell>
