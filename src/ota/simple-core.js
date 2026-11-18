@@ -49,15 +49,17 @@ export function parseEspGameImage(input) {
 
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const scanLimit = Math.max(0, bytes.byteLength - (APP_DESC_PROJECT_OFFSET + APP_DESC_TEXT_BYTES));
+  let sawDescriptorMagic = false;
   for (let offset = 0; offset <= scanLimit; offset += 4) {
     if (view.getUint32(offset, true) !== APP_DESC_MAGIC) continue;
+    sawDescriptorMagic = true;
     const version = readCString(bytes, offset + APP_DESC_VERSION_OFFSET, APP_DESC_TEXT_BYTES);
     const projectName = readCString(bytes, offset + APP_DESC_PROJECT_OFFSET, APP_DESC_TEXT_BYTES);
-    if (projectName !== 'DR_Game_FW') fail('not_dr_game_fw');
+    if (projectName !== 'DR_Game_FW') continue;
     const parsed = parseSimpleVersion(version);
     return { projectName, ...parsed };
   }
-  fail('esp_app_desc_not_found');
+  fail(sawDescriptorMagic ? 'not_dr_game_fw' : 'esp_app_desc_not_found');
 }
 
 export function validateAssetsPackHeader(input) {
