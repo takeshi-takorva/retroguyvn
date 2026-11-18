@@ -30,10 +30,11 @@ test('non-OTA Workers Builds branches skip Worker version upload before importin
   assert.match(source, /await import\('\.\/deploy-preview\.mjs'\)/);
 });
 
-test('OTA feature branch performs a zero-traffic canary only on its exact branch', async () => {
+test('OTA feature branches perform zero-traffic canaries', async () => {
   const source = await readFile(new URL('../../scripts/deploy-preview.mjs', import.meta.url), 'utf8');
   assert.match(source, /WORKERS_CI_BRANCH/);
-  assert.match(source, /feature\/dr-ota-cloudflare/);\n  assert.match(source, /feature\/ota-simple-v2/);
+  assert.match(source, /feature\/dr-ota-cloudflare/);
+  assert.match(source, /feature\/ota-simple-v2/);
   assert.match(source, /'deployments', 'status'/);
   assert.match(source, /'--json'/);
   assert.match(source, /'versions', 'deploy'/);
@@ -41,13 +42,15 @@ test('OTA feature branch performs a zero-traffic canary only on its exact branch
   assert.match(source, /@100%/);
 });
 
-test('OTA canary smoke test pins requests to the uploaded version and rolls back on failure', async () => {
+test('OTA canary smoke pins requests, exercises v2 and rolls back on failure', async () => {
   const source = await readFile(new URL('../../scripts/deploy-preview.mjs', import.meta.url), 'utf8');
   assert.match(source, /Cloudflare-Workers-Version-Overrides/);
   assert.match(source, /const BASE_URL = 'https:\/\/retroguyvn\.com'/);
   assert.match(source, /requestCanary\('\/api\/dr\/ota'/);
   assert.match(source, /X-DR-Device-ID/);
-  assert.match(source, /X-DR-HW-Version/);\n  assert.match(source, /\\/api\\/dr\\/ota\\/v2\\/check/);\n  assert.match(source, /v1\\.1\\.129/);
+  assert.match(source, /X-DR-HW-Version/);
+  assert.match(source, /\/api\/dr\/ota\/v2\/check/);
+  assert.match(source, /v1\.1\.129/);
   assert.match(source, /rollback/i);
   assert.match(source, /@100%/);
 });
