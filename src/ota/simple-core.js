@@ -26,7 +26,10 @@ export function parseSimpleVersion(value) {
   const hwMajor = Number(match[1]);
   const hwMinor = Number(match[2]);
   const revision = Number(match[3]);
-  if (![hwMajor, hwMinor, revision].every(Number.isSafeInteger)) fail('invalid_simple_version');
+  if (![hwMajor, hwMinor, revision].every(Number.isSafeInteger) ||
+      hwMajor > 0xFFFF || hwMinor > 0xFFFF || revision > 0xFFFFFFFF) {
+    fail('invalid_simple_version');
+  }
   return { version: text, hwMajor, hwMinor, revision };
 }
 
