@@ -151,7 +151,8 @@ test('published simple release is immutable and publish requires the game object
   assert.equal(published.status, 'published');
 
   await assert.rejects(() => service.replaceGame('v1.1.130', gameBin('v1.1.130')), error => error.status === 409 && error.code === 'simple_release_published');
-  await assert.rejects(() => service.replaceAssets('v1.1.130', await assetsPack()), error => error.status === 409 && error.code === 'simple_release_published');
+  const publishedPack = await assetsPack();
+  await assert.rejects(() => service.replaceAssets('v1.1.130', publishedPack), error => error.status === 409 && error.code === 'simple_release_published');
 });
 
 test('checkForUpdate offers only a newer revision on the same hardware line', async () => {
@@ -186,8 +187,9 @@ test('replaceAssets rejects a pack whose VERSION does not match the release', as
   });
   const bucket = { async put() { throw new Error('must not upload'); }, async delete() {} };
   const service = createSimpleOtaService({ repo, firmwareBucket: bucket });
+  const wrongVersionPack = await assetsPack('v1.1.131');
   await assert.rejects(
-    () => service.replaceAssets('v1.1.130', await assetsPack('v1.1.131'), 'tester'),
+    () => service.replaceAssets('v1.1.130', wrongVersionPack, 'tester'),
     error => error.status === 409 && error.code === 'assets_version_mismatch'
   );
 });
